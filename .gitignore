@@ -1,0 +1,46 @@
+# ===== Gradle =====
+.gradle/
+build/
+
+# ===== Local config =====
+local.properties
+
+# ===== Android Studio =====
+.idea/
+*.iml
+*.ipr
+*.iws
+/out/
+
+# ===== OS files =====
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+
+# ===== APK / AAB =====
+*.apk
+*.aab
+
+# ===== External native build =====
+.cxx/
+.externalNativeBuild/
+
+# ===== Kotlin =====
+.kotlin/
+
+# ===== Firebase / Google services (필요 시 제외) =====
+# google-services.json
+
+# ===== Keystore =====
+*.jks
+*.keystore
+
+# ===== Lint / Reports =====
+lint/
+lint-results*.html
+lint-results*.xml
+
+# ===== Coverage =====
+coverage/
