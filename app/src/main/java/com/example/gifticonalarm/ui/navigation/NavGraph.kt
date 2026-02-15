@@ -7,14 +7,18 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gifticonalarm.ui.home.HomeScreen as HomeDashboardScreen
 import com.example.gifticonalarm.ui.feature.add.AddGifticonScreen
 import com.example.gifticonalarm.ui.feature.detail.DetailScreen
 import com.example.gifticonalarm.ui.feature.home.HomeScreen
-import com.example.gifticonalarm.ui.feature.home.dashboard.DashboardScreen
 import com.example.gifticonalarm.ui.feature.settings.SettingsScreen
+import com.example.gifticonalarm.ui.onboarding.OnboardingScreen
+import com.example.gifticonalarm.ui.onboarding.OnboardingViewModel
 
 sealed class Screen(val route: String) {
-    data object Dashboard : Screen("dashboard")
+    data object Onboarding : Screen("onboarding")
+    data object Home : Screen("home")
     data object Coupons : Screen("coupons")
     data object Add : Screen("add")
     data object Settings : Screen("settings")
@@ -29,15 +33,38 @@ sealed class Screen(val route: String) {
 @Composable
 fun NavGraph(
     navController: NavHostController,
+    startDestination: String,
     modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Dashboard.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
-        composable(Screen.Dashboard.route) {
-            DashboardScreen()
+        composable(Screen.Onboarding.route) {
+            val viewModel: OnboardingViewModel = hiltViewModel()
+            OnboardingScreen(
+                onSkipClick = {
+                    viewModel.completeOnboarding {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                onStartClick = {
+                    viewModel.completeOnboarding {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.Home.route) {
+            HomeDashboardScreen()
         }
 
         composable(Screen.Coupons.route) {
