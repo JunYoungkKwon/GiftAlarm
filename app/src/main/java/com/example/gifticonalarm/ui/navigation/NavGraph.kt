@@ -8,10 +8,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.gifticonalarm.ui.home.HomeScreen as HomeDashboardScreen
 import com.example.gifticonalarm.ui.feature.add.AddGifticonScreen
 import com.example.gifticonalarm.ui.feature.detail.DetailScreen
 import com.example.gifticonalarm.ui.feature.home.HomeScreen
+import com.example.gifticonalarm.ui.feature.home.dashboard.DashboardScreen
 import com.example.gifticonalarm.ui.feature.settings.SettingsScreen
 import com.example.gifticonalarm.ui.onboarding.OnboardingScreen
 import com.example.gifticonalarm.ui.onboarding.OnboardingViewModel
@@ -64,7 +64,7 @@ fun NavGraph(
         }
 
         composable(Screen.Home.route) {
-            HomeDashboardScreen()
+            DashboardScreen()
         }
 
         composable(Screen.Coupons.route) {
