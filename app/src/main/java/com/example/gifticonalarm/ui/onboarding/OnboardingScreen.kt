@@ -441,7 +441,7 @@ private fun NotificationIllustration() {
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(top = 42.dp)
-                .size(width = 146.dp, height = 48.dp),
+                .size(width = 152.dp, height = 48.dp),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFFDE047))
         ) {

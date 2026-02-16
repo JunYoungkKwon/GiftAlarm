@@ -2,12 +2,13 @@ package com.example.gifticonalarm.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gifticonalarm.ui.coupon.detail.CouponDetailScreen
 import com.example.gifticonalarm.ui.feature.add.AddGifticonScreen
 import com.example.gifticonalarm.ui.feature.detail.DetailScreen
 import com.example.gifticonalarm.ui.feature.home.HomeScreen
@@ -22,6 +23,9 @@ sealed class Screen(val route: String) {
     data object Coupons : Screen("coupons")
     data object Add : Screen("add")
     data object Settings : Screen("settings")
+    data object CouponDetail : Screen("coupon_detail/{couponId}") {
+        fun createRoute(couponId: String) = "coupon_detail/$couponId"
+    }
     data object Detail : Screen("detail/{gifticonId}") {
         fun createRoute(gifticonId: Long) = "detail/$gifticonId"
     }
@@ -64,7 +68,11 @@ fun NavGraph(
         }
 
         composable(Screen.Home.route) {
-            DashboardScreen()
+            DashboardScreen(
+                onCouponClick = { couponId ->
+                    navController.navigate(Screen.CouponDetail.createRoute(couponId))
+                }
+            )
         }
 
         composable(Screen.Coupons.route) {
@@ -91,6 +99,19 @@ fun NavGraph(
 
         composable(Screen.Settings.route) {
             SettingsScreen()
+        }
+
+        composable(
+            route = Screen.CouponDetail.route,
+            arguments = listOf(navArgument("couponId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val couponId = backStackEntry.arguments?.getString("couponId") ?: return@composable
+            CouponDetailScreen(
+                couponId = couponId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         composable(
