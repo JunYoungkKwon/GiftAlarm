@@ -7,9 +7,11 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 fun DashboardScreen(
+    onAddClick: () -> Unit = {},
     onCouponClick: (String) -> Unit = {}
 ) {
     HomeDashboardScreen(
+        onPrimaryActionClick = onAddClick,
         onCouponClick = { couponId ->
             onCouponClick(couponId.toString())
         }

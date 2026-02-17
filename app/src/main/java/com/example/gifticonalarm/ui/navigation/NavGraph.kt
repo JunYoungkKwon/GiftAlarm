@@ -9,7 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.gifticonalarm.ui.coupon.detail.CouponDetailScreen
-import com.example.gifticonalarm.ui.feature.add.AddGifticonScreen
+import com.example.gifticonalarm.ui.coupon.registration.CouponRegistrationScreen
 import com.example.gifticonalarm.ui.feature.detail.DetailScreen
 import com.example.gifticonalarm.ui.feature.home.HomeScreen
 import com.example.gifticonalarm.ui.feature.home.dashboard.DashboardScreen
@@ -21,7 +21,7 @@ sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
     data object Home : Screen("home")
     data object Coupons : Screen("coupons")
-    data object Add : Screen("add")
+    data object CouponRegistration : Screen("coupon_registration")
     data object Settings : Screen("settings")
     data object CouponDetail : Screen("coupon_detail/{couponId}") {
         fun createRoute(couponId: String) = "coupon_detail/$couponId"
@@ -48,14 +48,6 @@ fun NavGraph(
         composable(Screen.Onboarding.route) {
             val viewModel: OnboardingViewModel = hiltViewModel()
             OnboardingScreen(
-                onSkipClick = {
-                    viewModel.completeOnboarding {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Onboarding.route) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
-                },
                 onStartClick = {
                     viewModel.completeOnboarding {
                         navController.navigate(Screen.Home.route) {
@@ -69,6 +61,9 @@ fun NavGraph(
 
         composable(Screen.Home.route) {
             DashboardScreen(
+                onAddClick = {
+                    navController.navigate(Screen.CouponRegistration.route)
+                },
                 onCouponClick = { couponId ->
                     navController.navigate(Screen.CouponDetail.createRoute(couponId))
                 }
@@ -78,7 +73,7 @@ fun NavGraph(
         composable(Screen.Coupons.route) {
             HomeScreen(
                 onNavigateToAdd = {
-                    navController.navigate(Screen.Add.route)
+                    navController.navigate(Screen.CouponRegistration.route)
                 },
                 onNavigateToDetail = { gifticonId ->
                     navController.navigate(Screen.Detail.createRoute(gifticonId))
@@ -86,11 +81,13 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Add.route) {
-            AddGifticonScreen(
-                onNavigateBack = {
+        composable(Screen.CouponRegistration.route) {
+            CouponRegistrationScreen(
+                onCloseClick = {
+                    navController.popBackStack()
+                },
+                onRegisterClick = {
                     navController.navigate(Screen.Coupons.route) {
-                        popUpTo(Screen.Coupons.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 }

@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
+import kotlinx.coroutines.launch
 
 private val OnboardingBackground = Color(0xFFFFFFFF)
 private val OnboardingAccent = Color(0xFF191970)
@@ -54,11 +56,13 @@ private val OnboardingMuted = Color(0xFFE5E7EB)
  */
 @Composable
 fun OnboardingScreen(
-    onSkipClick: () -> Unit,
     onStartClick: () -> Unit
 ) {
     val pages = onboardingPages()
     val pagerState = rememberPagerState(pageCount = { pages.size })
+    val coroutineScope = rememberCoroutineScope()
+    val lastPageIndex = pages.lastIndex
+    val isLastPage = pagerState.currentPage == lastPageIndex
 
     Column(
         modifier = Modifier
@@ -72,7 +76,13 @@ fun OnboardingScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            TextButton(onClick = onSkipClick) {
+            TextButton(
+                onClick = {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(lastPageIndex)
+                    }
+                }
+            ) {
                 Text(
                     text = "건너뛰기",
                     color = OnboardingAccent,
@@ -110,7 +120,15 @@ fun OnboardingScreen(
         }
 
         Button(
-            onClick = onStartClick,
+            onClick = {
+                if (isLastPage) {
+                    onStartClick()
+                    return@Button
+                }
+                coroutineScope.launch {
+                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -121,7 +139,7 @@ fun OnboardingScreen(
             )
         ) {
             Text(
-                text = "시작하기",
+                text = if (isLastPage) "시작하기" else "다음",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold
             )

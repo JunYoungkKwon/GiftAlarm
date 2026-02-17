@@ -81,7 +81,7 @@ fun GifticonAlarmApp() {
     val bottomItems = listOf(
         BottomNavItem(Screen.Home.route, "홈", Icons.Filled.Home),
         BottomNavItem(Screen.Coupons.route, "쿠폰함", Icons.Filled.Inventory2),
-        BottomNavItem(Screen.Add.route, "추가", Icons.Filled.AddCircle),
+        BottomNavItem(Screen.CouponRegistration.route, "추가", Icons.Filled.AddCircle),
         BottomNavItem(Screen.Settings.route, "설정", Icons.Filled.Settings)
     )
 
@@ -93,12 +93,11 @@ fun GifticonAlarmApp() {
                     bottomItems.any { it.route == destination.route }
                 } == true
 
-            if (shouldShowBottomBar) {
+            if (shouldShowBottomBar && currentDestination != null) {
                 NavigationBar {
                     bottomItems.forEach { item ->
-                        val selected = currentDestination
-                            ?.hierarchy
-                            ?.any { destination -> destination.route == item.route } == true
+                        val selected = currentDestination.hierarchy
+                            .any { destination -> destination.route == item.route }
 
                         NavigationBarItem(
                             selected = selected,
