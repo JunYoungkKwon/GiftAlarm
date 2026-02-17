@@ -185,10 +185,13 @@ fun CouponRegistrationScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             UnderlineInputField(
-                value = barcode,
+                value = if (withoutBarcode) "바코드 번호 없음" else barcode,
                 onValueChange = { barcode = it },
                 placeholder = "바코드 번호를 입력해주세요",
-                keyboardType = KeyboardType.Ascii
+                keyboardType = KeyboardType.Ascii,
+                enabled = !withoutBarcode,
+                disabledContainerColor = Color(0xFFF3F4F6),
+                disabledTextColor = Color(0xFF9CA3AF)
             )
             Spacer(modifier = Modifier.height(16.dp))
             BarcodePreviewCard(barcode = barcode)
@@ -343,9 +346,12 @@ private fun UnderlineInputField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     keyboardType: KeyboardType = KeyboardType.Text,
+    enabled: Boolean = true,
     readOnly: Boolean = false,
     onClick: (() -> Unit)? = null,
-    showExpandIcon: Boolean = false
+    showExpandIcon: Boolean = false,
+    disabledContainerColor: Color = Color.Transparent,
+    disabledTextColor: Color = RegistrationTextSecondary
 ) {
     TextField(
         value = value,
@@ -367,6 +373,7 @@ private fun UnderlineInputField(
             )
         },
         singleLine = true,
+        enabled = enabled,
         readOnly = readOnly,
         trailingIcon = {
             if (showExpandIcon) {
@@ -384,9 +391,11 @@ private fun UnderlineInputField(
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
+            disabledContainerColor = disabledContainerColor,
+            disabledTextColor = disabledTextColor,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
             cursorColor = RegistrationAccent
         ),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
