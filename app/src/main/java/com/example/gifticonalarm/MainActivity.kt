@@ -87,37 +87,38 @@ fun GifticonAlarmApp() {
 
     Scaffold(
         bottomBar = {
-            val shouldShowBottomBar = currentDestination
-                ?.hierarchy
-                ?.any { destination ->
-                    bottomItems.any { it.route == destination.route }
-                } == true
+            currentDestination?.let { destination ->
+                val shouldShowBottomBar = destination.hierarchy
+                    .any { navDestination ->
+                        bottomItems.any { it.route == navDestination.route }
+                    }
 
-            if (shouldShowBottomBar && currentDestination != null) {
-                NavigationBar {
-                    bottomItems.forEach { item ->
-                        val selected = currentDestination.hierarchy
-                            .any { destination -> destination.route == item.route }
+                if (shouldShowBottomBar) {
+                    NavigationBar {
+                        bottomItems.forEach { item ->
+                            val selected = destination.hierarchy
+                                .any { navDestination -> navDestination.route == item.route }
 
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.label
-                                )
-                            },
-                            label = { Text(item.label) }
-                        )
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.label
+                                    )
+                                },
+                                label = { Text(item.label) }
+                            )
+                        }
                     }
                 }
             }
