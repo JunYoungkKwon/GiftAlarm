@@ -33,6 +33,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -70,6 +72,11 @@ private val RegistrationTextSecondary = Color(0xFF9CA3AF)
 private val RegistrationDivider = Color(0xFFF1F5F9)
 private val RegistrationSurface = Color(0xFFF3F4F6)
 
+enum class CouponType {
+    EXCHANGE,
+    AMOUNT
+}
+
 /**
  * 쿠폰 등록 진입 및 수동 입력 UI를 제공하는 화면.
  */
@@ -89,6 +96,8 @@ fun CouponRegistrationScreen(
     var couponName by rememberSaveable { mutableStateOf("") }
     var expiryDate by rememberSaveable { mutableStateOf("") }
     var withoutBarcode by rememberSaveable { mutableStateOf(false) }
+    var couponType by rememberSaveable { mutableStateOf(CouponType.EXCHANGE) }
+    var amount by rememberSaveable { mutableStateOf("") }
     var thumbnailUri by rememberSaveable { mutableStateOf<String?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -250,6 +259,58 @@ fun CouponRegistrationScreen(
                 showExpandIcon = true
             )
 
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "쿠폰 타입",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = RegistrationTextPrimary
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = couponType == CouponType.EXCHANGE,
+                    onClick = { couponType = CouponType.EXCHANGE },
+                    label = { Text("교환권") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = RegistrationAccent,
+                        selectedLabelColor = Color.White
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = couponType == CouponType.AMOUNT,
+                    onClick = { couponType = CouponType.AMOUNT },
+                    label = { Text("금액권") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = RegistrationAccent,
+                        selectedLabelColor = Color.White
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            if (couponType == CouponType.AMOUNT) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(
+                    text = "금액 입력",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = RegistrationTextPrimary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                UnderlineInputField(
+                    value = amount,
+                    onValueChange = { input -> amount = input.filter { it.isDigit() } },
+                    placeholder = "금액을 입력해주세요",
+                    keyboardType = KeyboardType.Number,
+                    suffixText = "원"
+                )
+            }
+
             Spacer(modifier = Modifier.height(14.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -350,6 +411,7 @@ private fun UnderlineInputField(
     readOnly: Boolean = false,
     onClick: (() -> Unit)? = null,
     showExpandIcon: Boolean = false,
+    suffixText: String? = null,
     disabledContainerColor: Color = Color.Transparent,
     disabledTextColor: Color = RegistrationTextSecondary
 ) {
@@ -381,6 +443,15 @@ private fun UnderlineInputField(
                     imageVector = Icons.Outlined.ExpandMore,
                     contentDescription = "유효기한 선택",
                     tint = Color(0xFF94A3B8)
+                )
+            }
+        },
+        suffix = {
+            if (suffixText != null) {
+                Text(
+                    text = suffixText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = RegistrationTextSecondary
                 )
             }
         },
