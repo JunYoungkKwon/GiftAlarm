@@ -238,26 +238,14 @@ fun CouponRegistrationScreen(
                 placeholder = "쿠폰명을 입력해 주세요. (필수)"
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onExpiryDateClick)
-                    .padding(top = 6.dp, bottom = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (expiryDate.isEmpty()) "유효기한을 선택해주세요." else expiryDate,
-                    color = RegistrationTextSecondary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.Outlined.ExpandMore,
-                    contentDescription = "유효기한 선택",
-                    tint = Color(0xFF94A3B8)
-                )
-            }
-            HorizontalDivider(color = RegistrationDivider, thickness = 1.dp)
+            UnderlineInputField(
+                value = expiryDate,
+                onValueChange = {},
+                placeholder = "유효기한을 선택해주세요.",
+                readOnly = true,
+                onClick = onExpiryDateClick,
+                showExpandIcon = true
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
             Row(
@@ -354,12 +342,23 @@ private fun UnderlineInputField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    readOnly: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    showExpandIcon: Boolean = false
 ) {
     TextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .let { baseModifier ->
+                if (readOnly && onClick != null) {
+                    baseModifier.clickable(onClick = onClick)
+                } else {
+                    baseModifier
+                }
+            },
         placeholder = {
             Text(
                 text = placeholder,
@@ -368,6 +367,16 @@ private fun UnderlineInputField(
             )
         },
         singleLine = true,
+        readOnly = readOnly,
+        trailingIcon = {
+            if (showExpandIcon) {
+                Icon(
+                    imageVector = Icons.Outlined.ExpandMore,
+                    contentDescription = "유효기한 선택",
+                    tint = Color(0xFF94A3B8)
+                )
+            }
+        },
         textStyle = MaterialTheme.typography.bodyMedium.copy(
             color = RegistrationTextPrimary,
             fontWeight = FontWeight.Medium
