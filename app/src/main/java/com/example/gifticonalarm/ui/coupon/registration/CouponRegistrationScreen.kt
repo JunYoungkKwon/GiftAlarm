@@ -1,6 +1,7 @@
 package com.example.gifticonalarm.ui.coupon.registration
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -63,6 +64,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.gifticonalarm.ui.coupon.registration.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.coupon.registration.bottomsheet.ExpirationDateSelectionBottomSheet
@@ -98,6 +100,7 @@ fun CouponRegistrationScreen(
     onRegisterClick: () -> Unit = {}
 ) {
     val dateViewModel: CouponRegistrationDateViewModel = hiltViewModel()
+    val context = LocalContext.current
     var barcode by rememberSaveable { mutableStateOf("") }
     var place by rememberSaveable { mutableStateOf("") }
     var couponName by rememberSaveable { mutableStateOf("") }
@@ -105,7 +108,8 @@ fun CouponRegistrationScreen(
     var couponType by rememberSaveable { mutableStateOf(CouponType.EXCHANGE) }
     var amount by rememberSaveable { mutableStateOf("") }
     var thumbnailUri by rememberSaveable { mutableStateOf<String?>(null) }
-    var infoSheetType by rememberSaveable { mutableStateOf(CouponRegistrationInfoSheetType.NONE) }
+    val infoSheetTypeState = rememberSaveable { mutableStateOf(CouponRegistrationInfoSheetType.NONE) }
+    val infoSheetType = infoSheetTypeState.value
     val isExpiryBottomSheetVisible by dateViewModel.isExpiryBottomSheetVisible.observeAsState(false)
     val selectedExpiryDate by dateViewModel.selectedExpiryDate.observeAsState()
     val draftExpiryDate by dateViewModel.draftExpiryDate.observeAsState(ExpirationDate.today())
@@ -159,7 +163,25 @@ fun CouponRegistrationScreen(
                 border = BorderStroke(1.dp, RegistrationDivider)
             ) {
                 Button(
-                    onClick = onRegisterClick,
+                    onClick = {
+                        when {
+                            couponName.isBlank() -> {
+                                Toast.makeText(
+                                    context,
+                                    "쿠폰명을 입력해 주세요.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            expiryDate.isBlank() -> {
+                                Toast.makeText(
+                                    context,
+                                    "유효기한을 선택해 주세요.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            else -> onRegisterClick()
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 12.dp)
@@ -231,7 +253,7 @@ fun CouponRegistrationScreen(
                 IconButton(
                     onClick = {
                         onNoBarcodeInfoClick()
-                        infoSheetType = CouponRegistrationInfoSheetType.BARCODE_INFO
+                        infoSheetTypeState.value = CouponRegistrationInfoSheetType.BARCODE_INFO
                     },
                     modifier = Modifier.size(22.dp)
                 ) {
@@ -335,7 +357,9 @@ fun CouponRegistrationScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = { infoSheetType = CouponRegistrationInfoSheetType.NOTIFICATION_INFO },
+                    onClick = {
+                        infoSheetTypeState.value = CouponRegistrationInfoSheetType.NOTIFICATION_INFO
+                    },
                     modifier = Modifier.size(16.dp)
                 ) {
                     Icon(
@@ -367,11 +391,13 @@ fun CouponRegistrationScreen(
     }
 
     if (infoSheetType != CouponRegistrationInfoSheetType.NONE) {
-        CouponRegistrationInfoBottomSheet(
-            type = infoSheetType,
-            onDismissRequest = { infoSheetType = CouponRegistrationInfoSheetType.NONE }
-        )
-    }
+            CouponRegistrationInfoBottomSheet(
+                type = infoSheetType,
+                onDismissRequest = {
+                    infoSheetTypeState.value = CouponRegistrationInfoSheetType.NONE
+                }
+            )
+        }
 }
 
 @Composable
