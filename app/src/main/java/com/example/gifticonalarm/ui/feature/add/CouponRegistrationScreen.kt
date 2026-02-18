@@ -165,6 +165,13 @@ fun CouponRegistrationScreen(
                 Button(
                     onClick = {
                         when {
+                            place.isBlank() -> {
+                                Toast.makeText(
+                                    context,
+                                    "사용처를 입력해 주세요.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                             couponName.isBlank() -> {
                                 Toast.makeText(
                                     context,
@@ -277,7 +284,7 @@ fun CouponRegistrationScreen(
             UnderlineInputField(
                 value = place,
                 onValueChange = { place = it },
-                placeholder = "사용처를 입력해 주세요."
+                placeholder = "사용처를 입력해 주세요. (필수)"
             )
             Spacer(modifier = Modifier.height(8.dp))
             UnderlineInputField(
@@ -289,7 +296,7 @@ fun CouponRegistrationScreen(
             UnderlineInputField(
                 value = expiryDate,
                 onValueChange = {},
-                placeholder = "유효기한을 선택해주세요.",
+                placeholder = "유효기한을 선택해주세요. (필수)",
                 readOnly = true,
                 onClick = {
                     onExpiryDateClick()
