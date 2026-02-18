@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.usecase.AddGifticonUseCase
+import com.example.gifticonalarm.domain.usecase.SaveGifticonImageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -16,7 +17,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class CouponRegistrationViewModel @Inject constructor(
-    private val addGifticonUseCase: AddGifticonUseCase
+    private val addGifticonUseCase: AddGifticonUseCase,
+    private val saveGifticonImageUseCase: SaveGifticonImageUseCase
 ) : ViewModel() {
 
     private val _isLoading = MutableLiveData(false)
@@ -42,12 +44,15 @@ class CouponRegistrationViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
+                val persistedImageUri = imageUri
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { saveGifticonImageUseCase(it) }
                 val gifticon = Gifticon(
                     name = name,
                     brand = brand,
                     expiryDate = expiryDate,
                     barcode = barcode,
-                    imageUri = imageUri,
+                    imageUri = persistedImageUri,
                     memo = memo,
                     isUsed = false
                 )
