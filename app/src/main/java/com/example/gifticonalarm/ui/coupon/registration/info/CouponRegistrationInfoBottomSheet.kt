@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -115,10 +116,28 @@ private fun InfoSheetContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SheetInfoCard, RoundedCornerShape(12.dp))
-                    .padding(12.dp)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.WarningAmber,
+                        contentDescription = null,
+                        tint = SheetInfoAccent,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = "유의 사항",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = SheetTitle
+                    )
+                }
                 Text(
-                    text = description,
+                    text = "• $description",
                     style = MaterialTheme.typography.bodySmall,
                     color = SheetDescription
                 )
