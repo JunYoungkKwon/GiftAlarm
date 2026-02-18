@@ -49,6 +49,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -72,6 +73,7 @@ import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationIn
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
 import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
 import coil3.compose.AsyncImage
+import java.util.Calendar
 
 private val RegistrationBackground = Color(0xFFFFFFFF)
 private val RegistrationAccent = Color(0xFF191970)
@@ -100,6 +102,7 @@ fun CouponRegistrationScreen(
     onRegisterClick: () -> Unit = {}
 ) {
     val dateViewModel: CouponRegistrationDateViewModel = hiltViewModel()
+    val registrationViewModel: CouponRegistrationViewModel = hiltViewModel()
     val context = LocalContext.current
     var barcode by rememberSaveable { mutableStateOf("") }
     var place by rememberSaveable { mutableStateOf("") }
@@ -113,7 +116,24 @@ fun CouponRegistrationScreen(
     val isExpiryBottomSheetVisible by dateViewModel.isExpiryBottomSheetVisible.observeAsState(false)
     val selectedExpiryDate by dateViewModel.selectedExpiryDate.observeAsState()
     val draftExpiryDate by dateViewModel.draftExpiryDate.observeAsState(ExpirationDate.today())
+    val isRegistering by registrationViewModel.isLoading.observeAsState(false)
+    val registerError by registrationViewModel.error.observeAsState()
+    val isRegistered by registrationViewModel.isRegistered.observeAsState(false)
     val expiryDate = selectedExpiryDate?.toDisplayText().orEmpty()
+
+    LaunchedEffect(registerError) {
+        registerError?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            registrationViewModel.consumeError()
+        }
+    }
+
+    LaunchedEffect(isRegistered) {
+        if (isRegistered) {
+            onRegisterClick()
+            registrationViewModel.consumeRegistered()
+        }
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -186,13 +206,37 @@ fun CouponRegistrationScreen(
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
-                            else -> onRegisterClick()
+                            else -> {
+                                val parsedExpiry = selectedExpiryDate ?: return@Button
+                                val calendar = Calendar.getInstance().apply {
+                                    set(Calendar.YEAR, parsedExpiry.year)
+                                    set(Calendar.MONTH, parsedExpiry.month - 1)
+                                    set(Calendar.DAY_OF_MONTH, parsedExpiry.day)
+                                    set(Calendar.HOUR_OF_DAY, 23)
+                                    set(Calendar.MINUTE, 59)
+                                    set(Calendar.SECOND, 59)
+                                    set(Calendar.MILLISECOND, 0)
+                                }
+                                val memo = when (couponType) {
+                                    CouponType.AMOUNT -> amount.ifBlank { null }?.let { "금액권: ${it}원" }
+                                    CouponType.EXCHANGE -> null
+                                }
+                                registrationViewModel.registerGifticon(
+                                    name = couponName.trim(),
+                                    brand = place.trim(),
+                                    barcode = if (withoutBarcode) "" else barcode.trim(),
+                                    expiryDate = calendar.time,
+                                    imageUri = thumbnailUri,
+                                    memo = memo
+                                )
+                            }
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 12.dp)
                         .height(52.dp),
+                    enabled = !isRegistering,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = RegistrationAccent,
                         contentColor = Color.White
@@ -584,7 +628,7 @@ private fun BarcodePreviewCard(barcode: String) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = barcode.ifBlank { "1i1i w2i2 1111 11" },
+                text = barcode,
                 color = Color(0xFF6B7280),
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 9.sp,

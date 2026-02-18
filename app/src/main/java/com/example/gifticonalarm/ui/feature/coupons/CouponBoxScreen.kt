@@ -49,7 +49,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 private val CouponAccent = Color(0xFF191970)
 private val CouponBackground = Color(0xFFFFFFFF)
@@ -80,11 +85,25 @@ data class CouponUiModel(
 @Composable
 fun CouponBoxScreen(
     modifier: Modifier = Modifier,
+    coupons: List<Gifticon> = emptyList(),
+    useSampleData: Boolean = false,
     onAddClick: () -> Unit = {},
     onCouponClick: (Long) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val coupons = remember { sampleCoupons() }
+    val displayCoupons = remember(coupons, useSampleData) {
+        if (useSampleData) sampleCoupons() else coupons.map { it.toCouponUiModel() }
+    }
+    val filteredCoupons = remember(displayCoupons, searchQuery) {
+        if (searchQuery.isBlank()) {
+            displayCoupons
+        } else {
+            displayCoupons.filter {
+                it.brand.contains(searchQuery, ignoreCase = true) ||
+                    it.name.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -96,7 +115,8 @@ fun CouponBoxScreen(
             CouponBoxHeader(
                 onAddClick = onAddClick,
                 searchQuery = searchQuery,
-                onSearchQueryChange = { searchQuery = it }
+                onSearchQueryChange = { searchQuery = it },
+                totalCount = filteredCoupons.size
             )
 
             LazyColumn(
@@ -106,7 +126,7 @@ fun CouponBoxScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(coupons, key = { it.id }) { coupon ->
+                items(filteredCoupons, key = { it.id }) { coupon ->
                     CouponListItem(
                         coupon = coupon,
                         onClick = { onCouponClick(coupon.id) }
@@ -122,7 +142,8 @@ fun CouponBoxScreen(
 private fun CouponBoxHeader(
     onAddClick: () -> Unit,
     searchQuery: String,
-    onSearchQueryChange: (String) -> Unit
+    onSearchQueryChange: (String) -> Unit,
+    totalCount: Int
 ) {
     Column(
         modifier = Modifier
@@ -214,7 +235,7 @@ private fun CouponBoxHeader(
                 )
             }
             Text(
-                text = "총 5개",
+                text = "총 ${totalCount}개",
                 style = MaterialTheme.typography.labelSmall,
                 color = CouponMutedText
             )
@@ -349,6 +370,56 @@ private fun CouponListItem(
     }
 }
 
+private fun Gifticon.toCouponUiModel(): CouponUiModel {
+    val dday = calculateDday(expiryDate)
+    val status = when {
+        isUsed -> CouponStatus.USED
+        dday < 0 -> CouponStatus.EXPIRED
+        else -> CouponStatus.AVAILABLE
+    }
+    return CouponUiModel(
+        id = id,
+        brand = brand,
+        name = name,
+        expiryText = when (status) {
+            CouponStatus.USED -> "${formatDate(expiryDate)} 사용"
+            else -> "~${formatDate(expiryDate)} 까지"
+        },
+        statusBadge = when (status) {
+            CouponStatus.USED -> "사용 완료"
+            CouponStatus.EXPIRED -> "만료"
+            CouponStatus.AVAILABLE -> "D-$dday"
+        },
+        imageUrl = imageUri ?: defaultImage(id),
+        status = status
+    )
+}
+
+private fun calculateDday(targetDate: java.util.Date): Long {
+    val today = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    val target = Calendar.getInstance().apply {
+        time = targetDate
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    return TimeUnit.MILLISECONDS.toDays(target - today)
+}
+
+private fun formatDate(date: java.util.Date): String {
+    return SimpleDateFormat("yyyy.MM.dd", Locale.KOREAN).format(date)
+}
+
+private fun defaultImage(id: Long): String {
+    return "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&auto=format&fit=crop&q=80&seed=$id"
+}
+
 private fun sampleCoupons(): List<CouponUiModel> = listOf(
     CouponUiModel(
         id = 1,
@@ -358,42 +429,6 @@ private fun sampleCoupons(): List<CouponUiModel> = listOf(
         statusBadge = "D-15",
         imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDGSCo2UV4Y1_wz3-x4HeZV2PHh-5F2YwaVgskbyNACc0cETCrvJh4nnTgWyN1YmV3Xceu3mW70hMX1wY0RMu_42CnKVMnmq5oloMq1G-uNK02WhkWNG6YxbQEWwviPhstfUem38pASFWMyu8bjpb8ODKVJBCwHodsYnDenNe-liB0BrML8uG2KKE5c3mIsoo7I1jalz2pkVZIJMQ15QueNkF2VjYKD53pcJto1lES4Nxge8cvTmybEndSdTRDSUXxeAUjdBHrm2E1j",
         status = CouponStatus.AVAILABLE
-    ),
-    CouponUiModel(
-        id = 2,
-        brand = "배스킨라빈스",
-        name = "파인트 아이스크림",
-        expiryText = "~2024.06.01 까지",
-        statusBadge = "D-27",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuC96Xa41LQpSK1TjaS9jdMceqgavhl2pNwr7ZjP12VoeDwRxyY4bio5QuiJyOKOXPBcKZSKNGjwSBCISjeiVg4XKbPSlQZ_6f6J_dVT15gKX31melVWxrH1ObiJU3yC02A6mXZadHTFA9fEQkQfhG3vaXmH9hqVtBe8FxsumRGGglXznJJ2KLqsAKi7AjCw4uPmCjUtux84TKGgCzhz9mLS0VmdzXYlXd9QNgslxbq8k3HI5EI60rxORD0j_cHIDAxMgDseJP0GxeqX",
-        status = CouponStatus.AVAILABLE
-    ),
-    CouponUiModel(
-        id = 3,
-        brand = "도미노피자",
-        name = "포테이토 피자 L + 콜라 1.25L",
-        expiryText = "~2024.05.06 까지",
-        statusBadge = "D-1",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBmbGA8jimHazEwfZo77_t4lpynkv6bIs69VX5fqjB4_ZsIJFF-ANWo0I48gnIkYMBOjYiuwKGuQ1huWMC15nLhhGPI9TnrD3sWHub4kfrw6ijyEM3Y-QSCiAre1ZHMNW9MKZD0tv6zRQorx3mZ7YKvvNJ1MwTyCB243HWRpqtzl2cDSaTCi76VuWj3ln56PZaSGtCJ5d2lLfiTPjAhAPIoGlPRhmOOn-McCr-oKHd0AI4fMv5Wk-v0cPGj5_QRBx8FJKahA_aMf5ZG",
-        status = CouponStatus.EXPIRED
-    ),
-    CouponUiModel(
-        id = 4,
-        brand = "버거킹",
-        name = "와퍼세트",
-        expiryText = "2024.04.10 사용",
-        statusBadge = "사용 완료",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDJlIaXAjJ-g44lMhrz9qEfoLXgrBFRtVvODghZIDd6aurvlNO9vBYCWI91ef1u0y4IJ0vdQbdZ6wODUxM1mDyAjU9Sb8yFBGyA_Fu-Jgos1nxayHy_ir4f7gshYLCfRpwfmyIDkzwlhKPhQyUN4mtMMgUSGuvuwbqixzGfUQbdDm32fZM7s1RE8QN6AnQ4hZSlS3L3OZ4BV40HCO7yL7D8HuXjrVkvhTqwu2CHHj6d62AkTceOAOg46hXMXVXs_SMo6w639N2yqxQJ",
-        status = CouponStatus.USED
-    ),
-    CouponUiModel(
-        id = 5,
-        brand = "메가커피",
-        name = "아이스 바닐라 라떼",
-        expiryText = "~2024.06.14 까지",
-        statusBadge = "D-40",
-        imageUrl = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&auto=format&fit=crop&q=80",
-        status = CouponStatus.AVAILABLE
     )
 )
 
@@ -401,6 +436,6 @@ private fun sampleCoupons(): List<CouponUiModel> = listOf(
 @Composable
 private fun CouponBoxScreenPreview() {
     GifticonAlarmTheme {
-        CouponBoxScreen()
+        CouponBoxScreen(useSampleData = true)
     }
 }

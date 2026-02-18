@@ -85,15 +85,23 @@ fun HomeScreen(
             item {
                 HomeHeader(onNotificationClick = onNotificationClick)
             }
-            item {
-                FocusSection(focus = state.focus)
+            state.focus?.let { focus ->
+                item {
+                    FocusSection(focus = focus)
+                }
             }
-            item {
-                CouponSection(
-                    coupons = state.coupons,
-                    onSortClick = onSortClick,
-                    onCouponClick = onCouponClick
-                )
+            if (state.coupons.isEmpty()) {
+                item {
+                    EmptyCouponSection()
+                }
+            } else {
+                item {
+                    CouponSection(
+                        coupons = state.coupons,
+                        onSortClick = onSortClick,
+                        onCouponClick = onCouponClick
+                    )
+                }
             }
         }
     }
@@ -387,7 +395,7 @@ private fun CouponCard(
  * 홈 대시보드용 UI 상태 모델.
  */
 data class HomeUiState(
-    val focus: HomeFocusItem,
+    val focus: HomeFocusItem?,
     val coupons: List<HomeCouponItem>
 ) {
     companion object {
@@ -464,6 +472,22 @@ data class HomeUiState(
                     imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuADuWGzcRoRFtLGdK-yIET1kPmCZY_1xLt2PtCB9kV1YAuq4B5LqHAplR3ngsx_S3-ZR3YV4JClC1Y_xOvelAlbYLC08RMMIhYxCSsz86XpPoKEsAogOtM8ER40tcmQ1bWIGJLm2niXxUN5zP6v5kW_Yhn3hcUl2qh-tebDi_p6sNfHEHtOurEvDz_XeL5i-N6PgnTkR6SFtV1EGzBmw5x1myq2xSVz_QhlEzzo-pI66B1vN9YDXmBd_0dSmV2jUUT0AwL3d1KAahNV"
                 )
             )
+        )
+    }
+}
+
+@Composable
+private fun EmptyCouponSection() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 48.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "등록된 쿠폰이 없어요.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = HomeTextSecondary
         )
     }
 }
