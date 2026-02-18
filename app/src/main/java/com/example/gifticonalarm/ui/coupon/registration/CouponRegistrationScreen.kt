@@ -48,6 +48,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -62,6 +63,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gifticonalarm.ui.coupon.registration.bottomsheet.ExpirationDate
+import com.example.gifticonalarm.ui.coupon.registration.bottomsheet.ExpirationDateSelectionBottomSheet
+import com.example.gifticonalarm.ui.coupon.registration.info.CouponRegistrationInfoBottomSheet
+import com.example.gifticonalarm.ui.coupon.registration.info.CouponRegistrationInfoSheetType
 import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
 import coil3.compose.AsyncImage
 
@@ -91,14 +97,19 @@ fun CouponRegistrationScreen(
     onExpiryDateClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {}
 ) {
+    val dateViewModel: CouponRegistrationDateViewModel = hiltViewModel()
     var barcode by rememberSaveable { mutableStateOf("") }
     var place by rememberSaveable { mutableStateOf("") }
     var couponName by rememberSaveable { mutableStateOf("") }
-    var expiryDate by rememberSaveable { mutableStateOf("") }
     var withoutBarcode by rememberSaveable { mutableStateOf(false) }
     var couponType by rememberSaveable { mutableStateOf(CouponType.EXCHANGE) }
     var amount by rememberSaveable { mutableStateOf("") }
     var thumbnailUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var infoSheetType by rememberSaveable { mutableStateOf(CouponRegistrationInfoSheetType.NONE) }
+    val isExpiryBottomSheetVisible by dateViewModel.isExpiryBottomSheetVisible.observeAsState(false)
+    val selectedExpiryDate by dateViewModel.selectedExpiryDate.observeAsState()
+    val draftExpiryDate by dateViewModel.draftExpiryDate.observeAsState(ExpirationDate.today())
+    val expiryDate = selectedExpiryDate?.toDisplayText().orEmpty()
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -218,7 +229,10 @@ fun CouponRegistrationScreen(
                     color = Color(0xFF6B7280)
                 )
                 IconButton(
-                    onClick = onNoBarcodeInfoClick,
+                    onClick = {
+                        onNoBarcodeInfoClick()
+                        infoSheetType = CouponRegistrationInfoSheetType.BARCODE_INFO
+                    },
                     modifier = Modifier.size(22.dp)
                 ) {
                     Icon(
@@ -255,7 +269,10 @@ fun CouponRegistrationScreen(
                 onValueChange = {},
                 placeholder = "유효기한을 선택해주세요.",
                 readOnly = true,
-                onClick = onExpiryDateClick,
+                onClick = {
+                    onExpiryDateClick()
+                    dateViewModel.openExpiryBottomSheet()
+                },
                 showExpandIcon = true
             )
 
@@ -317,12 +334,17 @@ fun CouponRegistrationScreen(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Info,
-                    contentDescription = null,
-                    tint = Color(0xFFCBD5E1),
-                    modifier = Modifier.size(14.dp)
-                )
+                IconButton(
+                    onClick = { infoSheetType = CouponRegistrationInfoSheetType.NOTIFICATION_INFO },
+                    modifier = Modifier.size(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = "만료일 알람 안내",
+                        tint = Color(0xFFCBD5E1),
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "만료일 알람은 언제 오나요?",
@@ -332,6 +354,23 @@ fun CouponRegistrationScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    if (isExpiryBottomSheetVisible) {
+        ExpirationDateSelectionBottomSheet(
+            selectedDate = draftExpiryDate,
+            onDateSelected = dateViewModel::updateDraftExpiryDate,
+            onConfirmClick = dateViewModel::confirmExpiryDate,
+            onDismissRequest = dateViewModel::dismissExpiryBottomSheet,
+            onNoExpiryClick = dateViewModel::dismissExpiryBottomSheet
+        )
+    }
+
+    if (infoSheetType != CouponRegistrationInfoSheetType.NONE) {
+        CouponRegistrationInfoBottomSheet(
+            type = infoSheetType,
+            onDismissRequest = { infoSheetType = CouponRegistrationInfoSheetType.NONE }
+        )
     }
 }
 
@@ -439,11 +478,16 @@ private fun UnderlineInputField(
         readOnly = readOnly,
         trailingIcon = {
             if (showExpandIcon) {
-                Icon(
-                    imageVector = Icons.Outlined.ExpandMore,
-                    contentDescription = "유효기한 선택",
-                    tint = Color(0xFF94A3B8)
-                )
+                IconButton(
+                    onClick = { onClick?.invoke() },
+                    enabled = onClick != null
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ExpandMore,
+                        contentDescription = "유효기한 선택",
+                        tint = Color(0xFF94A3B8)
+                    )
+                }
             }
         },
         suffix = {
