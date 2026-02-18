@@ -1,9 +1,9 @@
-package com.example.gifticonalarm.ui.coupon.registration
+package com.example.gifticonalarm.ui.feature.add
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.gifticonalarm.ui.coupon.registration.bottomsheet.ExpirationDate
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 

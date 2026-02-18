@@ -71,7 +71,7 @@ fun GifticonAlarmApp() {
     }
 
     val startDestination = if (isOnboardingCompleted == true) {
-        Screen.Home.route
+        Screen.HomeTab.route
     } else {
         Screen.Onboarding.route
     }
@@ -81,10 +81,10 @@ fun GifticonAlarmApp() {
     val currentDestination = navBackStackEntry?.destination
 
     val bottomItems = listOf(
-        BottomNavItem(Screen.Home.route, "홈", Icons.Filled.Home),
-        BottomNavItem(Screen.Coupons.route, "쿠폰함", Icons.Filled.Inventory2),
-        BottomNavItem(Screen.CouponRegistration.route, "추가", Icons.Filled.AddCircle),
-        BottomNavItem(Screen.Settings.route, "설정", Icons.Filled.Settings)
+        BottomNavItem(Screen.HomeTab.route, "홈", Icons.Filled.Home),
+        BottomNavItem(Screen.CouponsTab.route, "쿠폰함", Icons.Filled.Inventory2),
+        BottomNavItem(Screen.AddTab.route, "추가", Icons.Filled.AddCircle),
+        BottomNavItem(Screen.SettingsTab.route, "설정", Icons.Filled.Settings)
     )
 
     Scaffold(

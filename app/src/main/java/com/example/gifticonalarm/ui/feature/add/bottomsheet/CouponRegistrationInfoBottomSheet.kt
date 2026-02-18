@@ -1,4 +1,4 @@
-package com.example.gifticonalarm.ui.coupon.registration.info
+package com.example.gifticonalarm.ui.feature.add.bottomsheet
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

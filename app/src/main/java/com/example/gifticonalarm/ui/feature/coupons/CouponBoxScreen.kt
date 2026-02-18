@@ -1,4 +1,4 @@
-package com.example.gifticonalarm.ui.couponbox
+package com.example.gifticonalarm.ui.feature.coupons
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

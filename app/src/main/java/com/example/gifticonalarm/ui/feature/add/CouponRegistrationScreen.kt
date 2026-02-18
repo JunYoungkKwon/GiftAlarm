@@ -1,4 +1,4 @@
-package com.example.gifticonalarm.ui.coupon.registration
+package com.example.gifticonalarm.ui.feature.add
 
 import android.net.Uri
 import android.widget.Toast
@@ -66,10 +66,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.gifticonalarm.ui.coupon.registration.bottomsheet.ExpirationDate
-import com.example.gifticonalarm.ui.coupon.registration.bottomsheet.ExpirationDateSelectionBottomSheet
-import com.example.gifticonalarm.ui.coupon.registration.info.CouponRegistrationInfoBottomSheet
-import com.example.gifticonalarm.ui.coupon.registration.info.CouponRegistrationInfoSheetType
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoBottomSheet
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
 import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
 import coil3.compose.AsyncImage
 

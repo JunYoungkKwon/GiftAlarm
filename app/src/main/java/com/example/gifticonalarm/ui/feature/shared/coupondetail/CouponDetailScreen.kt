@@ -1,4 +1,4 @@
-package com.example.gifticonalarm.ui.coupon.detail
+package com.example.gifticonalarm.ui.feature.shared.coupondetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
