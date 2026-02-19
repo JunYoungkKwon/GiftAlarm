@@ -2,17 +2,22 @@ package com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.model.GifticonType
+import com.example.gifticonalarm.domain.usecase.DeleteGifticonUseCase
 import com.example.gifticonalarm.domain.usecase.GetGifticonByIdUseCase
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailScreen
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -30,11 +35,21 @@ private const val DEFAULT_EXCHANGE_PLACE = "사용처 정보 없음"
 fun VoucherDetailRoute(
     couponId: String,
     onNavigateBack: () -> Unit,
+    onEditClick: (String) -> Unit,
+    onDeleteCompleted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: VoucherDetailViewModel = hiltViewModel()
 ) {
     val gifticon by viewModel.getGifticon(couponId).observeAsState()
+    val isDeleted by viewModel.isDeleted.observeAsState(false)
     val voucherType = viewModel.resolveVoucherType(gifticon)
+
+    LaunchedEffect(isDeleted) {
+        if (isDeleted) {
+            onDeleteCompleted()
+            viewModel.consumeDeleted()
+        }
+    }
 
     when (voucherType) {
         VoucherType.AMOUNT -> {
@@ -42,7 +57,9 @@ fun VoucherDetailRoute(
                 couponId = couponId,
                 onNavigateBack = onNavigateBack,
                 modifier = modifier,
-                uiModel = gifticon.toCashVoucherUiModel(couponId)
+                uiModel = gifticon.toCashVoucherUiModel(couponId),
+                onEditClick = { onEditClick(couponId) },
+                onDeleteClick = { viewModel.deleteGifticon(gifticon) }
             )
         }
 
@@ -51,7 +68,9 @@ fun VoucherDetailRoute(
                 couponId = couponId,
                 onNavigateBack = onNavigateBack,
                 modifier = modifier,
-                uiModel = gifticon.toProductVoucherUiModel(couponId)
+                uiModel = gifticon.toProductVoucherUiModel(couponId),
+                onEditClick = { onEditClick(couponId) },
+                onDeleteClick = { viewModel.deleteGifticon(gifticon) }
             )
         }
     }
@@ -70,10 +89,14 @@ enum class VoucherType {
  */
 @HiltViewModel
 class VoucherDetailViewModel @Inject constructor(
-    private val getGifticonByIdUseCase: GetGifticonByIdUseCase
+    private val getGifticonByIdUseCase: GetGifticonByIdUseCase,
+    private val deleteGifticonUseCase: DeleteGifticonUseCase
 ) : ViewModel() {
+    private val _isDeleted = MutableLiveData(false)
+    val isDeleted: LiveData<Boolean> = _isDeleted
+
     fun getGifticon(couponId: String): LiveData<Gifticon?> {
-        val id = couponId.toLongOrNull() ?: return androidx.lifecycle.MutableLiveData(null)
+        val id = couponId.toLongOrNull() ?: return MutableLiveData(null)
         return getGifticonByIdUseCase(id)
     }
 
@@ -89,6 +112,18 @@ class VoucherDetailViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun deleteGifticon(gifticon: Gifticon?) {
+        if (gifticon == null) return
+        viewModelScope.launch {
+            deleteGifticonUseCase(gifticon)
+            _isDeleted.value = true
+        }
+    }
+
+    fun consumeDeleted() {
+        _isDeleted.value = false
     }
 }
 

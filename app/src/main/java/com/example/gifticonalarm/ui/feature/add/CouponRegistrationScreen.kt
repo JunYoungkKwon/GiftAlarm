@@ -67,14 +67,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.model.GifticonType
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
-import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoBottomSheet
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
 import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
 import coil3.compose.AsyncImage
 import java.util.Calendar
+import java.util.Date
 
 private val RegistrationBackground = Color(0xFFFFFFFF)
 private val RegistrationAccent = Color(0xFF191970)
@@ -95,6 +97,8 @@ enum class CouponType {
 @Composable
 fun CouponRegistrationScreen(
     modifier: Modifier = Modifier,
+    couponId: String? = null,
+    editTarget: Gifticon? = null,
     onCloseClick: () -> Unit = {},
     onThumbnailClick: () -> Unit = {},
     onThumbnailSelected: (Uri) -> Unit = {},
@@ -105,6 +109,7 @@ fun CouponRegistrationScreen(
     val dateViewModel: CouponRegistrationDateViewModel = hiltViewModel()
     val registrationViewModel: CouponRegistrationViewModel = hiltViewModel()
     val context = LocalContext.current
+    val isEditMode = couponId != null
     var barcode by rememberSaveable { mutableStateOf("") }
     var place by rememberSaveable { mutableStateOf("") }
     var couponName by rememberSaveable { mutableStateOf("") }
@@ -112,6 +117,7 @@ fun CouponRegistrationScreen(
     var couponType by rememberSaveable { mutableStateOf(CouponType.EXCHANGE) }
     var amount by rememberSaveable { mutableStateOf("") }
     var thumbnailUri by rememberSaveable { mutableStateOf<String?>(null) }
+    val isEditInitialized = rememberSaveable(couponId) { mutableStateOf(false) }
     val infoSheetTypeState = rememberSaveable { mutableStateOf(CouponRegistrationInfoSheetType.NONE) }
     val infoSheetType = infoSheetTypeState.value
     val isExpiryBottomSheetVisible by dateViewModel.isExpiryBottomSheetVisible.observeAsState(false)
@@ -121,6 +127,28 @@ fun CouponRegistrationScreen(
     val registerError by registrationViewModel.error.observeAsState()
     val isRegistered by registrationViewModel.isRegistered.observeAsState(false)
     val expiryDate = selectedExpiryDate?.toDisplayText().orEmpty()
+
+    LaunchedEffect(couponId, editTarget?.id, isEditInitialized.value) {
+        if (couponId != null && editTarget != null && !isEditInitialized.value) {
+            barcode = editTarget.barcode
+            place = editTarget.brand
+            couponName = editTarget.name
+            withoutBarcode = editTarget.barcode.isBlank()
+            couponType = if (editTarget.type == GifticonType.AMOUNT) {
+                CouponType.AMOUNT
+            } else {
+                CouponType.EXCHANGE
+            }
+            amount = if (editTarget.type == GifticonType.AMOUNT) {
+                extractAmountFromMemo(editTarget.memo)
+            } else {
+                ""
+            }
+            thumbnailUri = editTarget.imageUri
+            dateViewModel.setSelectedExpiryDate(editTarget.expiryDate.toExpirationDate())
+            isEditInitialized.value = true
+        }
+    }
 
     LaunchedEffect(registerError) {
         registerError?.let {
@@ -155,7 +183,7 @@ fun CouponRegistrationScreen(
                 ),
                 title = {
                     Text(
-                        text = "등록하기",
+                        text = if (isEditMode) "수정하기" else "등록하기",
                         modifier = Modifier.fillMaxWidth(),
                         color = RegistrationTextPrimary,
                         style = MaterialTheme.typography.titleMedium,
@@ -222,7 +250,9 @@ fun CouponRegistrationScreen(
                                     CouponType.AMOUNT -> amount.ifBlank { null }?.let { "금액권: ${it}원" }
                                     CouponType.EXCHANGE -> null
                                 }
-                                registrationViewModel.registerGifticon(
+                                registrationViewModel.saveGifticon(
+                                    couponId = couponId,
+                                    existingGifticon = editTarget,
                                     name = couponName.trim(),
                                     brand = place.trim(),
                                     barcode = if (withoutBarcode) "" else barcode.trim(),
@@ -249,7 +279,7 @@ fun CouponRegistrationScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "등록하기",
+                        text = if (isEditMode) "수정하기" else "등록하기",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -649,4 +679,21 @@ private fun CouponRegistrationScreenPreview() {
     GifticonAlarmTheme {
         CouponRegistrationScreen()
     }
+}
+
+private fun extractAmountFromMemo(memo: String?): String {
+    return memo
+        ?.removePrefix("금액권:")
+        ?.removeSuffix("원")
+        ?.trim()
+        .orEmpty()
+}
+
+private fun Date.toExpirationDate(): ExpirationDate {
+    val calendar = Calendar.getInstance().apply { time = this@toExpirationDate }
+    return ExpirationDate(
+        year = calendar.get(Calendar.YEAR),
+        month = calendar.get(Calendar.MONTH) + 1,
+        day = calendar.get(Calendar.DAY_OF_MONTH)
+    )
 }

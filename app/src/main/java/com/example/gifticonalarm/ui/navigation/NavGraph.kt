@@ -18,7 +18,17 @@ sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
     data object HomeTab : Screen("home")
     data object CouponsTab : Screen("coupons")
-    data object AddTab : Screen("coupon_registration")
+    data object AddTab : Screen("coupon_registration") {
+        const val routeWithArgs: String = "coupon_registration?couponId={couponId}"
+
+        fun createRoute(couponId: String? = null): String {
+            return if (couponId.isNullOrBlank()) {
+                "coupon_registration"
+            } else {
+                "coupon_registration?couponId=$couponId"
+            }
+        }
+    }
     data object SettingsTab : Screen("settings")
     data object CashVoucherDetail : Screen("cash_voucher_detail/{couponId}") {
         fun createRoute(couponId: String) = "cash_voucher_detail/$couponId"
@@ -53,7 +63,7 @@ fun NavGraph(
         composable(Screen.HomeTab.route) {
             HomeRoute(
                 onNavigateToAdd = {
-                    navController.navigate(Screen.AddTab.route)
+                    navController.navigate(Screen.AddTab.createRoute())
                 },
                 onNavigateToCashVoucherDetail = { couponId ->
                     navController.navigate(Screen.CashVoucherDetail.createRoute(couponId))
@@ -64,7 +74,7 @@ fun NavGraph(
         composable(Screen.CouponsTab.route) {
             CouponsRoute(
                 onNavigateToAdd = {
-                    navController.navigate(Screen.AddTab.route)
+                    navController.navigate(Screen.AddTab.createRoute())
                 },
                 onNavigateToCashVoucherDetail = { couponId ->
                     navController.navigate(Screen.CashVoucherDetail.createRoute(couponId))
@@ -72,8 +82,19 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.AddTab.route) {
+        composable(
+            route = Screen.AddTab.routeWithArgs,
+            arguments = listOf(
+                navArgument("couponId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val couponId = backStackEntry.arguments?.getString("couponId")
             CouponRegistrationRoute(
+                couponId = couponId,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
@@ -97,6 +118,12 @@ fun NavGraph(
             VoucherDetailRoute(
                 couponId = couponId,
                 onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onEditClick = { editCouponId ->
+                    navController.navigate(Screen.AddTab.createRoute(editCouponId))
+                },
+                onDeleteCompleted = {
                     navController.popBackStack()
                 }
             )

@@ -43,4 +43,10 @@ class CouponRegistrationDateViewModel @Inject constructor() : ViewModel() {
         _selectedExpiryDate.value = _draftExpiryDate.value
         _isExpiryBottomSheetVisible.value = false
     }
+
+    /** 수정 모드에서 유효기간 초기값을 설정한다. */
+    fun setSelectedExpiryDate(date: ExpirationDate) {
+        _selectedExpiryDate.value = date
+        _draftExpiryDate.value = date
+    }
 }
