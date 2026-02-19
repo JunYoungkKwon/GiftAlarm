@@ -26,6 +26,8 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +37,10 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.gifticonalarm.R
+import com.example.gifticonalarm.ui.feature.coupons.model.CouponCategoryType
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponFilterType
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponStatus
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponUiModel
@@ -85,8 +92,10 @@ fun CouponBoxScreen(
     coupons: List<CouponUiModel> = emptyList(),
     searchQuery: String = "",
     selectedFilter: CouponFilterType = CouponFilterType.ALL,
+    selectedCategory: CouponCategoryType = CouponCategoryType.ALL,
     onSearchQueryChange: (String) -> Unit = {},
     onFilterSelected: (CouponFilterType) -> Unit = {},
+    onCategorySelected: (CouponCategoryType) -> Unit = {},
     onAddClick: () -> Unit = {},
     onCouponClick: (Long) -> Unit = {}
 ) {
@@ -103,6 +112,8 @@ fun CouponBoxScreen(
                 onSearchQueryChange = onSearchQueryChange,
                 selectedFilter = selectedFilter,
                 onFilterSelected = onFilterSelected,
+                selectedCategory = selectedCategory,
+                onCategorySelected = onCategorySelected,
                 totalCount = coupons.size
             )
 
@@ -132,8 +143,12 @@ private fun CouponBoxHeader(
     onSearchQueryChange: (String) -> Unit,
     selectedFilter: CouponFilterType,
     onFilterSelected: (CouponFilterType) -> Unit,
+    selectedCategory: CouponCategoryType,
+    onCategorySelected: (CouponCategoryType) -> Unit,
     totalCount: Int
 ) {
+    var categoryMenuExpanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -238,19 +253,52 @@ private fun CouponBoxHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "전체 카테고리",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = CouponAccent,
-                    fontWeight = FontWeight.Bold
-                )
-                Icon(
-                    imageVector = Icons.Outlined.ExpandMore,
-                    contentDescription = null,
-                    tint = CouponAccent,
-                    modifier = Modifier.size(18.dp)
-                )
+            Box {
+                Row(
+                    modifier = Modifier.clickable { categoryMenuExpanded = true },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedCategory.label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = CouponAccent,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.ExpandMore,
+                        contentDescription = null,
+                        tint = CouponAccent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = categoryMenuExpanded,
+                    onDismissRequest = { categoryMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(CouponCategoryType.ALL.label) },
+                        onClick = {
+                            onCategorySelected(CouponCategoryType.ALL)
+                            categoryMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(CouponCategoryType.EXCHANGE.label) },
+                        onClick = {
+                            onCategorySelected(CouponCategoryType.EXCHANGE)
+                            categoryMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(CouponCategoryType.AMOUNT.label) },
+                        onClick = {
+                            onCategorySelected(CouponCategoryType.AMOUNT)
+                            categoryMenuExpanded = false
+                        }
+                    )
+
+                }
             }
             Text(
                 text = "총 ${totalCount}개",

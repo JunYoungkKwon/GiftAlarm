@@ -7,12 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.model.GifticonAvailability
+import com.example.gifticonalarm.domain.model.GifticonType
 import com.example.gifticonalarm.domain.usecase.BuildGifticonStatusLabelUseCase
 import com.example.gifticonalarm.domain.usecase.CalculateDdayUseCase
 import com.example.gifticonalarm.domain.usecase.FormatGifticonDateUseCase
 import com.example.gifticonalarm.domain.usecase.GetAllGifticonsUseCase
 import com.example.gifticonalarm.domain.usecase.ResolveGifticonAvailabilityUseCase
 import com.example.gifticonalarm.domain.usecase.ResolveGifticonImageUrlUseCase
+import com.example.gifticonalarm.ui.feature.coupons.model.CouponCategoryType
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponFilterType
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponStatus
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponUiModel
@@ -42,17 +44,27 @@ class CouponsViewModel @Inject constructor(
     private val _selectedFilter = MutableLiveData(CouponFilterType.ALL)
     val selectedFilter: LiveData<CouponFilterType> = _selectedFilter
 
+    private val _selectedCategory = MutableLiveData(CouponCategoryType.ALL)
+    val selectedCategory: LiveData<CouponCategoryType> = _selectedCategory
+
     val coupons: LiveData<List<CouponUiModel>> = MediatorLiveData<List<CouponUiModel>>().apply {
         val update = {
             val sourceCoupons = allCoupons.value.orEmpty()
             val query = _searchQuery.value.orEmpty().trim()
             val filter = _selectedFilter.value ?: CouponFilterType.ALL
+            val category = _selectedCategory.value ?: CouponCategoryType.ALL
+
+            val byCategory = when (category) {
+                CouponCategoryType.ALL -> sourceCoupons
+                CouponCategoryType.EXCHANGE -> sourceCoupons.filter { it.category == CouponCategoryType.EXCHANGE }
+                CouponCategoryType.AMOUNT -> sourceCoupons.filter { it.category == CouponCategoryType.AMOUNT }
+            }
 
             val byFilter = when (filter) {
-                CouponFilterType.ALL -> sourceCoupons
-                CouponFilterType.AVAILABLE -> sourceCoupons.filter { it.status == CouponStatus.AVAILABLE }
-                CouponFilterType.USED -> sourceCoupons.filter { it.status == CouponStatus.USED }
-                CouponFilterType.EXPIRED -> sourceCoupons.filter { it.status == CouponStatus.EXPIRED }
+                CouponFilterType.ALL -> byCategory
+                CouponFilterType.AVAILABLE -> byCategory.filter { it.status == CouponStatus.AVAILABLE }
+                CouponFilterType.USED -> byCategory.filter { it.status == CouponStatus.USED }
+                CouponFilterType.EXPIRED -> byCategory.filter { it.status == CouponStatus.EXPIRED }
             }
 
             value = if (query.isBlank()) {
@@ -68,6 +80,7 @@ class CouponsViewModel @Inject constructor(
         addSource(allCoupons) { update() }
         addSource(_searchQuery) { update() }
         addSource(_selectedFilter) { update() }
+        addSource(_selectedCategory) { update() }
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -76,6 +89,10 @@ class CouponsViewModel @Inject constructor(
 
     fun onFilterSelected(filter: CouponFilterType) {
         _selectedFilter.value = filter
+    }
+
+    fun onCategorySelected(category: CouponCategoryType) {
+        _selectedCategory.value = category
     }
 
     private fun toCouponUiModel(gifticon: Gifticon): CouponUiModel {
@@ -104,7 +121,11 @@ class CouponsViewModel @Inject constructor(
             ),
             imageUrl = resolveGifticonImageUrlUseCase(gifticon.id, gifticon.imageUri),
             dday = dday,
-            status = status
+            status = status,
+            category = when (gifticon.type) {
+                GifticonType.EXCHANGE -> CouponCategoryType.EXCHANGE
+                GifticonType.AMOUNT -> CouponCategoryType.AMOUNT
+            }
         )
     }
 }

@@ -22,6 +22,8 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +31,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +49,7 @@ import coil3.compose.AsyncImage
 import com.example.gifticonalarm.ui.feature.home.model.HomeBadgeType
 import com.example.gifticonalarm.ui.feature.home.model.HomeCouponItem
 import com.example.gifticonalarm.ui.feature.home.model.HomeFocusItem
+import com.example.gifticonalarm.ui.feature.home.model.HomeSortType
 import com.example.gifticonalarm.ui.feature.home.model.HomeUiState
 import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
 import com.example.gifticonalarm.ui.theme.GifticonDanger
@@ -77,7 +84,7 @@ fun HomeScreen(
     ),
     onNotificationClick: () -> Unit = {},
     onPrimaryActionClick: () -> Unit = {},
-    onSortClick: () -> Unit = {},
+    onSortSelected: (HomeSortType) -> Unit = {},
     onCouponClick: (Long) -> Unit = {}
 ) {
     Scaffold(
@@ -116,8 +123,9 @@ fun HomeScreen(
             } else {
                 item {
                     CouponSection(
+                        selectedSort = state.selectedSort,
                         coupons = state.coupons,
-                        onSortClick = onSortClick,
+                        onSortSelected = onSortSelected,
                         onCouponClick = onCouponClick
                     )
                 }
@@ -331,10 +339,13 @@ private fun resolveHomeCouponBadgeColors(type: HomeBadgeType): CouponBadgeColors
 
 @Composable
 private fun CouponSection(
+    selectedSort: HomeSortType,
     coupons: List<HomeCouponItem>,
-    onSortClick: () -> Unit,
+    onSortSelected: (HomeSortType) -> Unit,
     onCouponClick: (Long) -> Unit
 ) {
+    var sortMenuExpanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -352,22 +363,51 @@ private fun CouponSection(
                 fontWeight = FontWeight.Bold,
                 color = HomeTextPrimary
             )
-            Row(
-                modifier = Modifier.clickable(onClick = onSortClick),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "최신순",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = GifticonTextTertiary,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Icon(
-                    imageVector = Icons.Outlined.ExpandMore,
-                    contentDescription = null,
-                    tint = GifticonTextTertiary,
-                    modifier = Modifier.size(16.dp)
-                )
+            Box {
+                Row(
+                    modifier = Modifier.clickable(onClick = { sortMenuExpanded = true }),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedSort.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = GifticonTextTertiary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.ExpandMore,
+                        contentDescription = null,
+                        tint = GifticonTextTertiary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = sortMenuExpanded,
+                    onDismissRequest = { sortMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(HomeSortType.EXPIRY_SOON.label) },
+                        onClick = {
+                            onSortSelected(HomeSortType.EXPIRY_SOON)
+                            sortMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(HomeSortType.EXPIRY_LATE.label) },
+                        onClick = {
+                            onSortSelected(HomeSortType.EXPIRY_LATE)
+                            sortMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(HomeSortType.LATEST.label) },
+                        onClick = {
+                            onSortSelected(HomeSortType.LATEST)
+                            sortMenuExpanded = false
+                        }
+                    )
+                }
             }
         }
 

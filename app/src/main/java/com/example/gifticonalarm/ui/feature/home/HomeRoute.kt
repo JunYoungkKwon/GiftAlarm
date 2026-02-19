@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gifticonalarm.ui.feature.home.model.HomeSortType
 import com.example.gifticonalarm.ui.feature.home.model.HomeUiState
 
 /**
@@ -18,12 +19,14 @@ fun HomeRoute(
     val state by viewModel.uiState.observeAsState(
         HomeUiState(
             focus = null,
-            coupons = emptyList()
+            coupons = emptyList(),
+            selectedSort = HomeSortType.LATEST
         )
     )
 
     HomeScreen(
         state = state,
+        onSortSelected = viewModel::onSortSelected,
         onPrimaryActionClick = onNavigateToAdd,
         onCouponClick = { couponId ->
             onNavigateToCashVoucherDetail(couponId.toString())

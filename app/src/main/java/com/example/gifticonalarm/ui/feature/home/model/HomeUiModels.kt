@@ -5,7 +5,8 @@ package com.example.gifticonalarm.ui.feature.home.model
  */
 data class HomeUiState(
     val focus: HomeFocusItem?,
-    val coupons: List<HomeCouponItem>
+    val coupons: List<HomeCouponItem>,
+    val selectedSort: HomeSortType = HomeSortType.LATEST
 )
 
 /**
@@ -28,6 +29,12 @@ enum class HomeBadgeType {
     URGENT,
     NORMAL,
     SAFE
+}
+
+enum class HomeSortType(val label: String) {
+    LATEST("최신순"),
+    EXPIRY_SOON("유효기간 짧은 순"),
+    EXPIRY_LATE("유효기간 긴 순")
 }
 
 /**

@@ -13,6 +13,12 @@ enum class CouponFilterType {
     EXPIRED
 }
 
+enum class CouponCategoryType(val label: String) {
+    ALL("전체 카테고리"),
+    EXCHANGE("교환권"),
+    AMOUNT("금액권")
+}
+
 data class CouponUiModel(
     val id: Long,
     val brand: String,
@@ -21,5 +27,6 @@ data class CouponUiModel(
     val statusBadge: String,
     val imageUrl: String,
     val dday: Long?,
-    val status: CouponStatus
+    val status: CouponStatus,
+    val category: CouponCategoryType
 )
