@@ -9,6 +9,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.gifticonalarm.domain.model.Gifticon
@@ -115,7 +116,7 @@ class VoucherDetailViewModel @Inject constructor(
 
     fun getGifticon(couponId: String): LiveData<Gifticon?> {
         val id = couponId.toLongOrNull() ?: return MutableLiveData(null)
-        return getGifticonByIdUseCase(id)
+        return getGifticonByIdUseCase(id).asLiveData()
     }
 
     fun getDetailUiState(couponId: String): LiveData<VoucherDetailUiState> {

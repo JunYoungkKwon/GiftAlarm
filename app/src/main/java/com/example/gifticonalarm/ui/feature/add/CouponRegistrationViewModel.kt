@@ -3,6 +3,7 @@ package com.example.gifticonalarm.ui.feature.add
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.model.GifticonType
@@ -138,29 +139,10 @@ class CouponRegistrationViewModel @Inject constructor(
     fun submit() {
         val state = _formState.value ?: CouponRegistrationFormState()
         val selectedExpiryDate = _selectedExpiryDate.value
-        when {
-            state.place.isBlank() -> {
-                _effect.value = CouponRegistrationEffect.ShowMessage("사용처를 입력해 주세요.")
-                return
-            }
-            state.couponName.isBlank() -> {
-                _effect.value = CouponRegistrationEffect.ShowMessage("쿠폰명을 입력해 주세요.")
-                return
-            }
-            selectedExpiryDate == null -> {
-                _effect.value = CouponRegistrationEffect.ShowMessage("유효기한을 선택해 주세요.")
-                return
-            }
-        }
-
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.YEAR, selectedExpiryDate.year)
-            set(Calendar.MONTH, selectedExpiryDate.month - 1)
-            set(Calendar.DAY_OF_MONTH, selectedExpiryDate.day)
-            set(Calendar.HOUR_OF_DAY, 23)
-            set(Calendar.MINUTE, 59)
-            set(Calendar.SECOND, 59)
-            set(Calendar.MILLISECOND, 0)
+        val validationMessage = validate(state, selectedExpiryDate)
+        if (validationMessage != null) {
+            _effect.value = CouponRegistrationEffect.ShowMessage(validationMessage)
+            return
         }
 
         val memo = when (state.couponType) {
@@ -174,7 +156,7 @@ class CouponRegistrationViewModel @Inject constructor(
             name = state.couponName.trim(),
             brand = state.place.trim(),
             barcode = if (state.withoutBarcode) "" else state.barcode.trim(),
-            expiryDate = calendar.time,
+            expiryDate = selectedExpiryDate!!.toEndOfDayDate(),
             imageUri = state.thumbnailUri,
             memo = memo,
             type = when (state.couponType) {
@@ -214,10 +196,7 @@ class CouponRegistrationViewModel @Inject constructor(
         _infoSheetType.value = CouponRegistrationInfoSheetType.NONE
     }
 
-    /**
-     * 등록/수정 폼 데이터를 실제 기프티콘으로 저장한다.
-     */
-    fun saveGifticon(
+    private fun saveGifticon(
         couponId: String?,
         existingGifticon: Gifticon?,
         name: String,
@@ -229,8 +208,8 @@ class CouponRegistrationViewModel @Inject constructor(
         type: GifticonType
     ) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
-                _isLoading.value = true
                 val persistedImageUri = imageUri
                     ?.takeIf { it.isNotBlank() }
                     ?.let { selectedImageUri ->
@@ -257,9 +236,9 @@ class CouponRegistrationViewModel @Inject constructor(
                     updateGifticonUseCase(gifticon)
                 }
                 _effect.value = CouponRegistrationEffect.RegistrationCompleted
-                _isLoading.value = false
             } catch (e: Exception) {
                 _effect.value = CouponRegistrationEffect.ShowMessage(e.message ?: "쿠폰 저장에 실패했어요.")
+            } finally {
                 _isLoading.value = false
             }
         }
@@ -270,7 +249,7 @@ class CouponRegistrationViewModel @Inject constructor(
      */
     fun getGifticonForEdit(couponId: String?): LiveData<Gifticon?> {
         val id = couponId?.toLongOrNull() ?: return MutableLiveData(null)
-        return getGifticonByIdUseCase(id)
+        return getGifticonByIdUseCase(id).asLiveData()
     }
 
     fun consumeEffect() {
@@ -298,6 +277,18 @@ class CouponRegistrationViewModel @Inject constructor(
             .orEmpty()
     }
 
+    private fun validate(
+        state: CouponRegistrationFormState,
+        selectedExpiryDate: ExpirationDate?
+    ): String? {
+        return when {
+            state.place.isBlank() -> "사용처를 입력해 주세요."
+            state.couponName.isBlank() -> "쿠폰명을 입력해 주세요."
+            selectedExpiryDate == null -> "유효기한을 선택해 주세요."
+            else -> null
+        }
+    }
+
     private fun Date.toExpirationDate(): ExpirationDate {
         val calendar = Calendar.getInstance().apply { time = this@toExpirationDate }
         return ExpirationDate(
@@ -305,5 +296,18 @@ class CouponRegistrationViewModel @Inject constructor(
             month = calendar.get(Calendar.MONTH) + 1,
             day = calendar.get(Calendar.DAY_OF_MONTH)
         )
+    }
+
+    private fun ExpirationDate.toEndOfDayDate(): Date {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.YEAR, year)
+            set(Calendar.MONTH, month - 1)
+            set(Calendar.DAY_OF_MONTH, day)
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return calendar.time
     }
 }

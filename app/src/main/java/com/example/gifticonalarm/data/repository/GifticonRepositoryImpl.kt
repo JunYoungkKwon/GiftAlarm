@@ -1,7 +1,6 @@
 package com.example.gifticonalarm.data.repository
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.map
+import androidx.lifecycle.asFlow
 import com.example.gifticonalarm.data.local.dao.GifticonDao
 import com.example.gifticonalarm.data.mapper.toDomain
 import com.example.gifticonalarm.data.mapper.toEntity
@@ -10,19 +9,24 @@ import com.example.gifticonalarm.domain.repository.GifticonRepository
 import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
+/**
+ * Room DAO 기반 기프티콘 저장소 구현체.
+ */
 class GifticonRepositoryImpl @Inject constructor(
     private val gifticonDao: GifticonDao
 ) : GifticonRepository {
 
-    override fun getAllGifticons(): LiveData<List<Gifticon>> {
-        return gifticonDao.getAllGifticons().map { entities ->
+    override fun observeAllGifticons(): Flow<List<Gifticon>> {
+        return gifticonDao.getAllGifticons().asFlow().map { entities ->
             entities.map { it.toDomain() }
         }
     }
 
-    override fun getGifticonById(id: Long): LiveData<Gifticon?> {
-        return gifticonDao.getGifticonById(id).map { it?.toDomain() }
+    override fun observeGifticonById(id: Long): Flow<Gifticon?> {
+        return gifticonDao.getGifticonById(id).asFlow().map { it?.toDomain() }
     }
 
     override suspend fun insertGifticon(gifticon: Gifticon): Long {
@@ -39,12 +43,12 @@ class GifticonRepositoryImpl @Inject constructor(
         gifticonDao.deleteGifticon(gifticon.toEntity())
     }
 
-    override fun getExpiringGifticons(daysThreshold: Int): LiveData<List<Gifticon>> {
+    override fun observeExpiringGifticons(daysThreshold: Int): Flow<List<Gifticon>> {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_YEAR, daysThreshold)
         val thresholdDate = calendar.timeInMillis
 
-        return gifticonDao.getExpiringGifticons(thresholdDate).map { entities ->
+        return gifticonDao.getExpiringGifticons(thresholdDate).asFlow().map { entities ->
             entities.map { it.toDomain() }
         }
     }

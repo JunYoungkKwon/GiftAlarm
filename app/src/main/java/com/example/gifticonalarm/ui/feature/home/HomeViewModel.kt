@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.usecase.BuildGifticonStatusLabelUseCase
 import com.example.gifticonalarm.domain.usecase.CalculateDdayUseCase
@@ -27,7 +28,7 @@ class HomeViewModel @Inject constructor(
     private val resolveGifticonImageUrlUseCase: ResolveGifticonImageUrlUseCase
 ) : ViewModel() {
 
-    val gifticons: LiveData<List<Gifticon>> = getAllGifticonsUseCase()
+    val gifticons: LiveData<List<Gifticon>> = getAllGifticonsUseCase().asLiveData()
     private val _selectedSort = MutableLiveData(HomeSortType.LATEST)
 
     val uiState: LiveData<HomeUiState> = MediatorLiveData<HomeUiState>().apply {

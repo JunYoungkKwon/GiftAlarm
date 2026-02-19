@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.map
+import androidx.lifecycle.asLiveData
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.model.GifticonAvailability
 import com.example.gifticonalarm.domain.model.GifticonType
@@ -20,6 +20,7 @@ import com.example.gifticonalarm.ui.feature.coupons.model.CouponStatus
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.map
 
 /**
  * 쿠폰함 화면에서 표시할 쿠폰 목록을 제공하는 ViewModel.
@@ -34,9 +35,10 @@ class CouponsViewModel @Inject constructor(
     private val resolveGifticonImageUrlUseCase: ResolveGifticonImageUrlUseCase
 ) : ViewModel() {
 
-    private val allCoupons: LiveData<List<CouponUiModel>> = getAllGifticonsUseCase().map { gifticons ->
-        gifticons.map { toCouponUiModel(it) }
-    }
+    private val allCoupons: LiveData<List<CouponUiModel>> =
+        getAllGifticonsUseCase()
+            .map { gifticons -> gifticons.map { toCouponUiModel(it) } }
+            .asLiveData()
 
     private val _searchQuery = MutableLiveData("")
     val searchQuery: LiveData<String> = _searchQuery

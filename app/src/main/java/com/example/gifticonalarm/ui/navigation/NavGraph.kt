@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
@@ -76,17 +77,7 @@ fun NavGraph(
         }
 
         composable(Screen.HomeTab.route) { backStackEntry ->
-            val toastMessage by backStackEntry.savedStateHandle
-                .getLiveData<String?>(TOAST_MESSAGE_KEY)
-                .observeAsState()
-
-            LaunchedEffect(toastMessage) {
-                if (toastMessage == null) return@LaunchedEffect
-                delay(1900L)
-                backStackEntry.savedStateHandle[TOAST_MESSAGE_KEY] = null
-            }
-
-            Box(modifier = Modifier.fillMaxSize()) {
+            ToastAwareTabContent(backStackEntry = backStackEntry) {
                 HomeRoute(
                     onNavigateToAdd = {
                         navController.navigate(Screen.AddTab.createRoute())
@@ -95,29 +86,11 @@ fun NavGraph(
                         navController.navigate(Screen.CashVoucherDetail.createRoute(couponId))
                     }
                 )
-                toastMessage?.let { message ->
-                    ToastBanner(
-                        message = message,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(horizontal = 20.dp, vertical = 20.dp)
-                    )
-                }
             }
         }
 
         composable(Screen.CouponsTab.route) { backStackEntry ->
-            val toastMessage by backStackEntry.savedStateHandle
-                .getLiveData<String?>(TOAST_MESSAGE_KEY)
-                .observeAsState()
-
-            LaunchedEffect(toastMessage) {
-                if (toastMessage == null) return@LaunchedEffect
-                delay(1900L)
-                backStackEntry.savedStateHandle[TOAST_MESSAGE_KEY] = null
-            }
-
-            Box(modifier = Modifier.fillMaxSize()) {
+            ToastAwareTabContent(backStackEntry = backStackEntry) {
                 CouponsRoute(
                     onNavigateToAdd = {
                         navController.navigate(Screen.AddTab.createRoute())
@@ -126,14 +99,6 @@ fun NavGraph(
                         navController.navigate(Screen.CashVoucherDetail.createRoute(couponId))
                     }
                 )
-                toastMessage?.let { message ->
-                    ToastBanner(
-                        message = message,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(horizontal = 20.dp, vertical = 20.dp)
-                    )
-                }
             }
         }
 
@@ -199,6 +164,34 @@ fun NavGraph(
                         ?.savedStateHandle
                         ?.set(TOAST_MESSAGE_KEY, TOAST_DELETED)
                 }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToastAwareTabContent(
+    backStackEntry: NavBackStackEntry,
+    content: @Composable () -> Unit
+) {
+    val toastMessage by backStackEntry.savedStateHandle
+        .getLiveData<String?>(TOAST_MESSAGE_KEY)
+        .observeAsState()
+
+    LaunchedEffect(toastMessage) {
+        if (toastMessage == null) return@LaunchedEffect
+        delay(1900L)
+        backStackEntry.savedStateHandle[TOAST_MESSAGE_KEY] = null
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        content()
+        toastMessage?.let { message ->
+            ToastBanner(
+                message = message,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 20.dp, vertical = 20.dp)
             )
         }
     }
