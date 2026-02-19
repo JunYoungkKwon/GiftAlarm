@@ -28,9 +28,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.gifticonalarm.R
 import com.example.gifticonalarm.ui.feature.shared.components.VoucherDetailMoreMenu
 import com.example.gifticonalarm.ui.theme.GifticonBlack
 import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
@@ -211,7 +213,9 @@ private fun ProductVoucherTopSection(
             AsyncImage(
                 model = uiModel.productImageUrl,
                 contentDescription = "교환권 상품 이미지",
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                error = painterResource(id = R.drawable.default_coupon_image),
+                fallback = painterResource(id = R.drawable.default_coupon_image)
             )
         }
 

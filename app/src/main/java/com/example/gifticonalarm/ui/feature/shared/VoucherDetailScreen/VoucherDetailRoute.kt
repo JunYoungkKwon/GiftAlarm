@@ -19,6 +19,7 @@ import com.example.gifticonalarm.domain.usecase.DeleteGifticonUseCase
 import com.example.gifticonalarm.domain.usecase.FormatGifticonDateUseCase
 import com.example.gifticonalarm.domain.usecase.GetGifticonByIdUseCase
 import com.example.gifticonalarm.domain.usecase.ResolveGifticonAvailabilityUseCase
+import com.example.gifticonalarm.domain.usecase.ResolveGifticonImageUrlUseCase
 import com.example.gifticonalarm.domain.usecase.UpdateGifticonUseCase
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailScreen
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailUiModel
@@ -105,6 +106,7 @@ class VoucherDetailViewModel @Inject constructor(
     private val deleteGifticonUseCase: DeleteGifticonUseCase,
     private val updateGifticonUseCase: UpdateGifticonUseCase,
     private val resolveGifticonAvailabilityUseCase: ResolveGifticonAvailabilityUseCase,
+    private val resolveGifticonImageUrlUseCase: ResolveGifticonImageUrlUseCase,
     private val buildGifticonStatusLabelUseCase: BuildGifticonStatusLabelUseCase,
     private val formatGifticonDateUseCase: FormatGifticonDateUseCase
 ) : ViewModel() {
@@ -176,7 +178,7 @@ class VoucherDetailViewModel @Inject constructor(
             barcodeNumber = barcode.ifBlank { "미등록" },
             exchangePlaceText = brand,
             memo = memo.orEmpty().ifBlank { "메모 없음" },
-            brandLogoUrl = imageUri.orEmpty()
+            brandLogoUrl = resolveGifticonImageUrlUseCase(id, imageUri)
         )
     }
 
@@ -199,7 +201,7 @@ class VoucherDetailViewModel @Inject constructor(
             barcodeNumber = barcode.ifBlank { "미등록" },
             exchangePlaceText = brand.ifBlank { DEFAULT_EXCHANGE_PLACE },
             memoText = memo.orEmpty().ifBlank { "메모 없음" },
-            productImageUrl = imageUri.orEmpty()
+            productImageUrl = resolveGifticonImageUrlUseCase(id, imageUri)
         )
     }
 

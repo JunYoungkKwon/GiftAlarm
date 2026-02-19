@@ -11,7 +11,7 @@ class ResolveGifticonImageUrlUseCase @Inject constructor() {
         return imageUri.takeUnless { it.isNullOrBlank() } ?: defaultImage(id)
     }
 
-    private fun defaultImage(id: Long): String {
-        return "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&auto=format&fit=crop&q=80&seed=$id"
+    private fun defaultImage(@Suppress("UNUSED_PARAMETER") id: Long): String {
+        return "android.resource://com.example.gifticonalarm/drawable/default_coupon_image"
     }
 }

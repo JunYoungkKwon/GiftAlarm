@@ -37,9 +37,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.gifticonalarm.R
 import com.example.gifticonalarm.ui.feature.shared.components.VoucherDetailMoreMenu
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailBottomSection
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailBottomSectionUiModel
@@ -231,7 +233,9 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
                             contentDescription = "브랜드 로고",
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(4.dp)
+                                .padding(4.dp),
+                            error = painterResource(id = R.drawable.default_coupon_image),
+                            fallback = painterResource(id = R.drawable.default_coupon_image)
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))

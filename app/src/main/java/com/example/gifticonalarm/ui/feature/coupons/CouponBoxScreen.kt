@@ -371,7 +371,9 @@ private fun CouponListItem(
                 model = coupon.imageUrl,
                 contentDescription = coupon.name,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                error = painterResource(id = R.drawable.default_coupon_image),
+                fallback = painterResource(id = R.drawable.default_coupon_image)
             )
             if (coupon.status == CouponStatus.USED) {
                 Box(

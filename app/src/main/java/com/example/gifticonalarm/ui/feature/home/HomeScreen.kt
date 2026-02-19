@@ -41,11 +41,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.gifticonalarm.R
 import com.example.gifticonalarm.ui.feature.home.model.HomeBadgeType
 import com.example.gifticonalarm.ui.feature.home.model.HomeCouponItem
 import com.example.gifticonalarm.ui.feature.home.model.HomeFocusItem
@@ -208,7 +210,9 @@ private fun FocusSection(
                     model = focus.imageUrl,
                     contentDescription = focus.brand,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    error = painterResource(id = R.drawable.default_coupon_image),
+                    fallback = painterResource(id = R.drawable.default_coupon_image)
                 )
 
                 Box(
@@ -466,7 +470,9 @@ private fun CouponCard(
                     model = item.imageUrl,
                     contentDescription = item.name,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    error = painterResource(id = R.drawable.default_coupon_image),
+                    fallback = painterResource(id = R.drawable.default_coupon_image)
                 )
 
                 if (item.badge != null) {

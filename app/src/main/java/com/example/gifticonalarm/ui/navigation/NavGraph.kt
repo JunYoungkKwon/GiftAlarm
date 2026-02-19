@@ -20,6 +20,7 @@ import com.example.gifticonalarm.ui.feature.add.CouponRegistrationRoute
 import com.example.gifticonalarm.ui.feature.coupons.CouponsRoute
 import com.example.gifticonalarm.ui.feature.home.HomeRoute
 import com.example.gifticonalarm.ui.feature.settings.SettingsRoute
+import com.example.gifticonalarm.ui.feature.splash.SplashRoute
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailRoute
 import com.example.gifticonalarm.ui.onboarding.OnboardingRoute
 import kotlinx.coroutines.delay
@@ -30,6 +31,7 @@ private const val TOAST_UPDATED = "변경사항이 저장되었어요."
 private const val TOAST_DELETED = "쿠폰이 삭제되었어요."
 
 sealed class Screen(val route: String) {
+    data object Splash : Screen("splash")
     data object Onboarding : Screen("onboarding")
     data object HomeTab : Screen("home")
     data object CouponsTab : Screen("coupons")
@@ -64,6 +66,23 @@ fun NavGraph(
         startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(Screen.Splash.route) {
+            SplashRoute(
+                onNavigateToHome = {
+                    navController.navigate(Screen.HomeTab.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToOnboarding = {
+                    navController.navigate(Screen.Onboarding.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
         composable(Screen.Onboarding.route) {
             OnboardingRoute(
                 onNavigateToHome = {

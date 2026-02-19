@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#191971",
+                "background-light": "#ffffff",
+                "background-dark": "#121220",
+              },
+              fontFamily: {
+                "display": ["Inter", "sans-serif"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<title>기프트알람 Splash Screen</title>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<!-- Splash Screen Container -->
+<div class="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden">
+<!-- Top App Bar Space (Empty for Splash Screen) -->
+<div class="absolute top-0 left-0 w-full h-12"></div>
+<!-- Center Content Area -->
+<div class="flex flex-col items-center justify-center space-y-8">
+<!-- Minimalist Logo Construction -->
+<div class="relative flex items-center justify-center w-32 h-32 md:w-40 md:h-40">
+<!-- Outer Ring / Clock Bell Hint -->
+<div class="absolute inset-0 rounded-full border-4 border-primary/10"></div>
+<!-- Main Logo Icon (Gift Box + Bell) -->
+<div class="flex flex-col items-center justify-center">
+<div class="relative">
+<!-- Gift Box Shape -->
+<div class="w-20 h-20 bg-primary rounded-xl flex flex-col items-center justify-center shadow-lg">
+<!-- Ribbon Cross -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-full bg-white/20"></div>
+<div class="absolute top-1/2 left-0 -translate-y-1/2 w-full h-1 bg-white/20"></div>
+<!-- Bell Symbol inside Gift Box (Symbolic Representation) -->
+<span class="material-symbols-outlined text-white text-5xl" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 48;">
+                                notifications
+                            </span>
+</div>
+<!-- Top Bell Handle/Loop -->
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-6 border-4 border-primary rounded-t-full"></div>
+</div>
+</div>
+</div>
+<!-- App Brand Name -->
+<div class="flex flex-col items-center">
+<h1 class="text-primary text-4xl font-bold tracking-tight mb-2">기프트알람</h1>
+<p class="text-primary/60 text-sm font-medium tracking-widest uppercase">Premium Gift Management</p>
+</div>
+</div>
+<!-- Decorative Subtle Background Element (Very Faint) -->
+<div class="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-primary/5 blur-3xl"></div>
+<div class="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-primary/5 blur-3xl"></div>
+<!-- Safe Area Spacer for iOS -->
+<div class="h-10"></div>
+</div>
+</body></html>
