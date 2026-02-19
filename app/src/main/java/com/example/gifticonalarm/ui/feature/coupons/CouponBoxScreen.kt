@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AssistChip
@@ -44,11 +44,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.gifticonalarm.R
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
 import java.text.SimpleDateFormat
@@ -75,6 +77,7 @@ data class CouponUiModel(
     val expiryText: String,
     val statusBadge: String,
     val imageUrl: String,
+    val dday: Long?,
     val status: CouponStatus
 )
 
@@ -278,16 +281,14 @@ private fun CouponListItem(
     coupon: CouponUiModel,
     onClick: () -> Unit
 ) {
-    val badgeColors = when (coupon.status) {
-        CouponStatus.AVAILABLE -> Color(0xFFDDE5FF) to CouponAccent
-        CouponStatus.EXPIRED -> Color(0xFFFEE2E2) to Color(0xFFEF4444)
-        CouponStatus.USED -> Color(0xFFE2E8F0) to Color(0xFF64748B)
-    }
+    val badgeColors = badgeColorByCoupon(coupon)
 
     val expiryColor = when (coupon.status) {
         CouponStatus.EXPIRED -> Color(0xFFEF4444)
-        CouponStatus.USED -> Color(0xFF94A3B8)
-        CouponStatus.AVAILABLE -> Color(0xFF64748B)
+        CouponStatus.USED -> Color(0xFF475569)
+        CouponStatus.AVAILABLE -> {
+            if ((coupon.dday ?: Long.MAX_VALUE) in 1L..7L) Color(0xFFEF4444) else Color(0xFF64748B)
+        }
     }
 
     Row(
@@ -321,10 +322,10 @@ private fun CouponListItem(
                         .background(Color(0x66000000)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.CheckCircle,
-                        contentDescription = null,
-                        tint = Color.White
+                    Image(
+                        painter = painterResource(id = R.drawable.used_coupon_overlay),
+                        contentDescription = "사용완료",
+                        modifier = Modifier.size(40.dp)
                     )
                 }
             }
@@ -336,14 +337,15 @@ private fun CouponListItem(
             Text(
                 text = coupon.brand,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (coupon.status == CouponStatus.USED) Color(0xFF94A3B8) else CouponAccent,
-                fontWeight = FontWeight.Bold
+                color = if (coupon.status == CouponStatus.USED) Color(0xFF475569) else CouponAccent,
+                fontWeight = FontWeight.Bold,
+                textDecoration = if (coupon.status == CouponStatus.USED) TextDecoration.LineThrough else null
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = coupon.name,
                 style = MaterialTheme.typography.titleSmall,
-                color = if (coupon.status == CouponStatus.USED) Color(0xFF64748B) else Color(0xFF0F172A),
+                color = if (coupon.status == CouponStatus.USED) Color(0xFF475569) else Color(0xFF0F172A),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 textDecoration = if (coupon.status == CouponStatus.USED) TextDecoration.LineThrough else null
@@ -358,7 +360,8 @@ private fun CouponListItem(
                     text = coupon.expiryText,
                     style = MaterialTheme.typography.labelSmall,
                     color = expiryColor,
-                    fontWeight = if (coupon.status == CouponStatus.EXPIRED) FontWeight.Bold else FontWeight.Medium
+                    fontWeight = if (coupon.status == CouponStatus.EXPIRED) FontWeight.Bold else FontWeight.Medium,
+                    textDecoration = if (coupon.status == CouponStatus.USED) TextDecoration.LineThrough else null
                 )
                 Box(
                     modifier = Modifier
@@ -393,11 +396,12 @@ private fun Gifticon.toCouponUiModel(): CouponUiModel {
             else -> "~${formatDate(expiryDate)} 까지"
         },
         statusBadge = when (status) {
-            CouponStatus.USED -> "사용 완료"
+            CouponStatus.USED -> "사용완료"
             CouponStatus.EXPIRED -> "만료"
             CouponStatus.AVAILABLE -> "D-$dday"
         },
         imageUrl = imageUri.takeUnless { it.isNullOrBlank() } ?: defaultImage(id),
+        dday = dday,
         status = status
     )
 }
@@ -435,9 +439,25 @@ private fun sampleCoupons(): List<CouponUiModel> = listOf(
         expiryText = "~2024.05.20 까지",
         statusBadge = "D-15",
         imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDGSCo2UV4Y1_wz3-x4HeZV2PHh-5F2YwaVgskbyNACc0cETCrvJh4nnTgWyN1YmV3Xceu3mW70hMX1wY0RMu_42CnKVMnmq5oloMq1G-uNK02WhkWNG6YxbQEWwviPhstfUem38pASFWMyu8bjpb8ODKVJBCwHodsYnDenNe-liB0BrML8uG2KKE5c3mIsoo7I1jalz2pkVZIJMQ15QueNkF2VjYKD53pcJto1lES4Nxge8cvTmybEndSdTRDSUXxeAUjdBHrm2E1j",
+        dday = 15,
         status = CouponStatus.AVAILABLE
     )
 )
+
+private fun badgeColorByCoupon(coupon: CouponUiModel): Pair<Color, Color> {
+    return when (coupon.status) {
+        CouponStatus.USED -> Color(0xFFE2E8F0) to Color(0xFF64748B)
+        CouponStatus.EXPIRED -> Color(0xFFFEE2E2) to Color(0xFFEF4444)
+        CouponStatus.AVAILABLE -> {
+            val dday = coupon.dday ?: Long.MAX_VALUE
+            when {
+                dday in 1..7 -> Color(0xFFFEE2E2) to Color(0xFFDC2626)
+                dday in 16..Long.MAX_VALUE -> Color(0xFFFFEDD5) to Color(0xFFEA580C)
+                else -> Color(0xFFDDE5FF) to CouponAccent
+            }
+        }
+    }
+}
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
