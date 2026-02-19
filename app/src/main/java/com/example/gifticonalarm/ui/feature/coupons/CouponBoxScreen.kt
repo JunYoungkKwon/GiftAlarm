@@ -176,6 +176,8 @@ private fun CouponBoxHeader(
             onValueChange = onSearchQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 1.dp)
+                .padding(top = 10.dp)
                 .padding(bottom = 10.dp),
             placeholder = {
                 Text(
@@ -195,6 +197,11 @@ private fun CouponBoxHeader(
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color(0xFFF1F5F9),
                 unfocusedContainerColor = Color(0xFFF1F5F9),
+                focusedTextColor = Color(0xFF0F172A),
+                unfocusedTextColor = Color(0xFF0F172A),
+                focusedPlaceholderColor = CouponMutedText,
+                unfocusedPlaceholderColor = CouponMutedText,
+                cursorColor = CouponAccent,
                 focusedBorderColor = Color.Transparent,
                 unfocusedBorderColor = Color.Transparent
             ),
