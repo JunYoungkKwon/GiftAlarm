@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 fun CouponRegistrationRoute(
     couponId: String?,
     onNavigateBack: () -> Unit,
-    onRegistrationCompleted: () -> Unit,
+    onRegistrationCompleted: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     CouponRegistrationScreen(

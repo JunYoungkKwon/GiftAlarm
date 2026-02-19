@@ -1,18 +1,33 @@
 package com.example.gifticonalarm.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.compose.ui.unit.dp
+import com.example.gifticonalarm.ui.common.components.ToastBanner
 import com.example.gifticonalarm.ui.feature.add.CouponRegistrationRoute
 import com.example.gifticonalarm.ui.feature.coupons.CouponsRoute
 import com.example.gifticonalarm.ui.feature.home.HomeRoute
 import com.example.gifticonalarm.ui.feature.settings.SettingsRoute
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailRoute
 import com.example.gifticonalarm.ui.onboarding.OnboardingRoute
+import kotlinx.coroutines.delay
+
+private const val TOAST_MESSAGE_KEY = "toast_message"
+private const val TOAST_REGISTERED = "쿠폰이 등록되었어요."
+private const val TOAST_UPDATED = "변경사항이 저장되었어요."
+private const val TOAST_DELETED = "쿠폰이 삭제되었어요."
 
 sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
@@ -60,26 +75,66 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.HomeTab.route) {
-            HomeRoute(
-                onNavigateToAdd = {
-                    navController.navigate(Screen.AddTab.createRoute())
-                },
-                onNavigateToCashVoucherDetail = { couponId ->
-                    navController.navigate(Screen.CashVoucherDetail.createRoute(couponId))
+        composable(Screen.HomeTab.route) { backStackEntry ->
+            val toastMessage by backStackEntry.savedStateHandle
+                .getLiveData<String?>(TOAST_MESSAGE_KEY)
+                .observeAsState()
+
+            LaunchedEffect(toastMessage) {
+                if (toastMessage == null) return@LaunchedEffect
+                delay(1900L)
+                backStackEntry.savedStateHandle[TOAST_MESSAGE_KEY] = null
+            }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                HomeRoute(
+                    onNavigateToAdd = {
+                        navController.navigate(Screen.AddTab.createRoute())
+                    },
+                    onNavigateToCashVoucherDetail = { couponId ->
+                        navController.navigate(Screen.CashVoucherDetail.createRoute(couponId))
+                    }
+                )
+                toastMessage?.let { message ->
+                    ToastBanner(
+                        message = message,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 20.dp, vertical = 20.dp)
+                    )
                 }
-            )
+            }
         }
 
-        composable(Screen.CouponsTab.route) {
-            CouponsRoute(
-                onNavigateToAdd = {
-                    navController.navigate(Screen.AddTab.createRoute())
-                },
-                onNavigateToCashVoucherDetail = { couponId ->
-                    navController.navigate(Screen.CashVoucherDetail.createRoute(couponId))
+        composable(Screen.CouponsTab.route) { backStackEntry ->
+            val toastMessage by backStackEntry.savedStateHandle
+                .getLiveData<String?>(TOAST_MESSAGE_KEY)
+                .observeAsState()
+
+            LaunchedEffect(toastMessage) {
+                if (toastMessage == null) return@LaunchedEffect
+                delay(1900L)
+                backStackEntry.savedStateHandle[TOAST_MESSAGE_KEY] = null
+            }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                CouponsRoute(
+                    onNavigateToAdd = {
+                        navController.navigate(Screen.AddTab.createRoute())
+                    },
+                    onNavigateToCashVoucherDetail = { couponId ->
+                        navController.navigate(Screen.CashVoucherDetail.createRoute(couponId))
+                    }
+                )
+                toastMessage?.let { message ->
+                    ToastBanner(
+                        message = message,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 20.dp, vertical = 20.dp)
+                    )
                 }
-            )
+            }
         }
 
         composable(
@@ -98,10 +153,22 @@ fun NavGraph(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onRegistrationCompleted = {
+                onRegistrationCompleted = { isEditMode ->
+                    val toastMessage = if (isEditMode) {
+                        TOAST_UPDATED
+                    } else {
+                        TOAST_REGISTERED
+                    }
                     navController.navigate(Screen.CouponsTab.route) {
                         launchSingleTop = true
                     }
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(TOAST_MESSAGE_KEY, toastMessage)
+                    runCatching { navController.getBackStackEntry(Screen.HomeTab.route) }
+                        .getOrNull()
+                        ?.savedStateHandle
+                        ?.set(TOAST_MESSAGE_KEY, toastMessage)
                 }
             )
         }
@@ -124,7 +191,13 @@ fun NavGraph(
                     navController.navigate(Screen.AddTab.createRoute(editCouponId))
                 },
                 onDeleteCompleted = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(TOAST_MESSAGE_KEY, TOAST_DELETED)
                     navController.popBackStack()
+                    navController.currentBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(TOAST_MESSAGE_KEY, TOAST_DELETED)
                 }
             )
         }

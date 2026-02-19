@@ -1,7 +1,6 @@
 package com.example.gifticonalarm.ui.feature.add
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -50,7 +49,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,13 +63,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gifticonalarm.ui.common.components.ToastBanner
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoBottomSheet
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 
 private val RegistrationBackground = Color(0xFFFFFFFF)
 private val RegistrationAccent = Color(0xFF191970)
@@ -94,11 +97,11 @@ fun CouponRegistrationScreen(
     onThumbnailSelected: (Uri) -> Unit = {},
     onNoBarcodeInfoClick: () -> Unit = {},
     onExpiryDateClick: () -> Unit = {},
-    onRegisterClick: () -> Unit = {}
+    onRegisterClick: (Boolean) -> Unit = {}
 ) {
     val registrationViewModel: CouponRegistrationViewModel = hiltViewModel()
     val editTarget by registrationViewModel.getGifticonForEdit(couponId).observeAsState()
-    val context = LocalContext.current
+    var toastMessage by remember { mutableStateOf<String?>(null) }
     val formState by registrationViewModel.formState.observeAsState(
         CouponRegistrationFormState(
             couponId = couponId,
@@ -120,15 +123,21 @@ fun CouponRegistrationScreen(
     LaunchedEffect(effect) {
         when (val currentEffect = effect) {
             is CouponRegistrationEffect.ShowMessage -> {
-                Toast.makeText(context, currentEffect.message, Toast.LENGTH_SHORT).show()
+                toastMessage = currentEffect.message
                 registrationViewModel.consumeEffect()
             }
             CouponRegistrationEffect.RegistrationCompleted -> {
-                onRegisterClick()
+                onRegisterClick(formState.isEditMode)
                 registrationViewModel.consumeEffect()
             }
             null -> Unit
         }
+    }
+
+    LaunchedEffect(toastMessage) {
+        if (toastMessage == null) return@LaunchedEffect
+        delay(1900L)
+        toastMessage = null
     }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -140,8 +149,9 @@ fun CouponRegistrationScreen(
         }
     }
 
-    Scaffold(
-        modifier = modifier,
+    Box(modifier = modifier.fillMaxSize()) {
+        Scaffold(
+        modifier = Modifier.fillMaxSize(),
         containerColor = RegistrationBackground,
         topBar = {
             TopAppBar(
@@ -200,14 +210,14 @@ fun CouponRegistrationScreen(
             }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(RegistrationBackground)
-                .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(RegistrationBackground)
+                    .verticalScroll(rememberScrollState())
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
             ThumbnailSection(
                 thumbnailUri = formState.thumbnailUri,
                 onThumbnailClick = {
@@ -375,7 +385,17 @@ fun CouponRegistrationScreen(
                     color = Color(0xFF9CA3AF)
                 )
             }
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+
+        toastMessage?.let { message ->
+            ToastBanner(
+                message = message,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 20.dp, vertical = 20.dp)
+            )
         }
     }
 
