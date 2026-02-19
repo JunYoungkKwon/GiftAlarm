@@ -1,10 +1,13 @@
 package com.example.gifticonalarm
 
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Home
@@ -18,14 +21,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.gifticonalarm.ui.navigation.NavGraph
 import com.example.gifticonalarm.ui.navigation.Screen
+import com.example.gifticonalarm.ui.onboarding.AppStartViewModel
 import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -34,7 +42,13 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val appStartViewModel: AppStartViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition {
+            appStartViewModel.isOnboardingCompleted.value == null
+        }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -50,6 +64,21 @@ class MainActivity : ComponentActivity() {
  */
 @Composable
 fun GifticonAlarmApp() {
+    val appStartViewModel: AppStartViewModel = hiltViewModel()
+    val isOnboardingCompleted by appStartViewModel.isOnboardingCompleted.observeAsState()
+    if (isOnboardingCompleted == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {}
+        return
+    }
+    val startDestination = if (isOnboardingCompleted == true) {
+        Screen.HomeTab.route
+    } else {
+        Screen.Onboarding.route
+    }
+
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -104,7 +133,7 @@ fun GifticonAlarmApp() {
     ) { innerPadding ->
         NavGraph(
             navController = navController,
-            startDestination = Screen.Splash.route,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         )
     }
