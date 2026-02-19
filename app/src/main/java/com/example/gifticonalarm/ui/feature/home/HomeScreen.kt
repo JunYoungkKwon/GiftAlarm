@@ -85,6 +85,7 @@ fun HomeScreen(
     onNotificationClick: () -> Unit = {},
     onPrimaryActionClick: () -> Unit = {},
     onSortSelected: (HomeSortType) -> Unit = {},
+    onFocusClick: (Long) -> Unit = {},
     onCouponClick: (Long) -> Unit = {}
 ) {
     Scaffold(
@@ -113,7 +114,10 @@ fun HomeScreen(
             }
             state.focus?.let { focus ->
                 item {
-                    FocusSection(focus = focus)
+                    FocusSection(
+                        focus = focus,
+                        onFocusClick = onFocusClick
+                    )
                 }
             }
             if (state.coupons.isEmpty()) {
@@ -170,7 +174,10 @@ private fun HomeHeader(onNotificationClick: () -> Unit) {
 }
 
 @Composable
-private fun FocusSection(focus: HomeFocusItem) {
+private fun FocusSection(
+    focus: HomeFocusItem,
+    onFocusClick: (Long) -> Unit
+) {
     val focusBadgeStyle = resolveHomeFocusBadgeStyle(focus.dday)
 
     Column(
@@ -264,6 +271,7 @@ private fun FocusSection(focus: HomeFocusItem) {
                         Text(
                             text = "사용하기",
                             modifier = Modifier
+                                .clickable { onFocusClick(focus.id) }
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(GifticonWhite.copy(alpha = 0.2f))
                                 .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -387,6 +395,13 @@ private fun CouponSection(
                     onDismissRequest = { sortMenuExpanded = false }
                 ) {
                     DropdownMenuItem(
+                        text = { Text(HomeSortType.LATEST.label) },
+                        onClick = {
+                            onSortSelected(HomeSortType.LATEST)
+                            sortMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text(HomeSortType.EXPIRY_SOON.label) },
                         onClick = {
                             onSortSelected(HomeSortType.EXPIRY_SOON)
@@ -400,13 +415,7 @@ private fun CouponSection(
                             sortMenuExpanded = false
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text(HomeSortType.LATEST.label) },
-                        onClick = {
-                            onSortSelected(HomeSortType.LATEST)
-                            sortMenuExpanded = false
-                        }
-                    )
+
                 }
             }
         }

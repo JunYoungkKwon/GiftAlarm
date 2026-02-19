@@ -87,6 +87,7 @@ class HomeViewModel @Inject constructor(
         return HomeUiState(
             focus = focusTarget?.let {
                 HomeFocusItem(
+                    id = it.id,
                     brand = it.brand,
                     title = it.name,
                     dday = focusDday(it),

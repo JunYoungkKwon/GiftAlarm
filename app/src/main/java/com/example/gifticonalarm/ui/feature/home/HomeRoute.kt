@@ -28,6 +28,9 @@ fun HomeRoute(
         state = state,
         onSortSelected = viewModel::onSortSelected,
         onPrimaryActionClick = onNavigateToAdd,
+        onFocusClick = { focusId ->
+            onNavigateToCashVoucherDetail(focusId.toString())
+        },
         onCouponClick = { couponId ->
             onNavigateToCashVoucherDetail(couponId.toString())
         }

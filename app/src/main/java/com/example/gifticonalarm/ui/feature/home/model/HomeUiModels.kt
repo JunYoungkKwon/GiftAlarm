@@ -13,6 +13,7 @@ data class HomeUiState(
  * Today Focus 영역 모델.
  */
 data class HomeFocusItem(
+    val id: Long,
     val brand: String,
     val title: String,
     val dday: String,
