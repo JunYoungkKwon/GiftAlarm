@@ -390,7 +390,7 @@ private fun Gifticon.toCouponUiModel(): CouponUiModel {
             CouponStatus.EXPIRED -> "만료"
             CouponStatus.AVAILABLE -> "D-$dday"
         },
-        imageUrl = imageUri ?: defaultImage(id),
+        imageUrl = imageUri.takeUnless { it.isNullOrBlank() } ?: defaultImage(id),
         status = status
     )
 }

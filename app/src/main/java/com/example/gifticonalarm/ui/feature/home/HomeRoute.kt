@@ -51,7 +51,7 @@ private fun List<Gifticon>.toHomeUiState(): HomeUiState {
             } else {
                 "~ ${formatDate(gifticon.expiryDate)}"
             },
-            imageUrl = gifticon.imageUri ?: defaultImage(gifticon.id),
+            imageUrl = gifticon.imageUri.takeUnless { it.isNullOrBlank() } ?: defaultImage(gifticon.id),
             badge = when {
                 gifticon.isUsed -> "사용완료"
                 dday < 0 -> "만료"
@@ -68,7 +68,7 @@ private fun List<Gifticon>.toHomeUiState(): HomeUiState {
             title = focusTarget.name,
             dday = focusDday(focusTarget),
             expireText = "~ ${formatDate(focusTarget.expiryDate)} 까지",
-            imageUrl = focusTarget.imageUri ?: defaultImage(focusTarget.id)
+            imageUrl = focusTarget.imageUri.takeUnless { it.isNullOrBlank() } ?: defaultImage(focusTarget.id)
         ),
         coupons = coupons
     )
