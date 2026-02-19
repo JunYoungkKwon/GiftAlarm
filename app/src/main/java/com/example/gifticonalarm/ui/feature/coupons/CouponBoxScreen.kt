@@ -325,7 +325,7 @@ private fun CouponListItem(
                     Image(
                         painter = painterResource(id = R.drawable.used_coupon_overlay),
                         contentDescription = "사용완료",
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }

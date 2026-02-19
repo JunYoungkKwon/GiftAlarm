@@ -2,6 +2,7 @@ package com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,7 +65,12 @@ data class VoucherDetailBottomSectionUiModel(
 fun VoucherDetailBottomSection(
     uiModel: VoucherDetailBottomSectionUiModel,
     onShowBarcodeClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    actionButtonText: String = "바코드 크게 보기",
+    actionButtonContainerColor: Color = Accent,
+    actionButtonContentColor: Color = Color.White,
+    actionButtonBorderColor: Color? = null,
+    showActionButtonIcon: Boolean = true
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
         Surface(
@@ -99,19 +105,22 @@ fun VoucherDetailBottomSection(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 14.dp),
                 shape = RoundedCornerShape(16.dp),
+                border = actionButtonBorderColor?.let { BorderStroke(1.dp, it) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Accent,
-                    contentColor = Color.White
+                    containerColor = actionButtonContainerColor,
+                    contentColor = actionButtonContentColor
                 ),
                 contentPadding = PaddingValues(vertical = 14.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Fullscreen,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "바코드 크게 보기", style = MaterialTheme.typography.titleMedium)
+                if (showActionButtonIcon) {
+                    Icon(
+                        imageVector = Icons.Outlined.Fullscreen,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+                Text(text = actionButtonText, style = MaterialTheme.typography.titleMedium)
             }
         }
     }
@@ -122,7 +131,7 @@ private fun BarcodeCard(barcodeNumber: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+        border = BorderStroke(1.dp, CardBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
@@ -176,7 +185,7 @@ private fun ExpireInfo(expireDateText: String, expireBadgeText: String) {
             Surface(
                 color = Color(0xFFFFF7ED),
                 shape = RoundedCornerShape(8.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
+                border = BorderStroke(1.dp, Color(0xFFFED7AA))
             ) {
                 Text(
                     text = expireBadgeText,
@@ -213,7 +222,7 @@ private fun MemoBlock(memoText: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9))
+        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
     ) {
         Column(
             modifier = Modifier

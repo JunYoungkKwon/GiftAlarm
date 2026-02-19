@@ -14,6 +14,7 @@ import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.model.GifticonType
 import com.example.gifticonalarm.domain.usecase.DeleteGifticonUseCase
 import com.example.gifticonalarm.domain.usecase.GetGifticonByIdUseCase
+import com.example.gifticonalarm.domain.usecase.UpdateGifticonUseCase
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailScreen
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -69,6 +70,7 @@ fun VoucherDetailRoute(
                 onNavigateBack = onNavigateBack,
                 modifier = modifier,
                 uiModel = gifticon.toProductVoucherUiModel(couponId),
+                onShowBarcodeClick = { viewModel.toggleUsed(gifticon) },
                 onEditClick = { onEditClick(couponId) },
                 onDeleteClick = { viewModel.deleteGifticon(gifticon) }
             )
@@ -90,7 +92,8 @@ enum class VoucherType {
 @HiltViewModel
 class VoucherDetailViewModel @Inject constructor(
     private val getGifticonByIdUseCase: GetGifticonByIdUseCase,
-    private val deleteGifticonUseCase: DeleteGifticonUseCase
+    private val deleteGifticonUseCase: DeleteGifticonUseCase,
+    private val updateGifticonUseCase: UpdateGifticonUseCase
 ) : ViewModel() {
     private val _isDeleted = MutableLiveData(false)
     val isDeleted: LiveData<Boolean> = _isDeleted
@@ -119,6 +122,13 @@ class VoucherDetailViewModel @Inject constructor(
         viewModelScope.launch {
             deleteGifticonUseCase(gifticon)
             _isDeleted.value = true
+        }
+    }
+
+    fun toggleUsed(gifticon: Gifticon?) {
+        if (gifticon == null) return
+        viewModelScope.launch {
+            updateGifticonUseCase(gifticon.copy(isUsed = !gifticon.isUsed))
         }
     }
 

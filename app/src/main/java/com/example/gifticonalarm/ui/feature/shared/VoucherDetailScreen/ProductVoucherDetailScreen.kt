@@ -160,6 +160,27 @@ fun ProductVoucherDetailScreen(
                     memoText = uiModel.memoText
                 ),
                 onShowBarcodeClick = onShowBarcodeClick,
+                actionButtonText = if (uiModel.status == ProductVoucherStatus.USED) {
+                    "사용취소"
+                } else {
+                    "사용하기"
+                },
+                actionButtonContainerColor = if (uiModel.status == ProductVoucherStatus.USED) {
+                    Color.White
+                } else {
+                    Accent
+                },
+                actionButtonContentColor = if (uiModel.status == ProductVoucherStatus.USED) {
+                    Color.Black
+                } else {
+                    Color.White
+                },
+                actionButtonBorderColor = if (uiModel.status == ProductVoucherStatus.USED) {
+                    Color(0xFF0F172A)
+                } else {
+                    null
+                },
+                showActionButtonIcon = false,
                 modifier = Modifier.weight(1f)
             )
         }
