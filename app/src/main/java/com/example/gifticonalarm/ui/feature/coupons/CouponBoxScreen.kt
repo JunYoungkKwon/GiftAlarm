@@ -35,10 +35,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.gifticonalarm.R
+import com.example.gifticonalarm.ui.feature.coupons.model.CouponFilterType
+import com.example.gifticonalarm.ui.feature.coupons.model.CouponStatus
+import com.example.gifticonalarm.ui.feature.coupons.model.CouponUiModel
 import com.example.gifticonalarm.ui.theme.GifticonBorder
 import com.example.gifticonalarm.ui.theme.GifticonBorderSoft
 import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
@@ -76,23 +75,6 @@ private val CouponListBackground = GifticonSurface
 private val CouponCardBorder = GifticonBorder
 private val CouponMutedText = GifticonTextMuted
 
-enum class CouponStatus {
-    AVAILABLE,
-    EXPIRED,
-    USED
-}
-
-data class CouponUiModel(
-    val id: Long,
-    val brand: String,
-    val name: String,
-    val expiryText: String,
-    val statusBadge: String,
-    val imageUrl: String,
-    val dday: Long?,
-    val status: CouponStatus
-)
-
 /**
  * 쿠폰함 화면 UI.
  */
@@ -101,24 +83,13 @@ data class CouponUiModel(
 fun CouponBoxScreen(
     modifier: Modifier = Modifier,
     coupons: List<CouponUiModel> = emptyList(),
+    searchQuery: String = "",
+    selectedFilter: CouponFilterType = CouponFilterType.ALL,
+    onSearchQueryChange: (String) -> Unit = {},
+    onFilterSelected: (CouponFilterType) -> Unit = {},
     onAddClick: () -> Unit = {},
     onCouponClick: (Long) -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    val displayCoupons = remember(coupons) {
-        coupons
-    }
-    val filteredCoupons = remember(displayCoupons, searchQuery) {
-        if (searchQuery.isBlank()) {
-            displayCoupons
-        } else {
-            displayCoupons.filter {
-                it.brand.contains(searchQuery, ignoreCase = true) ||
-                    it.name.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
-
     Surface(
         modifier = modifier.fillMaxSize(),
         color = CouponBackground
@@ -129,8 +100,10 @@ fun CouponBoxScreen(
             CouponBoxHeader(
                 onAddClick = onAddClick,
                 searchQuery = searchQuery,
-                onSearchQueryChange = { searchQuery = it },
-                totalCount = filteredCoupons.size
+                onSearchQueryChange = onSearchQueryChange,
+                selectedFilter = selectedFilter,
+                onFilterSelected = onFilterSelected,
+                totalCount = coupons.size
             )
 
             LazyColumn(
@@ -140,7 +113,7 @@ fun CouponBoxScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(filteredCoupons, key = { it.id }) { coupon ->
+                items(coupons, key = { it.id }) { coupon ->
                     CouponListItem(
                         coupon = coupon,
                         onClick = { onCouponClick(coupon.id) }
@@ -157,6 +130,8 @@ private fun CouponBoxHeader(
     onAddClick: () -> Unit,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
+    selectedFilter: CouponFilterType,
+    onFilterSelected: (CouponFilterType) -> Unit,
     totalCount: Int
 ) {
     Column(
@@ -234,10 +209,26 @@ private fun CouponBoxHeader(
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            CouponFilterChip(text = "전체", selected = true)
-            CouponFilterChip(text = "사용 가능", selected = false)
-            CouponFilterChip(text = "사용 완료", selected = false)
-            CouponFilterChip(text = "만료", selected = false)
+            CouponFilterChip(
+                text = "전체",
+                selected = selectedFilter == CouponFilterType.ALL,
+                onClick = { onFilterSelected(CouponFilterType.ALL) }
+            )
+            CouponFilterChip(
+                text = "사용 가능",
+                selected = selectedFilter == CouponFilterType.AVAILABLE,
+                onClick = { onFilterSelected(CouponFilterType.AVAILABLE) }
+            )
+            CouponFilterChip(
+                text = "사용 완료",
+                selected = selectedFilter == CouponFilterType.USED,
+                onClick = { onFilterSelected(CouponFilterType.USED) }
+            )
+            CouponFilterChip(
+                text = "만료",
+                selected = selectedFilter == CouponFilterType.EXPIRED,
+                onClick = { onFilterSelected(CouponFilterType.EXPIRED) }
+            )
         }
 
         Row(
@@ -273,10 +264,11 @@ private fun CouponBoxHeader(
 @Composable
 private fun CouponFilterChip(
     text: String,
-    selected: Boolean
+    selected: Boolean,
+    onClick: () -> Unit
 ) {
     AssistChip(
-        onClick = {},
+        onClick = onClick,
         label = {
             Text(
                 text = text,
