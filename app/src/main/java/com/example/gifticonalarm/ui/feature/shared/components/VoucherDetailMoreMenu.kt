@@ -24,6 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.gifticonalarm.ui.theme.GifticonBorderSoft
+import com.example.gifticonalarm.ui.theme.GifticonSurfaceSoft
+import com.example.gifticonalarm.ui.theme.GifticonTextSlate
+import com.example.gifticonalarm.ui.theme.GifticonTextSlateStrong
+import com.example.gifticonalarm.ui.theme.GifticonWhite
 
 /**
  * 상세 화면 상단 더보기 액션 메뉴.
@@ -41,13 +46,13 @@ fun VoucherDetailMoreMenu(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = Color.White,
+        containerColor = GifticonWhite,
         dragHandle = {
             Box(
                 modifier = Modifier
                     .padding(top = 12.dp, bottom = 8.dp)
                     .size(width = 40.dp, height = 6.dp)
-                    .background(Color(0xFFE2E8F0), RoundedCornerShape(999.dp))
+                    .background(GifticonBorderSoft, RoundedCornerShape(999.dp))
             )
         }
     ) {
@@ -59,12 +64,12 @@ fun VoucherDetailMoreMenu(
         ) {
             VoucherBottomSheetAction(
                 text = "수정하기",
-                tint = Color(0xFF475569),
+                tint = GifticonTextSlateStrong,
                 icon = {
                     Icon(
                         imageVector = Icons.Outlined.Edit,
                         contentDescription = null,
-                        tint = Color(0xFF64748B)
+                        tint = GifticonTextSlate
                     )
                 },
                 onClick = {
@@ -74,7 +79,7 @@ fun VoucherDetailMoreMenu(
             )
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 18.dp),
-                color = Color(0xFFF1F5F9),
+                color = GifticonSurfaceSoft,
                 thickness = 1.dp
             )
             VoucherBottomSheetAction(

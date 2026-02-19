@@ -28,17 +28,21 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.gifticonalarm.ui.feature.shared.components.VoucherDetailMoreMenu
-import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
+import com.example.gifticonalarm.ui.theme.GifticonBlack
+import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
+import com.example.gifticonalarm.ui.theme.GifticonSurfacePill
+import com.example.gifticonalarm.ui.theme.GifticonSurfaceUsed
+import com.example.gifticonalarm.ui.theme.GifticonTextMuted
+import com.example.gifticonalarm.ui.theme.GifticonTextPrimary
+import com.example.gifticonalarm.ui.theme.GifticonWhite
 
-private val ScreenBackground = Color(0xFFFFFFFF)
-private val PrimaryText = Color(0xFF0F172A)
-private val Accent = Color(0xFF191970)
+private val ScreenBackground = GifticonWhite
+private val PrimaryText = GifticonTextPrimary
+private val Accent = GifticonBrandPrimary
 
 /**
  * 교환권 상태.
@@ -166,17 +170,17 @@ fun ProductVoucherDetailScreen(
                     "사용하기"
                 },
                 actionButtonContainerColor = if (uiModel.status == ProductVoucherStatus.USED) {
-                    Color.White
+                    GifticonWhite
                 } else {
                     Accent
                 },
                 actionButtonContentColor = if (uiModel.status == ProductVoucherStatus.USED) {
-                    Color.Black
+                    GifticonBlack
                 } else {
-                    Color.White
+                    GifticonWhite
                 },
                 actionButtonBorderColor = if (uiModel.status == ProductVoucherStatus.USED) {
-                    Color(0xFF0F172A)
+                    GifticonTextPrimary
                 } else {
                     null
                 },
@@ -201,7 +205,7 @@ private fun ProductVoucherTopSection(
             modifier = Modifier
                 .size(192.dp)
                 .clip(RoundedCornerShape(20.dp))
-                .background(Color(0xFFF8FAFC)),
+                .background(GifticonSurfaceUsed),
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
@@ -213,7 +217,7 @@ private fun ProductVoucherTopSection(
 
         Text(
             text = uiModel.brand,
-            color = Color(0xFF94A3B8),
+            color = GifticonTextMuted,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold
         )
@@ -225,7 +229,7 @@ private fun ProductVoucherTopSection(
         )
 
         Surface(
-            color = Color(0xFFEEF2FF),
+            color = GifticonSurfacePill,
             shape = RoundedCornerShape(999.dp)
         ) {
             Text(
@@ -238,17 +242,5 @@ private fun ProductVoucherTopSection(
         }
 
         Spacer(modifier = Modifier.height(2.dp))
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 390, heightDp = 844)
-@Composable
-private fun ProductVoucherDetailScreenPreview() {
-    GifticonAlarmTheme {
-        ProductVoucherDetailScreen(
-            couponId = "1",
-            onNavigateBack = {},
-            uiModel = ProductVoucherDetailUiModel.placeholder(couponId = "1")
-        )
     }
 }

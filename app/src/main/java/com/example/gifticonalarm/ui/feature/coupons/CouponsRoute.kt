@@ -16,10 +16,10 @@ fun CouponsRoute(
     modifier: Modifier = Modifier,
     viewModel: CouponsViewModel = hiltViewModel()
 ) {
-    val gifticons by viewModel.gifticons.observeAsState(emptyList())
+    val coupons by viewModel.coupons.observeAsState(emptyList())
 
     CouponBoxScreen(
-        coupons = gifticons,
+        coupons = coupons,
         modifier = modifier,
         onAddClick = onNavigateToAdd,
         onCouponClick = { couponId ->

@@ -47,22 +47,34 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.gifticonalarm.R
-import com.example.gifticonalarm.domain.model.Gifticon
-import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import java.util.concurrent.TimeUnit
+import com.example.gifticonalarm.ui.theme.GifticonBorder
+import com.example.gifticonalarm.ui.theme.GifticonBorderSoft
+import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
+import com.example.gifticonalarm.ui.theme.GifticonDanger
+import com.example.gifticonalarm.ui.theme.GifticonDangerBackground
+import com.example.gifticonalarm.ui.theme.GifticonDangerStrong
+import com.example.gifticonalarm.ui.theme.GifticonInfoBackground
+import com.example.gifticonalarm.ui.theme.GifticonOverlayBlack40
+import com.example.gifticonalarm.ui.theme.GifticonSurface
+import com.example.gifticonalarm.ui.theme.GifticonSurfaceSoft
+import com.example.gifticonalarm.ui.theme.GifticonSurfaceUsed
+import com.example.gifticonalarm.ui.theme.GifticonTextMuted
+import com.example.gifticonalarm.ui.theme.GifticonTextPrimary
+import com.example.gifticonalarm.ui.theme.GifticonTextSlate
+import com.example.gifticonalarm.ui.theme.GifticonTextSlateStrong
+import com.example.gifticonalarm.ui.theme.GifticonWarning
+import com.example.gifticonalarm.ui.theme.GifticonWarningBackground
+import com.example.gifticonalarm.ui.theme.GifticonWhite
 
-private val CouponAccent = Color(0xFF191970)
-private val CouponBackground = Color(0xFFFFFFFF)
-private val CouponListBackground = Color(0xFFF6F6F8)
-private val CouponCardBorder = Color(0xFFE5E7EB)
-private val CouponMutedText = Color(0xFF94A3B8)
+private val CouponAccent = GifticonBrandPrimary
+private val CouponBackground = GifticonWhite
+private val CouponListBackground = GifticonSurface
+private val CouponCardBorder = GifticonBorder
+private val CouponMutedText = GifticonTextMuted
 
 enum class CouponStatus {
     AVAILABLE,
@@ -88,14 +100,13 @@ data class CouponUiModel(
 @Composable
 fun CouponBoxScreen(
     modifier: Modifier = Modifier,
-    coupons: List<Gifticon> = emptyList(),
-    useSampleData: Boolean = false,
+    coupons: List<CouponUiModel> = emptyList(),
     onAddClick: () -> Unit = {},
     onCouponClick: (Long) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val displayCoupons = remember(coupons, useSampleData) {
-        if (useSampleData) sampleCoupons() else coupons.map { it.toCouponUiModel() }
+    val displayCoupons = remember(coupons) {
+        coupons
     }
     val filteredCoupons = remember(displayCoupons, searchQuery) {
         if (searchQuery.isBlank()) {
@@ -180,13 +191,19 @@ private fun CouponBoxHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 1.dp)
+                .height(66.dp)
                 .padding(top = 10.dp)
                 .padding(bottom = 10.dp),
+            textStyle = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 12.sp
+            ),
             placeholder = {
                 Text(
                     text = "브랜드 또는 상품명 검색",
                     color = CouponMutedText,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 12.sp
+                    )
                 )
             },
             leadingIcon = {
@@ -198,10 +215,10 @@ private fun CouponBoxHeader(
             },
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFF1F5F9),
-                unfocusedContainerColor = Color(0xFFF1F5F9),
-                focusedTextColor = Color(0xFF0F172A),
-                unfocusedTextColor = Color(0xFF0F172A),
+                focusedContainerColor = GifticonSurfaceSoft,
+                unfocusedContainerColor = GifticonSurfaceSoft,
+                focusedTextColor = GifticonTextPrimary,
+                unfocusedTextColor = GifticonTextPrimary,
                 focusedPlaceholderColor = CouponMutedText,
                 unfocusedPlaceholderColor = CouponMutedText,
                 cursorColor = CouponAccent,
@@ -268,8 +285,8 @@ private fun CouponFilterChip(
             )
         },
         colors = AssistChipDefaults.assistChipColors(
-            containerColor = if (selected) CouponAccent else Color(0xFFE2E8F0),
-            labelColor = if (selected) Color.White else Color(0xFF64748B)
+            containerColor = if (selected) CouponAccent else GifticonBorderSoft,
+            labelColor = if (selected) GifticonWhite else GifticonTextSlate
         ),
         border = null,
         shape = RoundedCornerShape(999.dp)
@@ -281,13 +298,14 @@ private fun CouponListItem(
     coupon: CouponUiModel,
     onClick: () -> Unit
 ) {
-    val badgeColors = badgeColorByCoupon(coupon)
+    val badgeStyle = badgeStyleByCoupon(coupon)
+    val isInactiveCoupon = coupon.status == CouponStatus.USED || coupon.status == CouponStatus.EXPIRED
 
     val expiryColor = when (coupon.status) {
-        CouponStatus.EXPIRED -> Color(0xFFEF4444)
-        CouponStatus.USED -> Color(0xFF475569)
+        CouponStatus.EXPIRED -> GifticonDanger
+        CouponStatus.USED -> GifticonTextSlateStrong
         CouponStatus.AVAILABLE -> {
-            if ((coupon.dday ?: Long.MAX_VALUE) in 1L..7L) Color(0xFFEF4444) else Color(0xFF64748B)
+            if ((coupon.dday ?: Long.MAX_VALUE) in 1L..7L) GifticonDanger else GifticonTextSlate
         }
     }
 
@@ -295,7 +313,7 @@ private fun CouponListItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(if (coupon.status == CouponStatus.USED) Color(0xFFF8FAFC) else Color.White)
+            .background(if (coupon.status == CouponStatus.USED) GifticonSurfaceUsed else GifticonWhite)
             .border(1.dp, CouponCardBorder, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(12.dp),
@@ -306,7 +324,7 @@ private fun CouponListItem(
             modifier = Modifier
                 .size(64.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFF1F5F9)),
+                .background(GifticonSurfaceSoft),
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
@@ -319,7 +337,7 @@ private fun CouponListItem(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(0x66000000)),
+                        .background(GifticonOverlayBlack40),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -337,18 +355,18 @@ private fun CouponListItem(
             Text(
                 text = coupon.brand,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (coupon.status == CouponStatus.USED) Color(0xFF475569) else CouponAccent,
+                color = if (isInactiveCoupon) GifticonTextSlateStrong else CouponAccent,
                 fontWeight = FontWeight.Bold,
-                textDecoration = if (coupon.status == CouponStatus.USED) TextDecoration.LineThrough else null
+                textDecoration = if (isInactiveCoupon) TextDecoration.LineThrough else null
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = coupon.name,
                 style = MaterialTheme.typography.titleSmall,
-                color = if (coupon.status == CouponStatus.USED) Color(0xFF475569) else Color(0xFF0F172A),
+                color = if (isInactiveCoupon) GifticonTextSlateStrong else GifticonTextPrimary,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
-                textDecoration = if (coupon.status == CouponStatus.USED) TextDecoration.LineThrough else null
+                textDecoration = if (isInactiveCoupon) TextDecoration.LineThrough else null
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -359,19 +377,20 @@ private fun CouponListItem(
                 Text(
                     text = coupon.expiryText,
                     style = MaterialTheme.typography.labelSmall,
-                    color = expiryColor,
+                    color = if (isInactiveCoupon) GifticonTextSlateStrong else expiryColor,
                     fontWeight = if (coupon.status == CouponStatus.EXPIRED) FontWeight.Bold else FontWeight.Medium,
-                    textDecoration = if (coupon.status == CouponStatus.USED) TextDecoration.LineThrough else null
+                    textDecoration = if (isInactiveCoupon) TextDecoration.LineThrough else null
                 )
                 Box(
                     modifier = Modifier
-                        .background(badgeColors.first, RoundedCornerShape(6.dp))
+                        .background(badgeStyle.containerColor, RoundedCornerShape(6.dp))
+                        .border(1.dp, badgeStyle.borderColor, RoundedCornerShape(6.dp))
                         .padding(horizontal = 7.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = coupon.statusBadge,
                         style = MaterialTheme.typography.labelSmall,
-                        color = badgeColors.second,
+                        color = badgeStyle.textColor,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -380,89 +399,43 @@ private fun CouponListItem(
     }
 }
 
-private fun Gifticon.toCouponUiModel(): CouponUiModel {
-    val dday = calculateDday(expiryDate)
-    val status = when {
-        isUsed -> CouponStatus.USED
-        dday < 0 -> CouponStatus.EXPIRED
-        else -> CouponStatus.AVAILABLE
-    }
-    return CouponUiModel(
-        id = id,
-        brand = brand,
-        name = name,
-        expiryText = when (status) {
-            CouponStatus.USED -> "${formatDate(expiryDate)} 사용"
-            else -> "~${formatDate(expiryDate)} 까지"
-        },
-        statusBadge = when (status) {
-            CouponStatus.USED -> "사용완료"
-            CouponStatus.EXPIRED -> "만료"
-            CouponStatus.AVAILABLE -> "D-$dday"
-        },
-        imageUrl = imageUri.takeUnless { it.isNullOrBlank() } ?: defaultImage(id),
-        dday = dday,
-        status = status
-    )
-}
-
-private fun calculateDday(targetDate: java.util.Date): Long {
-    val today = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
-    val target = Calendar.getInstance().apply {
-        time = targetDate
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
-    return TimeUnit.MILLISECONDS.toDays(target - today)
-}
-
-private fun formatDate(date: java.util.Date): String {
-    return SimpleDateFormat("yyyy.MM.dd", Locale.KOREAN).format(date)
-}
-
-private fun defaultImage(id: Long): String {
-    return "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&auto=format&fit=crop&q=80&seed=$id"
-}
-
-private fun sampleCoupons(): List<CouponUiModel> = listOf(
-    CouponUiModel(
-        id = 1,
-        brand = "스타벅스",
-        name = "아이스 카페 아메리카노 T",
-        expiryText = "~2024.05.20 까지",
-        statusBadge = "D-15",
-        imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDGSCo2UV4Y1_wz3-x4HeZV2PHh-5F2YwaVgskbyNACc0cETCrvJh4nnTgWyN1YmV3Xceu3mW70hMX1wY0RMu_42CnKVMnmq5oloMq1G-uNK02WhkWNG6YxbQEWwviPhstfUem38pASFWMyu8bjpb8ODKVJBCwHodsYnDenNe-liB0BrML8uG2KKE5c3mIsoo7I1jalz2pkVZIJMQ15QueNkF2VjYKD53pcJto1lES4Nxge8cvTmybEndSdTRDSUXxeAUjdBHrm2E1j",
-        dday = 15,
-        status = CouponStatus.AVAILABLE
-    )
+private data class CouponBadgeStyle(
+    val containerColor: Color,
+    val borderColor: Color,
+    val textColor: Color
 )
 
-private fun badgeColorByCoupon(coupon: CouponUiModel): Pair<Color, Color> {
+private fun badgeStyleByCoupon(coupon: CouponUiModel): CouponBadgeStyle {
     return when (coupon.status) {
-        CouponStatus.USED -> Color(0xFFE2E8F0) to Color(0xFF64748B)
-        CouponStatus.EXPIRED -> Color(0xFFFEE2E2) to Color(0xFFEF4444)
+        CouponStatus.USED -> CouponBadgeStyle(
+            containerColor = GifticonBorderSoft,
+            borderColor = GifticonBorderSoft,
+            textColor = GifticonTextSlate
+        )
+        CouponStatus.EXPIRED -> CouponBadgeStyle(
+            containerColor = GifticonBorderSoft,
+            borderColor = GifticonBorderSoft,
+            textColor = GifticonDanger
+        )
         CouponStatus.AVAILABLE -> {
             val dday = coupon.dday ?: Long.MAX_VALUE
             when {
-                dday in 1..7 -> Color(0xFFFEE2E2) to Color(0xFFDC2626)
-                dday in 16..Long.MAX_VALUE -> Color(0xFFFFEDD5) to Color(0xFFEA580C)
-                else -> Color(0xFFDDE5FF) to CouponAccent
+                dday in 1L..7L -> CouponBadgeStyle(
+                    containerColor = GifticonDangerBackground,
+                    borderColor = GifticonDangerBackground,
+                    textColor = GifticonDangerStrong
+                )
+                dday in 16L..Long.MAX_VALUE -> CouponBadgeStyle(
+                    containerColor = GifticonWarningBackground,
+                    borderColor = GifticonWarningBackground,
+                    textColor = GifticonWarning
+                )
+                else -> CouponBadgeStyle(
+                    containerColor = GifticonInfoBackground,
+                    borderColor = GifticonInfoBackground,
+                    textColor = CouponAccent
+                )
             }
         }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-@Composable
-private fun CouponBoxScreenPreview() {
-    GifticonAlarmTheme {
-        CouponBoxScreen(useSampleData = true)
     }
 }

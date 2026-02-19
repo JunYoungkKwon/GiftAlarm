@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -303,15 +302,4 @@ private fun DateWheelColumn(
             Box(modifier = Modifier.height(48.dp))
         }
     }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-@Composable
-private fun ExpirationDateSelectionBottomSheetPreview() {
-    ExpirationDateSelectionContent(
-        selectedDate = ExpirationDate(year = 2026, month = 2, day = 18),
-        onDateSelected = {},
-        onConfirmClick = {},
-        onNoExpiryClick = {}
-    )
 }

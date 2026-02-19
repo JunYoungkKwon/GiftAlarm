@@ -40,12 +40,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.gifticonalarm.ui.theme.GifticonBorderSoft
+import com.example.gifticonalarm.ui.theme.GifticonBorderWarm
+import com.example.gifticonalarm.ui.theme.GifticonBlack
+import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
+import com.example.gifticonalarm.ui.theme.GifticonDanger
+import com.example.gifticonalarm.ui.theme.GifticonDangerBackground
+import com.example.gifticonalarm.ui.theme.GifticonDangerStrong
+import com.example.gifticonalarm.ui.theme.GifticonInfoBackground
+import com.example.gifticonalarm.ui.theme.GifticonSurfaceSoft
+import com.example.gifticonalarm.ui.theme.GifticonSurfaceUsed
+import com.example.gifticonalarm.ui.theme.GifticonTextMuted
+import com.example.gifticonalarm.ui.theme.GifticonTextPrimary
+import com.example.gifticonalarm.ui.theme.GifticonTextSlate
+import com.example.gifticonalarm.ui.theme.GifticonTextSlateStrong
+import com.example.gifticonalarm.ui.theme.GifticonWarning
+import com.example.gifticonalarm.ui.theme.GifticonWarningBackground
+import com.example.gifticonalarm.ui.theme.GifticonWarningSoftBackground
+import com.example.gifticonalarm.ui.theme.GifticonWhite
 
-private val BottomBackground = Color(0xFFF8FAFC)
-private val CardBorder = Color(0xFFE2E8F0)
-private val PrimaryText = Color(0xFF0F172A)
-private val SecondaryText = Color(0xFF94A3B8)
-private val Accent = Color(0xFF191970)
+private val BottomBackground = GifticonSurfaceUsed
+private val CardBorder = GifticonBorderSoft
+private val PrimaryText = GifticonTextPrimary
+private val SecondaryText = GifticonTextMuted
+private val Accent = GifticonBrandPrimary
+
+private data class ExpireBadgeStyle(
+    val containerColor: Color,
+    val borderColor: Color,
+    val textColor: Color
+)
 
 /**
  * 상세 화면 하단 섹션(UI 교체 범위) 데이터.
@@ -68,7 +92,7 @@ fun VoucherDetailBottomSection(
     modifier: Modifier = Modifier,
     actionButtonText: String = "바코드 크게 보기",
     actionButtonContainerColor: Color = Accent,
-    actionButtonContentColor: Color = Color.White,
+    actionButtonContentColor: Color = GifticonWhite,
     actionButtonBorderColor: Color? = null,
     showActionButtonIcon: Boolean = true
 ) {
@@ -96,7 +120,7 @@ fun VoucherDetailBottomSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter),
-            color = Color.White,
+            color = GifticonWhite,
             shadowElevation = 10.dp
         ) {
             Button(
@@ -129,7 +153,7 @@ fun VoucherDetailBottomSection(
 @Composable
 private fun BarcodeCard(barcodeNumber: String) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = GifticonWhite),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, CardBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -164,6 +188,8 @@ private fun BarcodeCard(barcodeNumber: String) {
 
 @Composable
 private fun ExpireInfo(expireDateText: String, expireBadgeText: String) {
+    val badgeStyle = resolveExpireBadgeStyle(expireBadgeText)
+
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text = "유효기간",
@@ -183,14 +209,14 @@ private fun ExpireInfo(expireDateText: String, expireBadgeText: String) {
                 fontWeight = FontWeight.Bold
             )
             Surface(
-                color = Color(0xFFFFF7ED),
+                color = badgeStyle.containerColor,
                 shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, Color(0xFFFED7AA))
+                border = BorderStroke(1.dp, badgeStyle.borderColor)
             ) {
                 Text(
                     text = expireBadgeText,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFEA580C),
+                    color = badgeStyle.textColor,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
@@ -220,9 +246,9 @@ private fun InfoBlock(content: String) {
 @Composable
 private fun MemoBlock(memoText: String) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = GifticonWhite),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
+        border = BorderStroke(1.dp, GifticonSurfaceSoft)
     ) {
         Column(
             modifier = Modifier
@@ -239,7 +265,7 @@ private fun MemoBlock(memoText: String) {
             Text(
                 text = memoText,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF475569)
+                color = GifticonTextSlateStrong
             )
         }
     }
@@ -252,7 +278,7 @@ private fun BarcodeGraphic() {
             .fillMaxWidth()
             .height(78.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.White)
+            .background(GifticonWhite)
             .drawBehind {
                 val widths = listOf(3.dp, 1.dp, 4.dp, 2.dp, 1.dp, 5.dp, 2.dp, 1.dp, 3.dp, 1.dp, 4.dp, 2.dp)
                 val unit = 1.dp.toPx()
@@ -261,7 +287,7 @@ private fun BarcodeGraphic() {
                     widths.forEach { widthDp ->
                         if (x >= size.width - 8.dp.toPx()) return@forEach
                         drawRect(
-                            color = Color.Black,
+                            color = GifticonBlack,
                             topLeft = Offset(x, 8.dp.toPx()),
                             size = Size(widthDp.toPx(), size.height - 16.dp.toPx())
                         )
@@ -271,4 +297,42 @@ private fun BarcodeGraphic() {
             }
             .border(1.dp, CardBorder, RoundedCornerShape(8.dp))
     )
+}
+
+private fun resolveExpireBadgeStyle(expireBadgeText: String): ExpireBadgeStyle {
+    val normalized = expireBadgeText.trim()
+    val dday = normalized.removePrefix("D-").toLongOrNull()
+
+    return when {
+        normalized == "사용 완료" -> ExpireBadgeStyle(
+            containerColor = GifticonBorderSoft,
+            borderColor = GifticonBorderSoft,
+            textColor = GifticonTextSlate
+        )
+        normalized == "만료" || (dday != null && dday < 0) -> ExpireBadgeStyle(
+            containerColor = GifticonDangerBackground,
+            borderColor = GifticonBorderSoft,
+            textColor = GifticonDanger
+        )
+        dday != null && dday in 1L..7L -> ExpireBadgeStyle(
+            containerColor = GifticonDangerBackground,
+            borderColor = GifticonDangerBackground,
+            textColor = GifticonDangerStrong
+        )
+        dday != null && dday in 8L..15L -> ExpireBadgeStyle(
+            containerColor = GifticonInfoBackground,
+            borderColor = GifticonInfoBackground,
+            textColor = Accent
+        )
+        dday != null -> ExpireBadgeStyle(
+            containerColor = GifticonWarningBackground,
+            borderColor = GifticonWarningBackground,
+            textColor = GifticonWarning
+        )
+        else -> ExpireBadgeStyle(
+            containerColor = GifticonWarningSoftBackground,
+            borderColor = GifticonBorderWarm,
+            textColor = GifticonWarning
+        )
+    }
 }

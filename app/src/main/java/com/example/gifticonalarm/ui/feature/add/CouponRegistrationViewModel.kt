@@ -10,14 +10,34 @@ import com.example.gifticonalarm.domain.usecase.AddGifticonUseCase
 import com.example.gifticonalarm.domain.usecase.GetGifticonByIdUseCase
 import com.example.gifticonalarm.domain.usecase.SaveGifticonImageUseCase
 import com.example.gifticonalarm.domain.usecase.UpdateGifticonUseCase
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.util.Date
+import java.util.Calendar
 import javax.inject.Inject
 
 /**
  * 쿠폰 등록 저장 로직을 담당하는 ViewModel.
  */
+data class CouponRegistrationFormState(
+    val couponId: String? = null,
+    val isEditMode: Boolean = false,
+    val barcode: String = "",
+    val place: String = "",
+    val couponName: String = "",
+    val withoutBarcode: Boolean = false,
+    val couponType: CouponType = CouponType.EXCHANGE,
+    val amount: String = "",
+    val thumbnailUri: String? = null
+)
+
+sealed interface CouponRegistrationEffect {
+    data class ShowMessage(val message: String) : CouponRegistrationEffect
+    data object RegistrationCompleted : CouponRegistrationEffect
+}
+
 @HiltViewModel
 class CouponRegistrationViewModel @Inject constructor(
     private val addGifticonUseCase: AddGifticonUseCase,
@@ -29,11 +49,170 @@ class CouponRegistrationViewModel @Inject constructor(
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _effect = MutableLiveData<CouponRegistrationEffect?>()
+    val effect: LiveData<CouponRegistrationEffect?> = _effect
 
-    private val _isRegistered = MutableLiveData(false)
-    val isRegistered: LiveData<Boolean> = _isRegistered
+    private val _formState = MutableLiveData(CouponRegistrationFormState())
+    val formState: LiveData<CouponRegistrationFormState> = _formState
+
+    private val _isExpiryBottomSheetVisible = MutableLiveData(false)
+    val isExpiryBottomSheetVisible: LiveData<Boolean> = _isExpiryBottomSheetVisible
+
+    private val _selectedExpiryDate = MutableLiveData<ExpirationDate?>(null)
+    val selectedExpiryDate: LiveData<ExpirationDate?> = _selectedExpiryDate
+
+    private val _draftExpiryDate = MutableLiveData(ExpirationDate.today())
+    val draftExpiryDate: LiveData<ExpirationDate> = _draftExpiryDate
+
+    private val _infoSheetType = MutableLiveData(CouponRegistrationInfoSheetType.NONE)
+    val infoSheetType: LiveData<CouponRegistrationInfoSheetType> = _infoSheetType
+
+    private var initializedCouponId: String? = null
+    private var existingGifticonForSave: Gifticon? = null
+
+    fun initializeForm(couponId: String?, editTarget: Gifticon?) {
+        if (couponId == null) {
+            if (initializedCouponId != null || existingGifticonForSave != null) {
+                resetCreateForm()
+            }
+            return
+        }
+        if (editTarget == null) return
+        if (initializedCouponId == couponId) return
+
+        _formState.value = CouponRegistrationFormState(
+            couponId = couponId,
+            isEditMode = true,
+            barcode = editTarget.barcode,
+            place = editTarget.brand,
+            couponName = editTarget.name,
+            withoutBarcode = editTarget.barcode.isBlank(),
+            couponType = if (editTarget.type == GifticonType.AMOUNT) CouponType.AMOUNT else CouponType.EXCHANGE,
+            amount = if (editTarget.type == GifticonType.AMOUNT) extractAmountFromMemo(editTarget.memo) else "",
+            thumbnailUri = editTarget.imageUri
+        )
+        _selectedExpiryDate.value = editTarget.expiryDate.toExpirationDate()
+        _draftExpiryDate.value = editTarget.expiryDate.toExpirationDate()
+        initializedCouponId = couponId
+        existingGifticonForSave = editTarget
+    }
+
+    fun updateBarcode(value: String) {
+        updateFormState { copy(barcode = value) }
+    }
+
+    fun updatePlace(value: String) {
+        updateFormState { copy(place = value) }
+    }
+
+    fun updateCouponName(value: String) {
+        updateFormState { copy(couponName = value) }
+    }
+
+    fun updateWithoutBarcode(value: Boolean) {
+        updateFormState {
+            copy(
+                withoutBarcode = value,
+                barcode = if (value) "" else barcode
+            )
+        }
+    }
+
+    fun updateCouponType(value: CouponType) {
+        updateFormState {
+            copy(
+                couponType = value,
+                amount = if (value == CouponType.AMOUNT) amount else ""
+            )
+        }
+    }
+
+    fun updateAmount(value: String) {
+        updateFormState { copy(amount = value.filter { it.isDigit() }) }
+    }
+
+    fun updateThumbnailUri(value: String?) {
+        updateFormState { copy(thumbnailUri = value) }
+    }
+
+    fun submit() {
+        val state = _formState.value ?: CouponRegistrationFormState()
+        val selectedExpiryDate = _selectedExpiryDate.value
+        when {
+            state.place.isBlank() -> {
+                _effect.value = CouponRegistrationEffect.ShowMessage("사용처를 입력해 주세요.")
+                return
+            }
+            state.couponName.isBlank() -> {
+                _effect.value = CouponRegistrationEffect.ShowMessage("쿠폰명을 입력해 주세요.")
+                return
+            }
+            selectedExpiryDate == null -> {
+                _effect.value = CouponRegistrationEffect.ShowMessage("유효기한을 선택해 주세요.")
+                return
+            }
+        }
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.YEAR, selectedExpiryDate.year)
+            set(Calendar.MONTH, selectedExpiryDate.month - 1)
+            set(Calendar.DAY_OF_MONTH, selectedExpiryDate.day)
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val memo = when (state.couponType) {
+            CouponType.AMOUNT -> state.amount.ifBlank { null }?.let { "금액권: ${it}원" }
+            CouponType.EXCHANGE -> null
+        }
+
+        saveGifticon(
+            couponId = state.couponId,
+            existingGifticon = existingGifticonForSave,
+            name = state.couponName.trim(),
+            brand = state.place.trim(),
+            barcode = if (state.withoutBarcode) "" else state.barcode.trim(),
+            expiryDate = calendar.time,
+            imageUri = state.thumbnailUri,
+            memo = memo,
+            type = when (state.couponType) {
+                CouponType.EXCHANGE -> GifticonType.EXCHANGE
+                CouponType.AMOUNT -> GifticonType.AMOUNT
+            }
+        )
+    }
+
+    fun openExpiryBottomSheet() {
+        _draftExpiryDate.value = _selectedExpiryDate.value ?: ExpirationDate.today()
+        _isExpiryBottomSheetVisible.value = true
+    }
+
+    fun dismissExpiryBottomSheet() {
+        _isExpiryBottomSheetVisible.value = false
+    }
+
+    fun updateDraftExpiryDate(date: ExpirationDate) {
+        _draftExpiryDate.value = date
+    }
+
+    fun confirmExpiryDate() {
+        _selectedExpiryDate.value = _draftExpiryDate.value
+        _isExpiryBottomSheetVisible.value = false
+    }
+
+    fun showBarcodeInfoSheet() {
+        _infoSheetType.value = CouponRegistrationInfoSheetType.BARCODE_INFO
+    }
+
+    fun showNotificationInfoSheet() {
+        _infoSheetType.value = CouponRegistrationInfoSheetType.NOTIFICATION_INFO
+    }
+
+    fun dismissInfoSheet() {
+        _infoSheetType.value = CouponRegistrationInfoSheetType.NONE
+    }
 
     /**
      * 등록/수정 폼 데이터를 실제 기프티콘으로 저장한다.
@@ -77,10 +256,10 @@ class CouponRegistrationViewModel @Inject constructor(
                 } else {
                     updateGifticonUseCase(gifticon)
                 }
-                _isRegistered.value = true
+                _effect.value = CouponRegistrationEffect.RegistrationCompleted
                 _isLoading.value = false
             } catch (e: Exception) {
-                _error.value = e.message ?: "쿠폰 저장에 실패했어요."
+                _effect.value = CouponRegistrationEffect.ShowMessage(e.message ?: "쿠폰 저장에 실패했어요.")
                 _isLoading.value = false
             }
         }
@@ -94,11 +273,37 @@ class CouponRegistrationViewModel @Inject constructor(
         return getGifticonByIdUseCase(id)
     }
 
-    fun consumeRegistered() {
-        _isRegistered.value = false
+    fun consumeEffect() {
+        _effect.value = null
     }
 
-    fun consumeError() {
-        _error.value = null
+    private fun updateFormState(update: CouponRegistrationFormState.() -> CouponRegistrationFormState) {
+        val current = _formState.value ?: CouponRegistrationFormState()
+        _formState.value = current.update()
+    }
+
+    private fun resetCreateForm() {
+        _formState.value = CouponRegistrationFormState()
+        _selectedExpiryDate.value = null
+        _draftExpiryDate.value = ExpirationDate.today()
+        initializedCouponId = null
+        existingGifticonForSave = null
+    }
+
+    private fun extractAmountFromMemo(memo: String?): String {
+        return memo
+            ?.removePrefix("금액권:")
+            ?.removeSuffix("원")
+            ?.trim()
+            .orEmpty()
+    }
+
+    private fun Date.toExpirationDate(): ExpirationDate {
+        val calendar = Calendar.getInstance().apply { time = this@toExpirationDate }
+        return ExpirationDate(
+            year = calendar.get(Calendar.YEAR),
+            month = calendar.get(Calendar.MONTH) + 1,
+            day = calendar.get(Calendar.DAY_OF_MONTH)
+        )
     }
 }

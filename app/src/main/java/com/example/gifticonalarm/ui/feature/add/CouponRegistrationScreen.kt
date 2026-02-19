@@ -51,9 +51,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,21 +59,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.gifticonalarm.domain.model.Gifticon
-import com.example.gifticonalarm.domain.model.GifticonType
-import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoBottomSheet
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
+import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
-import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
 import coil3.compose.AsyncImage
-import java.util.Calendar
-import java.util.Date
 
 private val RegistrationBackground = Color(0xFFFFFFFF)
 private val RegistrationAccent = Color(0xFF191970)
@@ -98,7 +89,6 @@ enum class CouponType {
 fun CouponRegistrationScreen(
     modifier: Modifier = Modifier,
     couponId: String? = null,
-    editTarget: Gifticon? = null,
     onCloseClick: () -> Unit = {},
     onThumbnailClick: () -> Unit = {},
     onThumbnailSelected: (Uri) -> Unit = {},
@@ -106,61 +96,38 @@ fun CouponRegistrationScreen(
     onExpiryDateClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {}
 ) {
-    val dateViewModel: CouponRegistrationDateViewModel = hiltViewModel()
     val registrationViewModel: CouponRegistrationViewModel = hiltViewModel()
+    val editTarget by registrationViewModel.getGifticonForEdit(couponId).observeAsState()
     val context = LocalContext.current
-    val isEditMode = couponId != null
-    var barcode by rememberSaveable { mutableStateOf("") }
-    var place by rememberSaveable { mutableStateOf("") }
-    var couponName by rememberSaveable { mutableStateOf("") }
-    var withoutBarcode by rememberSaveable { mutableStateOf(false) }
-    var couponType by rememberSaveable { mutableStateOf(CouponType.EXCHANGE) }
-    var amount by rememberSaveable { mutableStateOf("") }
-    var thumbnailUri by rememberSaveable { mutableStateOf<String?>(null) }
-    val isEditInitialized = rememberSaveable(couponId) { mutableStateOf(false) }
-    val infoSheetTypeState = rememberSaveable { mutableStateOf(CouponRegistrationInfoSheetType.NONE) }
-    val infoSheetType = infoSheetTypeState.value
-    val isExpiryBottomSheetVisible by dateViewModel.isExpiryBottomSheetVisible.observeAsState(false)
-    val selectedExpiryDate by dateViewModel.selectedExpiryDate.observeAsState()
-    val draftExpiryDate by dateViewModel.draftExpiryDate.observeAsState(ExpirationDate.today())
+    val formState by registrationViewModel.formState.observeAsState(
+        CouponRegistrationFormState(
+            couponId = couponId,
+            isEditMode = couponId != null
+        )
+    )
+    val infoSheetType by registrationViewModel.infoSheetType.observeAsState(CouponRegistrationInfoSheetType.NONE)
+    val isExpiryBottomSheetVisible by registrationViewModel.isExpiryBottomSheetVisible.observeAsState(false)
+    val selectedExpiryDate by registrationViewModel.selectedExpiryDate.observeAsState()
+    val draftExpiryDate by registrationViewModel.draftExpiryDate.observeAsState(ExpirationDate.today())
     val isRegistering by registrationViewModel.isLoading.observeAsState(false)
-    val registerError by registrationViewModel.error.observeAsState()
-    val isRegistered by registrationViewModel.isRegistered.observeAsState(false)
+    val effect by registrationViewModel.effect.observeAsState()
     val expiryDate = selectedExpiryDate?.toDisplayText().orEmpty()
 
-    LaunchedEffect(couponId, editTarget?.id, isEditInitialized.value) {
-        if (couponId != null && editTarget != null && !isEditInitialized.value) {
-            barcode = editTarget.barcode
-            place = editTarget.brand
-            couponName = editTarget.name
-            withoutBarcode = editTarget.barcode.isBlank()
-            couponType = if (editTarget.type == GifticonType.AMOUNT) {
-                CouponType.AMOUNT
-            } else {
-                CouponType.EXCHANGE
-            }
-            amount = if (editTarget.type == GifticonType.AMOUNT) {
-                extractAmountFromMemo(editTarget.memo)
-            } else {
-                ""
-            }
-            thumbnailUri = editTarget.imageUri
-            dateViewModel.setSelectedExpiryDate(editTarget.expiryDate.toExpirationDate())
-            isEditInitialized.value = true
-        }
+    LaunchedEffect(couponId, editTarget?.id) {
+        registrationViewModel.initializeForm(couponId, editTarget)
     }
 
-    LaunchedEffect(registerError) {
-        registerError?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            registrationViewModel.consumeError()
-        }
-    }
-
-    LaunchedEffect(isRegistered) {
-        if (isRegistered) {
-            onRegisterClick()
-            registrationViewModel.consumeRegistered()
+    LaunchedEffect(effect) {
+        when (val currentEffect = effect) {
+            is CouponRegistrationEffect.ShowMessage -> {
+                Toast.makeText(context, currentEffect.message, Toast.LENGTH_SHORT).show()
+                registrationViewModel.consumeEffect()
+            }
+            CouponRegistrationEffect.RegistrationCompleted -> {
+                onRegisterClick()
+                registrationViewModel.consumeEffect()
+            }
+            null -> Unit
         }
     }
 
@@ -168,7 +135,7 @@ fun CouponRegistrationScreen(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            thumbnailUri = uri.toString()
+            registrationViewModel.updateThumbnailUri(uri.toString())
             onThumbnailSelected(uri)
         }
     }
@@ -183,7 +150,7 @@ fun CouponRegistrationScreen(
                 ),
                 title = {
                     Text(
-                        text = if (isEditMode) "수정하기" else "등록하기",
+                        text = if (formState.isEditMode) "수정하기" else "등록하기",
                         modifier = Modifier.fillMaxWidth(),
                         color = RegistrationTextPrimary,
                         style = MaterialTheme.typography.titleMedium,
@@ -212,61 +179,7 @@ fun CouponRegistrationScreen(
                 border = BorderStroke(1.dp, RegistrationDivider)
             ) {
                 Button(
-                    onClick = {
-                        when {
-                            place.isBlank() -> {
-                                Toast.makeText(
-                                    context,
-                                    "사용처를 입력해 주세요.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            couponName.isBlank() -> {
-                                Toast.makeText(
-                                    context,
-                                    "쿠폰명을 입력해 주세요.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            expiryDate.isBlank() -> {
-                                Toast.makeText(
-                                    context,
-                                    "유효기한을 선택해 주세요.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            else -> {
-                                val parsedExpiry = selectedExpiryDate ?: return@Button
-                                val calendar = Calendar.getInstance().apply {
-                                    set(Calendar.YEAR, parsedExpiry.year)
-                                    set(Calendar.MONTH, parsedExpiry.month - 1)
-                                    set(Calendar.DAY_OF_MONTH, parsedExpiry.day)
-                                    set(Calendar.HOUR_OF_DAY, 23)
-                                    set(Calendar.MINUTE, 59)
-                                    set(Calendar.SECOND, 59)
-                                    set(Calendar.MILLISECOND, 0)
-                                }
-                                val memo = when (couponType) {
-                                    CouponType.AMOUNT -> amount.ifBlank { null }?.let { "금액권: ${it}원" }
-                                    CouponType.EXCHANGE -> null
-                                }
-                                registrationViewModel.saveGifticon(
-                                    couponId = couponId,
-                                    existingGifticon = editTarget,
-                                    name = couponName.trim(),
-                                    brand = place.trim(),
-                                    barcode = if (withoutBarcode) "" else barcode.trim(),
-                                    expiryDate = calendar.time,
-                                    imageUri = thumbnailUri,
-                                    memo = memo,
-                                    type = when (couponType) {
-                                        CouponType.EXCHANGE -> GifticonType.EXCHANGE
-                                        CouponType.AMOUNT -> GifticonType.AMOUNT
-                                    }
-                                )
-                            }
-                        }
-                    },
+                    onClick = { registrationViewModel.submit() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 12.dp)
@@ -279,7 +192,7 @@ fun CouponRegistrationScreen(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = if (isEditMode) "수정하기" else "등록하기",
+                        text = if (formState.isEditMode) "수정하기" else "등록하기",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -296,7 +209,7 @@ fun CouponRegistrationScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             ThumbnailSection(
-                thumbnailUri = thumbnailUri,
+                thumbnailUri = formState.thumbnailUri,
                 onThumbnailClick = {
                     onThumbnailClick()
                     photoPickerLauncher.launch(
@@ -313,23 +226,23 @@ fun CouponRegistrationScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             UnderlineInputField(
-                value = if (withoutBarcode) "바코드 번호 없음" else barcode,
-                onValueChange = { barcode = it },
+                value = if (formState.withoutBarcode) "바코드 번호 없음" else formState.barcode,
+                onValueChange = registrationViewModel::updateBarcode,
                 placeholder = "바코드 번호를 입력해주세요",
                 keyboardType = KeyboardType.Ascii,
-                enabled = !withoutBarcode,
+                enabled = !formState.withoutBarcode,
                 disabledContainerColor = Color(0xFFF3F4F6),
                 disabledTextColor = Color(0xFF9CA3AF)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            BarcodePreviewCard(barcode = barcode)
+            BarcodePreviewCard(barcode = formState.barcode)
             Spacer(modifier = Modifier.height(10.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
-                    checked = withoutBarcode,
-                    onCheckedChange = { withoutBarcode = it }
+                    checked = formState.withoutBarcode,
+                    onCheckedChange = registrationViewModel::updateWithoutBarcode
                 )
                 Text(
                     text = "바코드 번호 없이 등록하기",
@@ -339,7 +252,7 @@ fun CouponRegistrationScreen(
                 IconButton(
                     onClick = {
                         onNoBarcodeInfoClick()
-                        infoSheetTypeState.value = CouponRegistrationInfoSheetType.BARCODE_INFO
+                        registrationViewModel.showBarcodeInfoSheet()
                     },
                     modifier = Modifier.size(22.dp)
                 ) {
@@ -361,14 +274,14 @@ fun CouponRegistrationScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             UnderlineInputField(
-                value = place,
-                onValueChange = { place = it },
+                value = formState.place,
+                onValueChange = registrationViewModel::updatePlace,
                 placeholder = "사용처를 입력해 주세요. (필수)"
             )
             Spacer(modifier = Modifier.height(8.dp))
             UnderlineInputField(
-                value = couponName,
-                onValueChange = { couponName = it },
+                value = formState.couponName,
+                onValueChange = registrationViewModel::updateCouponName,
                 placeholder = "쿠폰명을 입력해 주세요. (필수)"
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -379,7 +292,7 @@ fun CouponRegistrationScreen(
                 readOnly = true,
                 onClick = {
                     onExpiryDateClick()
-                    dateViewModel.openExpiryBottomSheet()
+                    registrationViewModel.openExpiryBottomSheet()
                 },
                 showExpandIcon = true
             )
@@ -397,8 +310,8 @@ fun CouponRegistrationScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
-                    selected = couponType == CouponType.EXCHANGE,
-                    onClick = { couponType = CouponType.EXCHANGE },
+                    selected = formState.couponType == CouponType.EXCHANGE,
+                    onClick = { registrationViewModel.updateCouponType(CouponType.EXCHANGE) },
                     label = { Text("교환권") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = RegistrationAccent,
@@ -407,8 +320,8 @@ fun CouponRegistrationScreen(
                     modifier = Modifier.weight(1f)
                 )
                 FilterChip(
-                    selected = couponType == CouponType.AMOUNT,
-                    onClick = { couponType = CouponType.AMOUNT },
+                    selected = formState.couponType == CouponType.AMOUNT,
+                    onClick = { registrationViewModel.updateCouponType(CouponType.AMOUNT) },
                     label = { Text("금액권") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = RegistrationAccent,
@@ -418,7 +331,7 @@ fun CouponRegistrationScreen(
                 )
             }
 
-            if (couponType == CouponType.AMOUNT) {
+            if (formState.couponType == CouponType.AMOUNT) {
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(
                     text = "금액 입력",
@@ -428,8 +341,8 @@ fun CouponRegistrationScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 UnderlineInputField(
-                    value = amount,
-                    onValueChange = { input -> amount = input.filter { it.isDigit() } },
+                    value = formState.amount,
+                    onValueChange = registrationViewModel::updateAmount,
                     placeholder = "금액을 입력해주세요",
                     keyboardType = KeyboardType.Number,
                     suffixText = "원"
@@ -444,7 +357,7 @@ fun CouponRegistrationScreen(
             ) {
                 IconButton(
                     onClick = {
-                        infoSheetTypeState.value = CouponRegistrationInfoSheetType.NOTIFICATION_INFO
+                        registrationViewModel.showNotificationInfoSheet()
                     },
                     modifier = Modifier.size(16.dp)
                 ) {
@@ -469,21 +382,19 @@ fun CouponRegistrationScreen(
     if (isExpiryBottomSheetVisible) {
         ExpirationDateSelectionBottomSheet(
             selectedDate = draftExpiryDate,
-            onDateSelected = dateViewModel::updateDraftExpiryDate,
-            onConfirmClick = dateViewModel::confirmExpiryDate,
-            onDismissRequest = dateViewModel::dismissExpiryBottomSheet,
-            onNoExpiryClick = dateViewModel::dismissExpiryBottomSheet
+            onDateSelected = registrationViewModel::updateDraftExpiryDate,
+            onConfirmClick = registrationViewModel::confirmExpiryDate,
+            onDismissRequest = registrationViewModel::dismissExpiryBottomSheet,
+            onNoExpiryClick = registrationViewModel::dismissExpiryBottomSheet
         )
     }
 
     if (infoSheetType != CouponRegistrationInfoSheetType.NONE) {
-            CouponRegistrationInfoBottomSheet(
-                type = infoSheetType,
-                onDismissRequest = {
-                    infoSheetTypeState.value = CouponRegistrationInfoSheetType.NONE
-                }
-            )
-        }
+        CouponRegistrationInfoBottomSheet(
+            type = infoSheetType,
+            onDismissRequest = registrationViewModel::dismissInfoSheet
+        )
+    }
 }
 
 @Composable
@@ -671,29 +582,4 @@ private fun BarcodePreviewCard(barcode: String) {
             )
         }
     }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-@Composable
-private fun CouponRegistrationScreenPreview() {
-    GifticonAlarmTheme {
-        CouponRegistrationScreen()
-    }
-}
-
-private fun extractAmountFromMemo(memo: String?): String {
-    return memo
-        ?.removePrefix("금액권:")
-        ?.removeSuffix("원")
-        ?.trim()
-        .orEmpty()
-}
-
-private fun Date.toExpirationDate(): ExpirationDate {
-    val calendar = Calendar.getInstance().apply { time = this@toExpirationDate }
-    return ExpirationDate(
-        year = calendar.get(Calendar.YEAR),
-        month = calendar.get(Calendar.MONTH) + 1,
-        day = calendar.get(Calendar.DAY_OF_MONTH)
-    )
 }

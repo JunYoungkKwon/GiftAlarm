@@ -38,16 +38,32 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
+import com.example.gifticonalarm.ui.feature.home.model.HomeBadgeType
+import com.example.gifticonalarm.ui.feature.home.model.HomeCouponItem
+import com.example.gifticonalarm.ui.feature.home.model.HomeFocusItem
+import com.example.gifticonalarm.ui.feature.home.model.HomeUiState
+import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
+import com.example.gifticonalarm.ui.theme.GifticonDanger
+import com.example.gifticonalarm.ui.theme.GifticonDangerBackground
+import com.example.gifticonalarm.ui.theme.GifticonDangerStrong
+import com.example.gifticonalarm.ui.theme.GifticonOverlayBlack20
+import com.example.gifticonalarm.ui.theme.GifticonOverlayBlack80
+import com.example.gifticonalarm.ui.theme.GifticonOverlayBlack12
+import com.example.gifticonalarm.ui.theme.GifticonSurface
+import com.example.gifticonalarm.ui.theme.GifticonTextPrimaryAlt
+import com.example.gifticonalarm.ui.theme.GifticonTextSecondary
+import com.example.gifticonalarm.ui.theme.GifticonTextTertiary
+import com.example.gifticonalarm.ui.theme.GifticonTextUsed
+import com.example.gifticonalarm.ui.theme.GifticonWarning
+import com.example.gifticonalarm.ui.theme.GifticonWhite
 
-private val HomeBackground = Color(0xFFFFFFFF)
-private val HomePrimary = Color(0xFF191970)
-private val HomeSurface = Color(0xFFF6F6F8)
-private val HomeTextPrimary = Color(0xFF111827)
-private val HomeTextSecondary = Color(0xFF6B7280)
+private val HomeBackground = GifticonWhite
+private val HomePrimary = GifticonBrandPrimary
+private val HomeSurface = GifticonSurface
+private val HomeTextPrimary = GifticonTextPrimaryAlt
+private val HomeTextSecondary = GifticonTextSecondary
 
 /**
  * Stitch 홈 대시보드 디자인을 반영한 UI 전용 홈 화면.
@@ -55,7 +71,10 @@ private val HomeTextSecondary = Color(0xFF6B7280)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    state: HomeUiState = HomeUiState.preview(),
+    state: HomeUiState = HomeUiState(
+        focus = null,
+        coupons = emptyList()
+    ),
     onNotificationClick: () -> Unit = {},
     onPrimaryActionClick: () -> Unit = {},
     onSortClick: () -> Unit = {},
@@ -68,7 +87,7 @@ fun HomeScreen(
             FloatingActionButton(
                 onClick = onPrimaryActionClick,
                 containerColor = HomePrimary,
-                contentColor = Color.White,
+                contentColor = GifticonWhite,
                 shape = CircleShape
             ) {
                 Icon(imageVector = Icons.Outlined.Add, contentDescription = "추가")
@@ -136,7 +155,7 @@ private fun HomeHeader(onNotificationClick: () -> Unit) {
                     .size(8.dp)
                     .align(Alignment.TopEnd)
                     .clip(CircleShape)
-                    .background(Color(0xFFEF4444))
+                    .background(GifticonDanger)
             )
         }
     }
@@ -144,6 +163,8 @@ private fun HomeHeader(onNotificationClick: () -> Unit) {
 
 @Composable
 private fun FocusSection(focus: HomeFocusItem) {
+    val focusBadgeStyle = resolveHomeFocusBadgeStyle(focus.dday)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -160,7 +181,7 @@ private fun FocusSection(focus: HomeFocusItem) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = GifticonWhite),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Box(
@@ -182,8 +203,8 @@ private fun FocusSection(focus: HomeFocusItem) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Color(0x33000000),
-                                    Color(0xCC000000)
+                                    GifticonOverlayBlack20,
+                                    GifticonOverlayBlack80
                                 )
                             )
                         )
@@ -195,10 +216,10 @@ private fun FocusSection(focus: HomeFocusItem) {
                         .align(Alignment.TopEnd)
                         .padding(16.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(HomePrimary)
+                        .background(focusBadgeStyle.containerColor)
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White,
+                    color = focusBadgeStyle.textColor,
                     fontWeight = FontWeight.ExtraBold
                 )
 
@@ -211,13 +232,13 @@ private fun FocusSection(focus: HomeFocusItem) {
                     Text(
                         text = focus.brand,
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = GifticonWhite.copy(alpha = 0.85f),
                         fontWeight = FontWeight.Medium
                     )
                     Text(
                         text = focus.title,
                         style = MaterialTheme.typography.headlineSmall,
-                        color = Color.White,
+                        color = GifticonWhite,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -230,22 +251,81 @@ private fun FocusSection(focus: HomeFocusItem) {
                         Text(
                             text = focus.expireText,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = GifticonWhite.copy(alpha = 0.7f)
                         )
                         Text(
                             text = "사용하기",
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White.copy(alpha = 0.2f))
+                                .background(GifticonWhite.copy(alpha = 0.2f))
                                 .padding(horizontal = 14.dp, vertical = 8.dp),
                             style = MaterialTheme.typography.labelMedium,
-                            color = Color.White,
+                            color = GifticonWhite,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
         }
+    }
+}
+
+private data class FocusBadgeStyle(
+    val containerColor: Color,
+    val textColor: Color
+)
+
+private data class CouponBadgeColors(
+    val containerColor: Color,
+    val textColor: Color
+)
+
+private fun resolveHomeFocusBadgeStyle(ddayText: String): FocusBadgeStyle {
+    val normalized = ddayText.trim()
+    val dday = normalized.removePrefix("D-").toLongOrNull()
+
+    return when {
+        dday != null && dday in 1L..7L -> FocusBadgeStyle(
+            containerColor = GifticonDanger,
+            textColor = GifticonWhite
+        )
+        dday != null && dday in 8L..15L -> FocusBadgeStyle(
+            containerColor = GifticonBrandPrimary,
+            textColor = GifticonWhite
+        )
+        else -> FocusBadgeStyle(
+            containerColor = GifticonWarning,
+            textColor = GifticonWhite
+        )
+    }
+}
+
+private fun resolveHomeCouponBadgeColors(type: HomeBadgeType): CouponBadgeColors {
+    return when (type) {
+        HomeBadgeType.USED -> CouponBadgeColors(
+            containerColor = GifticonWhite,
+            textColor = GifticonTextUsed
+        )
+
+        HomeBadgeType.EXPIRED -> CouponBadgeColors(
+            containerColor = GifticonDangerBackground,
+            textColor = GifticonDangerStrong
+        )
+
+        HomeBadgeType.URGENT -> CouponBadgeColors(
+            containerColor = GifticonDanger,
+            textColor = GifticonWhite
+        )
+
+        HomeBadgeType.NORMAL -> CouponBadgeColors(
+            containerColor = GifticonBrandPrimary,
+            textColor = GifticonWhite
+        )
+
+        HomeBadgeType.SAFE -> CouponBadgeColors(
+            containerColor = GifticonWarning,
+            textColor = GifticonWhite
+        )
     }
 }
 
@@ -279,13 +359,13 @@ private fun CouponSection(
                 Text(
                     text = "최신순",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF9CA3AF),
+                    color = GifticonTextTertiary,
                     fontWeight = FontWeight.SemiBold
                 )
                 Icon(
                     imageVector = Icons.Outlined.ExpandMore,
                     contentDescription = null,
-                    tint = Color(0xFF9CA3AF),
+                    tint = GifticonTextTertiary,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -318,6 +398,8 @@ private fun CouponCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val badgeColors = resolveHomeCouponBadgeColors(item.badgeType)
+
     Card(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
@@ -342,13 +424,13 @@ private fun CouponCard(
                     Text(
                         text = item.badge,
                         modifier = Modifier
-                            .align(if (item.badgeAtStart) Alignment.TopStart else Alignment.TopEnd)
+                            .align(Alignment.TopEnd)
                             .padding(8.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(item.badgeColor)
+                            .background(badgeColors.containerColor)
                             .padding(horizontal = 6.dp, vertical = 3.dp),
                         style = MaterialTheme.typography.labelSmall,
-                        color = item.badgeTextColor,
+                        color = badgeColors.textColor,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -357,7 +439,7 @@ private fun CouponCard(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.12f))
+                            .background(GifticonOverlayBlack12)
                     )
                 }
             }
@@ -366,7 +448,7 @@ private fun CouponCard(
             Text(
                 text = item.brand,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (item.isUsed) Color(0xFF9CA3AF) else HomePrimary,
+                color = if (item.isUsed) GifticonTextTertiary else HomePrimary,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -374,7 +456,7 @@ private fun CouponCard(
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (item.isUsed) Color(0xFF9CA3AF) else HomeTextPrimary,
+                color = if (item.isUsed) GifticonTextTertiary else HomeTextPrimary,
                 fontWeight = FontWeight.Bold,
                 textDecoration = if (item.isUsed) TextDecoration.LineThrough else TextDecoration.None,
                 maxLines = 1,
@@ -384,95 +466,10 @@ private fun CouponCard(
             Text(
                 text = item.expireText,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF9CA3AF),
+                color = GifticonTextTertiary,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
-    }
-}
-
-/**
- * 홈 대시보드용 UI 상태 모델.
- */
-data class HomeUiState(
-    val focus: HomeFocusItem?,
-    val coupons: List<HomeCouponItem>
-) {
-    companion object {
-        fun preview(): HomeUiState = HomeUiState(
-            focus = HomeFocusItem(
-                brand = "스타벅스",
-                title = "아이스 아메리카노 T",
-                dday = "D-3",
-                expireText = "~ 2026.12.31 까지",
-                imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCoGcJf9XcwdEWX8oroZjaHnMVVflMpBWyzPmTQgOw9DL5HNIXbQSArKd_ipYeqloBEq8XsONIUl2lJH8SphOZpLfdSrHcSn3XbyYSmf9dFcZOKN7XM4KdKkblrS0a6AjpWdeOfLA5zpRzSqzzqNSWuvOVe2heH-kyCwPU3_b85_wu1RC8FovLF_rhf5ijfKhXEa887p22f7xYDZNhRMx4SVzvoPKbTYmGzm0nz3PRcHTNpWogUc99rAXjTGFHC6AxJ4Pz4mwj_ifj7"
-            ),
-            coupons = listOf(
-                HomeCouponItem(
-                    id = 1L,
-                    brand = "배스킨라빈스",
-                    name = "파인트 아이스크림",
-                    expireText = "~ 2026.01.02",
-                    badge = "D-5",
-                    badgeColor = HomePrimary,
-                    imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDQHej9W3cndWU9bq0W3mwkdTyCQhihwXx0lrY45AX-7X_cU_ibnTRdKXIbFX60yPyndbsBM6UIyLiHTq4ek67gmFh8PxbLbSSm9SZoO4AAPYdA48tKrcfykIEkstbpulreS01EkFTgY442fY-R9sAmvN65KHBN8-0s7kZcRdwGOkUKfzeqZcTjUOZ_a6rmYnf3HepcHxHkVRFQBnyS3LyNVhn3bfGdtOPF74_aCbReWow6ZgMeTdTMd3f-JXcs1ynvraXMBzlj9LDo"
-                ),
-                HomeCouponItem(
-                    id = 2L,
-                    brand = "도미노피자",
-                    name = "포테이토 피자 M + 콜라 1.25L",
-                    expireText = "~ 2026.01.04",
-                    badge = "D-7",
-                    badgeColor = Color(0xFFF97316),
-                    imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAKDs1dxnNEaaIPXtK4cQHGYXUa2MSwrhRoIesomDG1nIVW1SlPe1y-TZ5dhpDZo5w2IOXnSIvbJ82koYxiD7yCMCGjNQ6VjWG7QLCFKA7BHdsbx7AEQGCaRRCaQBkELA3jPCswdfTJtMDIG2JL2Mfbnj7ga8WclWjU6Z2-d0Sme7LQ-9oYh8soziR3ETFMwVaHBd7J0xK0g_uhDXY-CytPP7kauEbkm2aRM4He56YX_O2bRolKO0sbgTn3RtZ6nJ5vBQqB2YQWlqVG"
-                ),
-                HomeCouponItem(
-                    id = 3L,
-                    brand = "올리브영",
-                    name = "기프트카드 10,000원권",
-                    expireText = "2026.03.15 까지",
-                    badge = "사용가능",
-                    badgeAtStart = true,
-                    badgeColor = Color(0xFFE5E7EB),
-                    badgeTextColor = Color(0xFF6B7280),
-                    imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDmt4OHdC-0x4TMK6qtsrP3zBXi4vS00kKXmF1H4o6C6_4GDaCTh5ZP4_ui2B8KwXj2-Wjz5pxfqoyJJTo-JYpslqygca9gk9XUByG4Cv1qJZN_MHbUXIpizQhcCE8eKeqs5aSpSJ7qQZqeYyp8mj6mCflpH9vbq7gScLqtOlfgFT40PG4DNx7Jk8F4W0FTSCbg-KezqV_3smF88vqY5J9y1vb5TxR3E-Le1VF78kYOJIV7MJCi0MbmDJtY9Q77g_eosjNKmuhrHiMd"
-                ),
-                HomeCouponItem(
-                    id = 4L,
-                    brand = "교촌치킨",
-                    name = "허니콤보 웨지감자 세트",
-                    expireText = "2026.02.20 까지",
-                    badge = "사용가능",
-                    badgeAtStart = true,
-                    badgeColor = Color(0xFFE5E7EB),
-                    badgeTextColor = Color(0xFF6B7280),
-                    imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuA1vIbbpxXuq6hh4M6YCGfdDCTq8bXKNtHlvlNpPlmItuzBoj_OJBV4eGNNuBvqVTJw6UqZlYPqjyMoegjikF4N1QrDmKqlH5Inf4iO1pNnBdjwDy79n8GCmJ1VNehzHh3A-mangQ3IEx8ZJQp1X7QWJU8Mx3tFamZnwA2mJS8l57QK6mzINIBFMFFCqR1Tij6Kc4QWdNOJ9WfnwNigDugvL8hyzhz9jBV5L0QC4t_sm-4IX6hrieQfePmdm_A0Okv-0y7BhX3FPg5e"
-                ),
-                HomeCouponItem(
-                    id = 5L,
-                    brand = "CU 편의점",
-                    name = "모바일 금액권 5,000원",
-                    expireText = "2026.06.01 까지",
-                    badge = "사용가능",
-                    badgeAtStart = true,
-                    badgeColor = Color(0xFFE5E7EB),
-                    badgeTextColor = Color(0xFF6B7280),
-                    imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBMqRc4tprwPTT8YrbjMSQ8pfDkcR4rST4Z9E-N3t2NWT9UijMU1ApVUIPce2HsYXf3jP_Ufc5xygSR76BW0WGSalsG6eOFyTZO_qhy-s4DI3Ik-OMeubg02sRpfkPUjRIYOGKFxxqcVWeLslcvLDWvTD1olHfxw6t6l4Bb40AdJRFxrQSMxWQB1s7-OCuhG9teZJZ8xgagmuhwL3GQyfQHF1B3g3SM4Np-8ykTLzoeMwBTdJTclij3mUdJBM5IuSntyKmuxeHnfyXN"
-                ),
-                HomeCouponItem(
-                    id = 6L,
-                    brand = "메가커피",
-                    name = "아이스 아메리카노",
-                    expireText = "2025.11.10 사용함",
-                    badge = "사용완료",
-                    badgeAtStart = true,
-                    badgeColor = Color(0xFFFEE2E2),
-                    badgeTextColor = Color(0xFFDC2626),
-                    isUsed = true,
-                    imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuADuWGzcRoRFtLGdK-yIET1kPmCZY_1xLt2PtCB9kV1YAuq4B5LqHAplR3ngsx_S3-ZR3YV4JClC1Y_xOvelAlbYLC08RMMIhYxCSsz86XpPoKEsAogOtM8ER40tcmQ1bWIGJLm2niXxUN5zP6v5kW_Yhn3hcUl2qh-tebDi_p6sNfHEHtOurEvDz_XeL5i-N6PgnTkR6SFtV1EGzBmw5x1myq2xSVz_QhlEzzo-pI66B1vN9YDXmBd_0dSmV2jUUT0AwL3d1KAahNV"
-                )
-            )
-        )
     }
 }
 
@@ -489,46 +486,5 @@ private fun EmptyCouponSection() {
             style = MaterialTheme.typography.bodyMedium,
             color = HomeTextSecondary
         )
-    }
-}
-
-/**
- * Today Focus 영역 모델.
- */
-data class HomeFocusItem(
-    val brand: String,
-    val title: String,
-    val dday: String,
-    val expireText: String,
-    val imageUrl: String
-)
-
-/**
- * 쿠폰 카드 UI 모델.
- */
-data class HomeCouponItem(
-    val id: Long,
-    val brand: String,
-    val name: String,
-    val expireText: String,
-    val imageUrl: String,
-    val badge: String? = null,
-    val badgeColor: Color = HomePrimary,
-    val badgeTextColor: Color = Color.White,
-    val badgeAtStart: Boolean = false,
-    val isUsed: Boolean = false
-)
-
-@Preview(
-    name = "Home Screen",
-    showBackground = true,
-    backgroundColor = 0xFFFFFFFF,
-    widthDp = 390,
-    heightDp = 844
-)
-@Composable
-fun HomeScreenPreview() {
-    GifticonAlarmTheme {
-        HomeScreen()
     }
 }

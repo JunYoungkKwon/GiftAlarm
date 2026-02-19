@@ -40,10 +40,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
 import kotlinx.coroutines.launch
 
 private val OnboardingBackground = Color(0xFFFFFFFF)
@@ -585,45 +583,3 @@ private data class OnboardingPageUiModel(
     val title: String,
     val description: String
 )
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 390, heightDp = 844)
-@Composable
-private fun OnboardingAutoRegistrationPreview() {
-    GifticonAlarmTheme {
-        OnboardingPageContent(
-            page = OnboardingPageUiModel(
-                type = OnboardingType.AUTO_REGISTRATION,
-                title = "OCR 자동 등록",
-                description = "이미지를 불러오거나 촬영하면\n쿠폰 정보를 자동으로 입력해요."
-            )
-        )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 390, heightDp = 844)
-@Composable
-private fun OnboardingExpirationPreview() {
-    GifticonAlarmTheme {
-        OnboardingPageContent(
-            page = OnboardingPageUiModel(
-                type = OnboardingType.EXPIRATION_MANAGEMENT,
-                title = "기프티콘 만료 관리",
-                description = "만료 임박한 쿠폰을\n놓치지 않게 관리해드려요."
-            )
-        )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 390, heightDp = 844)
-@Composable
-private fun OnboardingNotificationPreview() {
-    GifticonAlarmTheme {
-        OnboardingPageContent(
-            page = OnboardingPageUiModel(
-                type = OnboardingType.NOTIFICATION,
-                title = "알림 및 잔액 확인",
-                description = "잔액권 관리부터 알림 설정까지\n한 번에 확인하세요."
-            )
-        )
-    }
-}

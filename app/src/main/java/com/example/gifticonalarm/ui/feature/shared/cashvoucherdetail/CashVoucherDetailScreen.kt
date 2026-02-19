@@ -37,19 +37,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.gifticonalarm.ui.feature.shared.components.VoucherDetailMoreMenu
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailBottomSection
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailBottomSectionUiModel
-import com.example.gifticonalarm.ui.theme.GifticonAlarmTheme
+import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
+import com.example.gifticonalarm.ui.theme.GifticonSurfaceSoft
+import com.example.gifticonalarm.ui.theme.GifticonTextPrimary
+import com.example.gifticonalarm.ui.theme.GifticonWhite
 
-private val CouponAccent = Color(0xFF191970)
-private val CouponBackground = Color(0xFFFFFFFF)
-private val CouponTextPrimary = Color(0xFF0F172A)
+private val CouponAccent = GifticonBrandPrimary
+private val CouponBackground = GifticonWhite
+private val CouponTextPrimary = GifticonTextPrimary
 
 /**
  * 금액권 상세 화면에 표시할 UI 모델.
@@ -223,7 +224,7 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
                     Surface(
                         modifier = Modifier.size(28.dp),
                         shape = CircleShape,
-                        color = Color.White
+                        color = GifticonWhite
                     ) {
                         AsyncImage(
                             model = uiModel.brandLogoUrl,
@@ -237,25 +238,25 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
                     Column {
                         Text(
                             text = uiModel.brand,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = GifticonWhite.copy(alpha = 0.85f),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
                             text = uiModel.title,
-                            color = Color.White,
+                            color = GifticonWhite,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
                 Surface(
-                    color = Color.White.copy(alpha = 0.2f),
+                    color = GifticonWhite.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
                         text = uiModel.status,
-                        color = Color.White,
+                        color = GifticonWhite,
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
@@ -265,20 +266,20 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "남은 잔액",
-                color = Color.White.copy(alpha = 0.8f),
+                color = GifticonWhite.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.labelSmall
             )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = uiModel.remainAmountText,
-                    color = Color.White,
+                    color = GifticonWhite,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "원",
-                    color = Color.White,
+                    color = GifticonWhite,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -289,19 +290,19 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color.White.copy(alpha = 0.08f))
+                    .background(GifticonWhite.copy(alpha = 0.08f))
                     .padding(horizontal = 10.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "유효기간",
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = GifticonWhite.copy(alpha = 0.85f),
                     style = MaterialTheme.typography.labelSmall
                 )
                 Text(
                     text = uiModel.expireDateText,
-                    color = Color.White,
+                    color = GifticonWhite,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -325,7 +326,7 @@ private fun ActionButtons(
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = CouponAccent,
-                contentColor = Color.White
+                contentColor = GifticonWhite
             ),
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
@@ -339,7 +340,7 @@ private fun ActionButtons(
             onClick = onImageClick,
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF1F5F9),
+                containerColor = GifticonSurfaceSoft,
                 contentColor = CouponTextPrimary
             ),
             contentPadding = PaddingValues(vertical = 12.dp)
@@ -348,17 +349,5 @@ private fun ActionButtons(
             Spacer(modifier = Modifier.width(4.dp))
             Text("교환권 이미지", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
         }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, widthDp = 390, heightDp = 844)
-@Composable
-private fun CashVoucherDetailScreenPreview() {
-    GifticonAlarmTheme {
-        CashVoucherDetailScreen(
-            couponId = "1",
-            onNavigateBack = {},
-            uiModel = CashVoucherDetailUiModel.placeholder(couponId = "1")
-        )
     }
 }
