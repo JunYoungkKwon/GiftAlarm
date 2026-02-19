@@ -22,6 +22,8 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
@@ -156,21 +158,25 @@ private fun HomeHeader(onNotificationClick: () -> Unit) {
             color = HomePrimary
         )
 
-        Box {
-            IconButton(onClick = onNotificationClick) {
+        BadgedBox(
+            badge = {
+                Badge(
+                    containerColor = GifticonDanger,
+                    modifier = Modifier.size(8.dp)
+                )
+            }
+        ) {
+            IconButton(
+                onClick = onNotificationClick,
+                modifier = Modifier.size(32.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.NotificationsNone,
                     contentDescription = "알림",
-                    tint = HomeTextSecondary
+                    tint = HomeTextSecondary,
+                    modifier = Modifier.size(25.dp)
                 )
             }
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .align(Alignment.TopEnd)
-                    .clip(CircleShape)
-                    .background(GifticonDanger)
-            )
         }
     }
 }
