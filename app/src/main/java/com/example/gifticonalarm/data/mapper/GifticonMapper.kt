@@ -15,7 +15,8 @@ fun GifticonEntity.toDomain(): Gifticon {
         imageUri = imageUri,
         memo = memo,
         isUsed = isUsed,
-        type = runCatching { GifticonType.valueOf(type) }.getOrDefault(GifticonType.EXCHANGE)
+        type = runCatching { GifticonType.valueOf(type) }.getOrDefault(GifticonType.EXCHANGE),
+        lastModifiedAt = Date(lastModifiedAt)
     )
 }
 
@@ -29,6 +30,7 @@ fun Gifticon.toEntity(): GifticonEntity {
         imageUri = imageUri,
         memo = memo,
         isUsed = isUsed,
-        type = type.name
+        type = type.name,
+        lastModifiedAt = lastModifiedAt.time
     )
 }

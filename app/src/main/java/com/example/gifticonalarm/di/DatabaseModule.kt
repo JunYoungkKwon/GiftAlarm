@@ -26,6 +26,7 @@ object DatabaseModule {
             "gifticon_database"
         )
             .addMigrations(GifticonDatabase.MIGRATION_1_2)
+            .addMigrations(GifticonDatabase.MIGRATION_2_3)
             .build()
     }
 

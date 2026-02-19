@@ -14,5 +14,6 @@ data class GifticonEntity(
     val imageUri: String?,
     val memo: String?,
     val isUsed: Boolean,
-    val type: String = "EXCHANGE"
+    val type: String = "EXCHANGE",
+    val lastModifiedAt: Long = 0L
 )

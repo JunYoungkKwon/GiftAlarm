@@ -29,7 +29,6 @@ class HomeViewModel @Inject constructor(
 
     val gifticons: LiveData<List<Gifticon>> = getAllGifticonsUseCase()
     private val _selectedSort = MutableLiveData(HomeSortType.LATEST)
-    val selectedSort: LiveData<HomeSortType> = _selectedSort
 
     val uiState: LiveData<HomeUiState> = MediatorLiveData<HomeUiState>().apply {
         val update = {

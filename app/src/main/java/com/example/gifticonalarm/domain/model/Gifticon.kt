@@ -19,5 +19,6 @@ data class Gifticon(
     val imageUri: String? = null,
     val memo: String? = null,
     val isUsed: Boolean = false,
-    val type: GifticonType = GifticonType.EXCHANGE
+    val type: GifticonType = GifticonType.EXCHANGE,
+    val lastModifiedAt: Date = Date()
 )

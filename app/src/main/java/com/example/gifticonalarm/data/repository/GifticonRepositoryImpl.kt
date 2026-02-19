@@ -8,6 +8,7 @@ import com.example.gifticonalarm.data.mapper.toEntity
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.repository.GifticonRepository
 import java.util.Calendar
+import java.util.Date
 import javax.inject.Inject
 
 class GifticonRepositoryImpl @Inject constructor(
@@ -25,11 +26,13 @@ class GifticonRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertGifticon(gifticon: Gifticon): Long {
-        return gifticonDao.insertGifticon(gifticon.toEntity())
+        val now = Date()
+        return gifticonDao.insertGifticon(gifticon.copy(lastModifiedAt = now).toEntity())
     }
 
     override suspend fun updateGifticon(gifticon: Gifticon) {
-        gifticonDao.updateGifticon(gifticon.toEntity())
+        val now = Date()
+        gifticonDao.updateGifticon(gifticon.copy(lastModifiedAt = now).toEntity())
     }
 
     override suspend fun deleteGifticon(gifticon: Gifticon) {
