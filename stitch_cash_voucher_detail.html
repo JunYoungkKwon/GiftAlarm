@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>금액권 상세 정보</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#191970",
+                        "primary-light": "#2a2a8c",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#121220",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "3xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        @layer base {
+            body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            }
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .bottom-sheet-transition {
+            transition: transform 0.3s ease-out;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display min-h-screen flex justify-center">
+<div class="w-full max-w-md bg-white dark:bg-gray-900 min-h-screen shadow-2xl relative flex flex-col overflow-hidden">
+<header class="flex items-center justify-between px-4 py-4 bg-white dark:bg-gray-900 sticky top-0 z-10">
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
+<span class="material-icons">arrow_back_ios_new</span>
+</button>
+<h1 class="text-lg font-bold text-slate-900 dark:text-white">금액권 상세 정보</h1>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
+<span class="material-icons">more_horiz</span>
+</button>
+</header>
+<main class="flex-1 px-5 pt-4 pb-48 overflow-y-auto">
+<div class="relative overflow-hidden rounded-xl bg-primary text-white shadow-lg mb-6">
+<div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-5"></div>
+<div class="absolute bottom-0 left-0 -ml-8 -mb-8 w-40 h-40 rounded-full bg-white opacity-5"></div>
+<div class="p-6 relative z-10">
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-white p-1 overflow-hidden">
+<img alt="Brand Logo Icon" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXVWYahb8gPbQN0cgsRi5zK9FKYl2Hy4pcMW13H2rafEVzYzFh6EFlFpNyyKaJfmw5hXjnAaGKgOTUme6FFpdjLyt2HfAdvf4AuYNExmaFc95S4Kdzj4UbJuTd-7FnOl4msBfNkyakzIXVuoHQTroSR8iUFfAJFsapq_JyzJqORe8kTGMwr7EjPtINS1mZHKAfAgpxM8R9W5Yl9SjXYIYJVc34QmoWsCCIRG13WJpgzPqVhAhS0wUAK6QV_fZh21BMlltykcQNeYKG"/>
+</div>
+<div>
+<p class="text-sm text-blue-100 font-medium opacity-90">스타벅스</p>
+<h2 class="text-lg font-semibold tracking-tight">e카드 5만원 교환권</h2>
+</div>
+</div>
+<span class="bg-white/20 text-xs px-2 py-1 rounded text-white font-medium">사용가능</span>
+</div>
+<div class="mt-4">
+<p class="text-sm text-blue-200 mb-1">남은 잔액</p>
+<div class="flex items-baseline">
+<span class="text-4xl font-bold tracking-tight">32,500</span>
+<span class="text-xl ml-1 font-medium opacity-80">원</span>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-white/10 flex justify-between text-sm text-blue-100">
+<span>유효기간</span>
+<span class="font-medium">2024.12.31 까지</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3 mb-8">
+<button class="flex items-center justify-center space-x-2 py-3 px-4 bg-primary text-white rounded-lg font-medium shadow-sm hover:bg-primary-light transition-colors">
+<span class="material-icons text-sm">add</span>
+<span>사용 내역 추가</span>
+</button>
+<button class="flex items-center justify-center space-x-2 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-icons text-sm">image</span>
+<span>교환권 이미지</span>
+</button>
+</div>
+<div>
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">사용 내역</h3>
+<span class="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">총 3건</span>
+</div>
+<div class="space-y-4 relative">
+<div class="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-200 dark:bg-slate-800 -z-0"></div>
+<div class="flex items-start group relative z-10">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:border-primary group-hover:text-primary transition-colors">
+<span class="material-icons text-lg">local_cafe</span>
+</div>
+<div class="ml-4 flex-1 pt-1 pb-4 border-b border-slate-100 dark:border-slate-800">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-slate-900 dark:text-white font-semibold">스타벅스 강남점</p>
+<p class="text-xs text-slate-500 mt-0.5">2023.11.15 14:30</p>
+</div>
+<span class="text-slate-900 dark:text-white font-bold">-4,500원</span>
+</div>
+</div>
+</div>
+<div class="flex items-start group relative z-10">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:border-primary group-hover:text-primary transition-colors">
+<span class="material-icons text-lg">local_cafe</span>
+</div>
+<div class="ml-4 flex-1 pt-1 pb-4 border-b border-slate-100 dark:border-slate-800">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-slate-900 dark:text-white font-semibold">스타벅스 홍대입구역점</p>
+<p class="text-xs text-slate-500 mt-0.5">2023.10.02 09:15</p>
+</div>
+<span class="text-slate-900 dark:text-white font-bold">-6,200원</span>
+</div>
+</div>
+</div>
+<div class="flex items-start group relative z-10">
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:border-primary group-hover:text-primary transition-colors">
+<span class="material-icons text-lg">cake</span>
+</div>
+<div class="ml-4 flex-1 pt-1 pb-4 border-b border-transparent">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-slate-900 dark:text-white font-semibold">스타벅스 코엑스몰점</p>
+<p class="text-xs text-slate-500 mt-0.5">2023.09.28 18:45</p>
+</div>
+<span class="text-slate-900 dark:text-white font-bold">-6,800원</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-8">
+<div class="bg-background-light dark:bg-slate-800 rounded-lg p-4">
+<div class="flex items-center space-x-2 mb-2">
+<span class="material-icons text-slate-400 text-sm">edit_note</span>
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300">메모</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                        친구 생일 선물로 받은 기프티콘. 유효기간 연장 1회 완료함.
+                    </p>
+</div>
+</div>
+</main>
+<div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] p-6 pb-safe z-20">
+<div class="flex flex-col items-center">
+<div class="w-12 h-1 bg-slate-200 dark:bg-slate-600 rounded-full mb-6"></div>
+<div class="w-full bg-white p-4 rounded-lg border border-slate-200 dark:border-slate-700 flex flex-col items-center">
+<div class="w-full h-16 relative overflow-hidden mb-3">
+<div class="absolute inset-0 flex items-center justify-center">
+<div aria-label="Barcode graphic" class="h-full w-full bg-[repeating-linear-gradient(90deg,black,black_2px,transparent_2px,transparent_4px,black_4px,black_6px,transparent_6px,transparent_9px)] opacity-80"></div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-xl font-mono font-bold tracking-widest text-slate-900">1234 5678 9012</span>
+</div>
+</div>
+<button class="mt-4 w-full py-3 text-primary dark:text-white font-medium text-sm flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors">
+<span class="material-icons mr-2 text-lg">fullscreen</span>
+                    바코드 크게 보기
+                </button>
+</div>
+</div>
+<div class="absolute inset-0 bg-black/40 z-40 transition-opacity"></div>
+<div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl z-50 flex flex-col pb-safe">
+<div class="flex justify-center pt-3 pb-2">
+<div class="w-10 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+</div>
+<div class="px-2 pt-2 pb-8">
+<button class="w-full flex items-center px-6 py-4 space-x-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-slate-500">edit</span>
+<span class="text-base font-medium text-slate-800 dark:text-slate-200">수정하기</span>
+</button>
+<div class="h-[1px] bg-slate-100 dark:bg-slate-800 mx-6"></div>
+<button class="w-full flex items-center px-6 py-4 space-x-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-red-500">delete</span>
+<span class="text-base font-medium text-red-500">삭제하기</span>
+</button>
+</div>
+</div>
+</div>
+
+</body></html>

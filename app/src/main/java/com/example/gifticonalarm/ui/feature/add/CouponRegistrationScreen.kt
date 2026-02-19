@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gifticonalarm.domain.model.GifticonType
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoBottomSheet
@@ -227,7 +228,11 @@ fun CouponRegistrationScreen(
                                     barcode = if (withoutBarcode) "" else barcode.trim(),
                                     expiryDate = calendar.time,
                                     imageUri = thumbnailUri,
-                                    memo = memo
+                                    memo = memo,
+                                    type = when (couponType) {
+                                        CouponType.EXCHANGE -> GifticonType.EXCHANGE
+                                        CouponType.AMOUNT -> GifticonType.AMOUNT
+                                    }
                                 )
                             }
                         }

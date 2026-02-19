@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun HomeRoute(
     onNavigateToAdd: () -> Unit = {},
-    onNavigateToCouponDetail: (String) -> Unit = {},
+    onNavigateToCashVoucherDetail: (String) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val gifticons by viewModel.gifticons.observeAsState(emptyList())
@@ -26,7 +26,7 @@ fun HomeRoute(
         state = state,
         onPrimaryActionClick = onNavigateToAdd,
         onCouponClick = { couponId ->
-            onNavigateToCouponDetail(couponId.toString())
+            onNavigateToCashVoucherDetail(couponId.toString())
         }
     )
 }

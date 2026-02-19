@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gifticonalarm.domain.model.Gifticon
+import com.example.gifticonalarm.domain.model.GifticonType
 import com.example.gifticonalarm.domain.usecase.AddGifticonUseCase
 import com.example.gifticonalarm.domain.usecase.SaveGifticonImageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,7 +40,8 @@ class CouponRegistrationViewModel @Inject constructor(
         barcode: String,
         expiryDate: Date,
         imageUri: String?,
-        memo: String?
+        memo: String?,
+        type: GifticonType
     ) {
         viewModelScope.launch {
             try {
@@ -54,7 +56,8 @@ class CouponRegistrationViewModel @Inject constructor(
                     barcode = barcode,
                     imageUri = persistedImageUri,
                     memo = memo,
-                    isUsed = false
+                    isUsed = false,
+                    type = type
                 )
                 addGifticonUseCase(gifticon)
                 _isRegistered.value = true

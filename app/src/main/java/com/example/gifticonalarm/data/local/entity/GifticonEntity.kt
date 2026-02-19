@@ -13,5 +13,6 @@ data class GifticonEntity(
     val barcode: String,
     val imageUri: String?,
     val memo: String?,
-    val isUsed: Boolean
+    val isUsed: Boolean,
+    val type: String = "EXCHANGE"
 )

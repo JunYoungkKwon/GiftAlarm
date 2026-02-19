@@ -24,7 +24,9 @@ object DatabaseModule {
             context,
             GifticonDatabase::class.java,
             "gifticon_database"
-        ).build()
+        )
+            .addMigrations(GifticonDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides

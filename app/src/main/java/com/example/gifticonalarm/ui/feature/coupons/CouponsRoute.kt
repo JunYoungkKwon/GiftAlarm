@@ -12,7 +12,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun CouponsRoute(
     onNavigateToAdd: () -> Unit,
-    onNavigateToCouponDetail: (String) -> Unit,
+    onNavigateToCashVoucherDetail: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CouponsViewModel = hiltViewModel()
 ) {
@@ -23,7 +23,7 @@ fun CouponsRoute(
         modifier = modifier,
         onAddClick = onNavigateToAdd,
         onCouponClick = { couponId ->
-            onNavigateToCouponDetail(couponId.toString())
+            onNavigateToCashVoucherDetail(couponId.toString())
         }
     )
 }

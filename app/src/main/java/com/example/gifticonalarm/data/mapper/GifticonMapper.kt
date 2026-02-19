@@ -2,6 +2,7 @@ package com.example.gifticonalarm.data.mapper
 
 import com.example.gifticonalarm.data.local.entity.GifticonEntity
 import com.example.gifticonalarm.domain.model.Gifticon
+import com.example.gifticonalarm.domain.model.GifticonType
 import java.util.Date
 
 fun GifticonEntity.toDomain(): Gifticon {
@@ -13,7 +14,8 @@ fun GifticonEntity.toDomain(): Gifticon {
         barcode = barcode,
         imageUri = imageUri,
         memo = memo,
-        isUsed = isUsed
+        isUsed = isUsed,
+        type = runCatching { GifticonType.valueOf(type) }.getOrDefault(GifticonType.EXCHANGE)
     )
 }
 
@@ -26,6 +28,7 @@ fun Gifticon.toEntity(): GifticonEntity {
         barcode = barcode,
         imageUri = imageUri,
         memo = memo,
-        isUsed = isUsed
+        isUsed = isUsed,
+        type = type.name
     )
 }
