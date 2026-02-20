@@ -32,6 +32,7 @@ fun VoucherDetailRoute(
     couponId: String,
     onNavigateBack: () -> Unit,
     onEditClick: (String) -> Unit,
+    onNavigateToLargeBarcode: (String) -> Unit,
     onDeleteCompleted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: VoucherDetailViewModel = hiltViewModel()
@@ -66,6 +67,14 @@ fun VoucherDetailRoute(
                 toastMessage = currentEffect.message
                 viewModel.consumeEffect()
             }
+            is VoucherDetailEffect.ShowMessage -> {
+                toastMessage = currentEffect.message
+                viewModel.consumeEffect()
+            }
+            is VoucherDetailEffect.OpenLargeBarcode -> {
+                onNavigateToLargeBarcode(currentEffect.couponId)
+                viewModel.consumeEffect()
+            }
             null -> Unit
         }
     }
@@ -86,6 +95,12 @@ fun VoucherDetailRoute(
                     onNavigateBack = onNavigateBack,
                     modifier = Modifier.fillMaxSize(),
                     uiModel = state.uiModel,
+                    onShowBarcodeClick = {
+                        viewModel.requestOpenLargeBarcode(
+                            couponId = couponId,
+                            barcodeNumber = gifticon?.barcode.orEmpty()
+                        )
+                    },
                     onCopyBarcodeClick = viewModel::requestBarcodeCopy,
                     onEditClick = { onEditClick(couponId) },
                     onDeleteClick = { viewModel.deleteGifticon(gifticon) }

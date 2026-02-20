@@ -50,6 +50,8 @@ sealed interface VoucherDetailEffect {
         val barcodeNumber: String,
         val message: String
     ) : VoucherDetailEffect
+    data class ShowMessage(val message: String) : VoucherDetailEffect
+    data class OpenLargeBarcode(val couponId: String) : VoucherDetailEffect
 }
 
 /**
@@ -114,6 +116,15 @@ class VoucherDetailViewModel @Inject constructor(
             barcodeNumber = normalizedBarcode,
             message = "바코드 번호가 복사되었어요."
         )
+    }
+
+    fun requestOpenLargeBarcode(couponId: String, barcodeNumber: String) {
+        val normalizedBarcode = barcodeNumber.trim()
+        if (normalizedBarcode.isBlank() || normalizedBarcode == UNREGISTERED_BARCODE) {
+            _effect.value = VoucherDetailEffect.ShowMessage("등록된 바코드 번호가 없어요.")
+            return
+        }
+        _effect.value = VoucherDetailEffect.OpenLargeBarcode(couponId)
     }
 
     fun consumeEffect() {

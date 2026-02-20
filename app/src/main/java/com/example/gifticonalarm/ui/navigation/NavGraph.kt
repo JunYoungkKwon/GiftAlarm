@@ -22,6 +22,7 @@ import com.example.gifticonalarm.ui.feature.coupons.CouponsRoute
 import com.example.gifticonalarm.ui.feature.home.HomeRoute
 import com.example.gifticonalarm.ui.feature.notification.NotificationRoute
 import com.example.gifticonalarm.ui.feature.settings.SettingsRoute
+import com.example.gifticonalarm.ui.feature.shared.barcodelarge.BarcodeLargeRoute
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailRoute
 import com.example.gifticonalarm.ui.onboarding.OnboardingRoute
 import kotlinx.coroutines.delay
@@ -48,6 +49,9 @@ sealed class Screen(val route: String) {
     }
     data object SettingsTab : Screen("settings")
     data object Notification : Screen("notification")
+    data object BarcodeLarge : Screen("barcode_large/{couponId}") {
+        fun createRoute(couponId: String) = "barcode_large/$couponId"
+    }
     data object CashVoucherDetail : Screen("cash_voucher_detail/{couponId}") {
         fun createRoute(couponId: String) = "cash_voucher_detail/$couponId"
     }
@@ -166,6 +170,9 @@ fun NavGraph(
                 onEditClick = { editCouponId ->
                     navController.navigate(Screen.AddTab.createRoute(editCouponId))
                 },
+                onNavigateToLargeBarcode = { selectedCouponId ->
+                    navController.navigate(Screen.BarcodeLarge.createRoute(selectedCouponId))
+                },
                 onDeleteCompleted = {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
@@ -175,6 +182,17 @@ fun NavGraph(
                         ?.savedStateHandle
                         ?.set(TOAST_MESSAGE_KEY, TOAST_DELETED)
                 }
+            )
+        }
+
+        composable(
+            route = Screen.BarcodeLarge.route,
+            arguments = listOf(navArgument("couponId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val couponId = backStackEntry.arguments?.getString("couponId") ?: return@composable
+            BarcodeLargeRoute(
+                couponId = couponId,
+                onCloseClick = { navController.popBackStack() }
             )
         }
     }
