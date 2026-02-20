@@ -1,6 +1,7 @@
 package com.example.gifticonalarm.ui.feature.settings
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
@@ -29,6 +30,10 @@ data class SettingsUiState(
     val notificationTimeText: String = "09:00"
 )
 
+sealed interface SettingsEffect {
+    data class ShowMessage(val message: String) : SettingsEffect
+}
+
 /**
  * 설정 화면 상태를 관리하는 ViewModel.
  */
@@ -39,6 +44,8 @@ class SettingsViewModel @Inject constructor(
     private val updateNotificationSettingsUseCase: UpdateNotificationSettingsUseCase,
     private val syncNotificationScheduleUseCase: SyncNotificationScheduleUseCase
 ) : ViewModel() {
+    private val _effect = MutableLiveData<SettingsEffect?>()
+    val effect: LiveData<SettingsEffect?> = _effect
 
     val uiState: LiveData<SettingsUiState> = observeNotificationSettingsUseCase()
         .mapToUiState()
@@ -46,6 +53,9 @@ class SettingsViewModel @Inject constructor(
 
     fun updatePushEnabled(enabled: Boolean) {
         updateSettings { copy(pushEnabled = enabled) }
+        _effect.value = SettingsEffect.ShowMessage(
+            if (enabled) "푸시 알림을 켰어요." else "푸시 알림을 껐어요."
+        )
     }
 
     fun updateNotify30Days(enabled: Boolean) {
@@ -119,5 +129,9 @@ class SettingsViewModel @Inject constructor(
             updateNotificationSettingsUseCase(updated)
             syncNotificationScheduleUseCase(updated)
         }
+    }
+
+    fun consumeEffect() {
+        _effect.value = null
     }
 }
