@@ -10,6 +10,7 @@ import com.example.gifticonalarm.domain.usecase.BuildGifticonStatusLabelUseCase
 import com.example.gifticonalarm.domain.usecase.CalculateDdayUseCase
 import com.example.gifticonalarm.domain.usecase.FormatGifticonDateUseCase
 import com.example.gifticonalarm.domain.usecase.GetAllGifticonsUseCase
+import com.example.gifticonalarm.domain.usecase.ObserveHasUnreadNotificationsUseCase
 import com.example.gifticonalarm.domain.usecase.ResolveGifticonImageUrlUseCase
 import com.example.gifticonalarm.ui.feature.home.model.HomeBadgeType
 import com.example.gifticonalarm.ui.feature.home.model.HomeCouponItem
@@ -22,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     getAllGifticonsUseCase: GetAllGifticonsUseCase,
+    observeHasUnreadNotificationsUseCase: ObserveHasUnreadNotificationsUseCase,
     private val calculateDdayUseCase: CalculateDdayUseCase,
     private val buildGifticonStatusLabelUseCase: BuildGifticonStatusLabelUseCase,
     private val formatGifticonDateUseCase: FormatGifticonDateUseCase,
@@ -29,28 +31,36 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     val gifticons: LiveData<List<Gifticon>> = getAllGifticonsUseCase().asLiveData()
+    val hasUnreadNotifications: LiveData<Boolean> = observeHasUnreadNotificationsUseCase().asLiveData()
     private val _selectedSort = MutableLiveData(HomeSortType.LATEST)
 
     val uiState: LiveData<HomeUiState> = MediatorLiveData<HomeUiState>().apply {
         val update = {
             val coupons = gifticons.value.orEmpty()
             val sort = _selectedSort.value ?: HomeSortType.LATEST
-            value = toHomeUiState(coupons, sort)
+            val hasUnread = hasUnreadNotifications.value ?: false
+            value = toHomeUiState(coupons, sort, hasUnread)
         }
         addSource(gifticons) { update() }
         addSource(_selectedSort) { update() }
+        addSource(hasUnreadNotifications) { update() }
     }
 
     fun onSortSelected(sortType: HomeSortType) {
         _selectedSort.value = sortType
     }
 
-    private fun toHomeUiState(gifticons: List<Gifticon>, selectedSort: HomeSortType): HomeUiState {
+    private fun toHomeUiState(
+        gifticons: List<Gifticon>,
+        selectedSort: HomeSortType,
+        hasUnreadNotifications: Boolean
+    ): HomeUiState {
         if (gifticons.isEmpty()) {
             return HomeUiState(
                 focus = null,
                 coupons = emptyList(),
-                selectedSort = selectedSort
+                selectedSort = selectedSort,
+                hasUnreadNotifications = hasUnreadNotifications
             )
         }
 
@@ -97,7 +107,8 @@ class HomeViewModel @Inject constructor(
                 )
             },
             coupons = coupons,
-            selectedSort = selectedSort
+            selectedSort = selectedSort,
+            hasUnreadNotifications = hasUnreadNotifications
         )
     }
 

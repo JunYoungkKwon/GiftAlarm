@@ -6,7 +6,8 @@ package com.example.gifticonalarm.ui.feature.home.model
 data class HomeUiState(
     val focus: HomeFocusItem?,
     val coupons: List<HomeCouponItem>,
-    val selectedSort: HomeSortType = HomeSortType.LATEST
+    val selectedSort: HomeSortType = HomeSortType.LATEST,
+    val hasUnreadNotifications: Boolean = false
 )
 
 /**

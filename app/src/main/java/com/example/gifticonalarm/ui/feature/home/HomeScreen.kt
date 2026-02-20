@@ -114,7 +114,10 @@ fun HomeScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 92.dp)
         ) {
             item {
-                HomeHeader(onNotificationClick = onNotificationClick)
+                HomeHeader(
+                    onNotificationClick = onNotificationClick,
+                    hasUnreadNotifications = state.hasUnreadNotifications
+                )
             }
             state.focus?.let { focus ->
                 item {
@@ -143,7 +146,10 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader(onNotificationClick: () -> Unit) {
+private fun HomeHeader(
+    onNotificationClick: () -> Unit,
+    hasUnreadNotifications: Boolean
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -160,10 +166,12 @@ private fun HomeHeader(onNotificationClick: () -> Unit) {
 
         BadgedBox(
             badge = {
-                Badge(
-                    containerColor = GifticonDanger,
-                    modifier = Modifier.size(8.dp)
-                )
+                if (hasUnreadNotifications) {
+                    Badge(
+                        containerColor = GifticonDanger,
+                        modifier = Modifier.size(8.dp)
+                    )
+                }
             }
         ) {
             IconButton(
