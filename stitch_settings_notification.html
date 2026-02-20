@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>알림 설정 - Gifticon Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#191971",
+                        "primary-light": "#E8E8F0", // Derived from primary for backgrounds
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#121220",
+                        "neutral-surface": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "Apple SD Gothic Neo", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #191971;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #191971;
+        }
+        
+        /* Custom Checkbox */
+        .custom-checkbox:checked {
+            background-color: #191971;
+            border-color: #191971;
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+        }
+
+        /* iOS-like Scrolling */
+        body {
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex justify-center">
+<!-- Mobile Container -->
+<div class="w-full max-w-md bg-background-light dark:bg-background-dark min-h-screen relative shadow-2xl overflow-hidden flex flex-col">
+<!-- Header -->
+<header class="bg-white dark:bg-slate-900 px-4 pt-12 pb-4 flex items-center justify-between sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800">
+<button class="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-800 dark:text-white">
+<span class="material-icons text-[24px]">arrow_back_ios_new</span>
+</button>
+<h1 class="text-lg font-bold text-center flex-1 pr-8">알림 설정</h1>
+</header>
+<!-- Content Scroll Area -->
+<main class="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+<!-- Master Toggle Section -->
+<section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-4 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-base font-semibold text-slate-900 dark:text-white">푸시 알림 받기</span>
+<span class="text-xs text-slate-500 mt-1">기프티콘 만료 전 알림을 받아보세요.</span>
+</div>
+<!-- Toggle Switch Component -->
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 dark:border-slate-600 checked:right-0 checked:border-primary transition-all duration-300 left-0" id="master-toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 dark:bg-slate-700 cursor-pointer transition-colors duration-300" for="master-toggle"></label>
+</div>
+</section>
+<!-- Notification Timing Section -->
+<section>
+<h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 px-1">알림 주기</h2>
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm divide-y divide-slate-100 dark:divide-slate-800">
+<!-- Option D-30 -->
+<label class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-t-xl">
+<span class="flex items-center gap-3">
+<span class="text-slate-900 dark:text-white font-medium">만료 30일 전</span>
+<span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-300 text-xs font-bold">D-30</span>
+</span>
+<input class="custom-checkbox w-6 h-6 border-2 border-slate-300 rounded text-primary focus:ring-primary focus:ring-offset-0 transition-colors cursor-pointer" type="checkbox"/>
+</label>
+<!-- Option D-7 -->
+<label class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<span class="flex items-center gap-3">
+<span class="text-slate-900 dark:text-white font-medium">만료 7일 전</span>
+<span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-300 text-xs font-bold">D-7</span>
+</span>
+<input checked="" class="custom-checkbox w-6 h-6 border-2 border-slate-300 rounded text-primary focus:ring-primary focus:ring-offset-0 transition-colors cursor-pointer" type="checkbox"/>
+</label>
+<!-- Option D-3 -->
+<label class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<span class="flex items-center gap-3">
+<span class="text-slate-900 dark:text-white font-medium">만료 3일 전</span>
+<span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-300 text-xs font-bold">D-3</span>
+</span>
+<input checked="" class="custom-checkbox w-6 h-6 border-2 border-slate-300 rounded text-primary focus:ring-primary focus:ring-offset-0 transition-colors cursor-pointer" type="checkbox"/>
+</label>
+<!-- Option D-1 -->
+<label class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-b-xl">
+<span class="flex items-center gap-3">
+<span class="text-slate-900 dark:text-white font-medium">만료 1일 전</span>
+<span class="px-2 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold">D-1</span>
+</span>
+<input checked="" class="custom-checkbox w-6 h-6 border-2 border-slate-300 rounded text-primary focus:ring-primary focus:ring-offset-0 transition-colors cursor-pointer" type="checkbox"/>
+</label>
+</div>
+<p class="text-xs text-slate-400 mt-2 px-2">선택한 날짜의 오전에 알림을 보내드립니다.</p>
+</section>
+<!-- Time Picker Section -->
+<section>
+<h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 px-1">알림 수신 시간</h2>
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm">
+<button class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<span class="text-slate-900 dark:text-white font-medium">시간 선택</span>
+<span class="flex items-center gap-2">
+<span class="text-xl font-bold text-primary dark:text-blue-300 bg-primary-light dark:bg-primary/30 px-3 py-1 rounded-lg group-hover:bg-primary/20 transition-colors">09:00</span>
+<span class="material-icons text-slate-400 text-lg">chevron_right</span>
+</span>
+</button>
+</div>
+</section>
+<!-- Additional Info/Settings -->
+<section class="pt-2">
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm divide-y divide-slate-100 dark:divide-slate-800">
+<button class="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-t-xl rounded-b-xl">
+<span class="text-slate-900 dark:text-white font-medium">소리 및 진동 설정</span>
+<span class="material-icons text-slate-400 text-lg">chevron_right</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Footer / Save Indicator (Often implicit on iOS settings, but visual feedback is good) -->
+<div class="p-6 text-center">
+<p class="text-xs text-slate-400">설정 변경 사항은 자동으로 저장됩니다.</p>
+</div>
+</div>
+</body></html>
