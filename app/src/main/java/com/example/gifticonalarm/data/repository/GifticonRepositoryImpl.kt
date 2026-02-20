@@ -25,6 +25,10 @@ class GifticonRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getAllGifticons(): List<Gifticon> {
+        return gifticonDao.getAllGifticonsSnapshot().map { it.toDomain() }
+    }
+
     override fun observeGifticonById(id: Long): Flow<Gifticon?> {
         return gifticonDao.getGifticonById(id).asFlow().map { it?.toDomain() }
     }

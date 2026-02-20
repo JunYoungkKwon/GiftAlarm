@@ -9,6 +9,9 @@ interface GifticonDao {
     @Query("SELECT * FROM gifticons ORDER BY expiryDate ASC")
     fun getAllGifticons(): LiveData<List<GifticonEntity>>
 
+    @Query("SELECT * FROM gifticons ORDER BY expiryDate ASC")
+    suspend fun getAllGifticonsSnapshot(): List<GifticonEntity>
+
     @Query("SELECT * FROM gifticons WHERE id = :id")
     fun getGifticonById(id: Long): LiveData<GifticonEntity?>
 

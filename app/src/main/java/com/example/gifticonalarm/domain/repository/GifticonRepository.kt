@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
  */
 interface GifticonRepository {
     fun observeAllGifticons(): Flow<List<Gifticon>>
+    suspend fun getAllGifticons(): List<Gifticon>
     fun observeGifticonById(id: Long): Flow<Gifticon?>
     suspend fun insertGifticon(gifticon: Gifticon): Long
     suspend fun updateGifticon(gifticon: Gifticon)
