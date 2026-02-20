@@ -309,6 +309,20 @@ fun CouponRegistrationScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
             Text(
+                text = "메모",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = RegistrationTextPrimary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            UnderlineInputField(
+                value = formState.memo,
+                onValueChange = registrationViewModel::updateMemo,
+                placeholder = "메모를 입력해주세요"
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
                 text = "쿠폰 타입",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,

@@ -100,6 +100,7 @@ fun CashVoucherDetailScreen(
     onAddUsageClick: () -> Unit = {},
     onImageClick: () -> Unit = {},
     onShowBarcodeClick: () -> Unit = {},
+    onCopyBarcodeClick: (String) -> Unit = {},
     onEditClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {}
 ) {
@@ -165,6 +166,7 @@ fun CashVoucherDetailScreen(
             CashVoucherBottomSection(
                 uiModel = uiModel,
                 onShowBarcodeClick = onShowBarcodeClick,
+                onCopyBarcodeClick = onCopyBarcodeClick,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -194,6 +196,7 @@ private fun CashVoucherTopSection(
 private fun CashVoucherBottomSection(
     uiModel: CashVoucherDetailUiModel,
     onShowBarcodeClick: () -> Unit,
+    onCopyBarcodeClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     VoucherDetailBottomSection(
@@ -205,6 +208,7 @@ private fun CashVoucherBottomSection(
             memoText = uiModel.memo
         ),
         onShowBarcodeClick = onShowBarcodeClick,
+        onCopyBarcodeClick = onCopyBarcodeClick,
         modifier = modifier
     )
 }

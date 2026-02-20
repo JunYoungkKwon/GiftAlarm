@@ -31,6 +31,7 @@ data class CouponRegistrationFormState(
     val withoutBarcode: Boolean = false,
     val couponType: CouponType = CouponType.EXCHANGE,
     val amount: String = "",
+    val memo: String = "",
     val thumbnailUri: String? = null
 )
 
@@ -46,6 +47,10 @@ class CouponRegistrationViewModel @Inject constructor(
     private val getGifticonByIdUseCase: GetGifticonByIdUseCase,
     private val saveGifticonImageUseCase: SaveGifticonImageUseCase
 ) : ViewModel() {
+    private companion object {
+        const val AMOUNT_MEMO_PREFIX = "금액권:"
+        const val NOTE_PREFIX = "메모:"
+    }
 
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -90,6 +95,7 @@ class CouponRegistrationViewModel @Inject constructor(
             withoutBarcode = editTarget.barcode.isBlank(),
             couponType = if (editTarget.type == GifticonType.AMOUNT) CouponType.AMOUNT else CouponType.EXCHANGE,
             amount = if (editTarget.type == GifticonType.AMOUNT) extractAmountFromMemo(editTarget.memo) else "",
+            memo = extractNoteFromMemo(editTarget.memo, editTarget.type),
             thumbnailUri = editTarget.imageUri
         )
         _selectedExpiryDate.value = editTarget.expiryDate.toExpirationDate()
@@ -132,6 +138,10 @@ class CouponRegistrationViewModel @Inject constructor(
         updateFormState { copy(amount = value.filter { it.isDigit() }) }
     }
 
+    fun updateMemo(value: String) {
+        updateFormState { copy(memo = value) }
+    }
+
     fun updateThumbnailUri(value: String?) {
         updateFormState { copy(thumbnailUri = value) }
     }
@@ -146,8 +156,8 @@ class CouponRegistrationViewModel @Inject constructor(
         }
 
         val memo = when (state.couponType) {
-            CouponType.AMOUNT -> state.amount.ifBlank { null }?.let { "금액권: ${it}원" }
-            CouponType.EXCHANGE -> null
+            CouponType.AMOUNT -> buildAmountMemo(state.amount, state.memo)
+            CouponType.EXCHANGE -> state.memo.trim().ifBlank { null }
         }
 
         saveGifticon(
@@ -270,11 +280,45 @@ class CouponRegistrationViewModel @Inject constructor(
     }
 
     private fun extractAmountFromMemo(memo: String?): String {
-        return memo
-            ?.removePrefix("금액권:")
-            ?.removeSuffix("원")
-            ?.trim()
+        if (memo.isNullOrBlank()) return ""
+        val amountRegex = Regex("""금액권:\s*([0-9,]+)\s*원""")
+        return amountRegex.find(memo)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.replace(",", "")
             .orEmpty()
+    }
+
+    private fun extractNoteFromMemo(memo: String?, type: GifticonType): String {
+        val rawMemo = memo.orEmpty().trim()
+        if (rawMemo.isBlank()) return ""
+        if (type == GifticonType.EXCHANGE && !rawMemo.startsWith(AMOUNT_MEMO_PREFIX)) {
+            return rawMemo
+        }
+
+        val lines = rawMemo.lines().map { it.trim() }.filter { it.isNotBlank() }
+        val noteLine = lines.firstOrNull { it.startsWith(NOTE_PREFIX) }
+            ?.removePrefix(NOTE_PREFIX)
+            ?.trim()
+        if (!noteLine.isNullOrBlank()) {
+            return noteLine
+        }
+
+        if (lines.firstOrNull()?.startsWith(AMOUNT_MEMO_PREFIX) == true) {
+            return lines.drop(1).joinToString("\n").trim()
+        }
+        return rawMemo
+    }
+
+    private fun buildAmountMemo(amount: String, note: String): String? {
+        val amountPart = amount.ifBlank { null }?.let { "$AMOUNT_MEMO_PREFIX ${it}원" }
+        val notePart = note.trim().ifBlank { null }?.let { "$NOTE_PREFIX $it" }
+        return when {
+            amountPart != null && notePart != null -> "$amountPart\n$notePart"
+            amountPart != null -> amountPart
+            notePart != null -> notePart
+            else -> null
+        }
     }
 
     private fun validate(

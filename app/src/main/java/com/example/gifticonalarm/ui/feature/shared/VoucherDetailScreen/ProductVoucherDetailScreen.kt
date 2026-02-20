@@ -97,6 +97,7 @@ fun ProductVoucherDetailScreen(
     modifier: Modifier = Modifier,
     uiModel: ProductVoucherDetailUiModel = ProductVoucherDetailUiModel.placeholder(couponId),
     onShowBarcodeClick: () -> Unit = {},
+    onCopyBarcodeClick: (String) -> Unit = {},
     onEditClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {}
 ) {
@@ -166,6 +167,7 @@ fun ProductVoucherDetailScreen(
                     memoText = uiModel.memoText
                 ),
                 onShowBarcodeClick = onShowBarcodeClick,
+                onCopyBarcodeClick = onCopyBarcodeClick,
                 actionButtonText = if (uiModel.status == ProductVoucherStatus.USED) {
                     "사용취소"
                 } else {

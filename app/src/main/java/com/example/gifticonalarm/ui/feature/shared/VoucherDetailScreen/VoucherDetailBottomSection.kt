@@ -26,6 +26,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -89,6 +90,7 @@ data class VoucherDetailBottomSectionUiModel(
 fun VoucherDetailBottomSection(
     uiModel: VoucherDetailBottomSectionUiModel,
     onShowBarcodeClick: () -> Unit,
+    onCopyBarcodeClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     actionButtonText: String = "바코드 크게 보기",
     actionButtonContainerColor: Color = Accent,
@@ -109,7 +111,10 @@ fun VoucherDetailBottomSection(
                     .padding(PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 120.dp)),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                BarcodeCard(barcodeNumber = uiModel.barcodeNumber)
+                BarcodeCard(
+                    barcodeNumber = uiModel.barcodeNumber,
+                    onCopyBarcodeClick = onCopyBarcodeClick
+                )
                 ExpireInfo(expireDateText = uiModel.expireDateText, expireBadgeText = uiModel.expireBadgeText)
                 InfoBlock(content = uiModel.exchangePlaceText)
                 MemoBlock(memoText = uiModel.memoText)
@@ -151,7 +156,10 @@ fun VoucherDetailBottomSection(
 }
 
 @Composable
-private fun BarcodeCard(barcodeNumber: String) {
+private fun BarcodeCard(
+    barcodeNumber: String,
+    onCopyBarcodeClick: (String) -> Unit
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = GifticonWhite),
         shape = RoundedCornerShape(16.dp),
@@ -175,12 +183,17 @@ private fun BarcodeCard(barcodeNumber: String) {
                     fontFamily = FontFamily.Monospace
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Outlined.ContentCopy,
-                    contentDescription = "바코드 번호 복사",
-                    tint = SecondaryText,
-                    modifier = Modifier.size(18.dp)
-                )
+                IconButton(
+                    onClick = { onCopyBarcodeClick(barcodeNumber) },
+                    modifier = Modifier.size(22.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ContentCopy,
+                        contentDescription = "바코드 번호 복사",
+                        tint = SecondaryText,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
