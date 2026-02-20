@@ -25,7 +25,6 @@ class NotificationSettingsPreferencesDataSource @Inject constructor(
                 selectedDays = preferences[SELECTED_DAYS_KEY]
                     ?.mapNotNull { it.toIntOrNull() }
                     ?.toSet()
-                    ?.ifEmpty { DEFAULT_SELECTED_DAYS }
                     ?: DEFAULT_SELECTED_DAYS,
                 notifyHour = preferences[NOTIFY_HOUR_KEY] ?: 9,
                 notifyMinute = preferences[NOTIFY_MINUTE_KEY] ?: 0

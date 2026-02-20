@@ -23,13 +23,14 @@ class WorkManagerNotificationScheduler @Inject constructor(
             return
         }
 
+        val initialDelayMillis = calculateInitialDelayMillis(settings.notifyHour, settings.notifyMinute)
         val request = PeriodicWorkRequestBuilder<GifticonExpiryNotificationWorker>(1, TimeUnit.DAYS)
-            .setInitialDelay(calculateInitialDelayMillis(settings.notifyHour, settings.notifyMinute), TimeUnit.MILLISECONDS)
+            .setInitialDelay(initialDelayMillis, TimeUnit.MILLISECONDS)
             .build()
 
         workManager.enqueueUniquePeriodicWork(
             WORK_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
+            ExistingPeriodicWorkPolicy.REPLACE,
             request
         )
     }

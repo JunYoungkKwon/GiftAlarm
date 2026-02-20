@@ -1,28 +1,33 @@
 package com.example.gifticonalarm.data.worker
 
 import android.content.Context
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.gifticonalarm.data.notification.GifticonNotificationDispatcher
 import com.example.gifticonalarm.domain.repository.GifticonRepository
 import com.example.gifticonalarm.domain.repository.NotificationSettingsRepository
 import com.example.gifticonalarm.domain.usecase.CalculateDdayUseCase
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 
 /**
  * 만료 알림 대상 기프티콘을 조회해 로컬 푸시를 발송하는 Worker.
  */
-@HiltWorker
-class GifticonExpiryNotificationWorker @AssistedInject constructor(
-    @Assisted appContext: Context,
-    @Assisted workerParams: WorkerParameters,
-    private val gifticonRepository: GifticonRepository,
-    private val notificationSettingsRepository: NotificationSettingsRepository,
-    private val calculateDdayUseCase: CalculateDdayUseCase,
-    private val notificationDispatcher: GifticonNotificationDispatcher
+class GifticonExpiryNotificationWorker(
+    appContext: Context,
+    workerParams: WorkerParameters
 ) : CoroutineWorker(appContext, workerParams) {
+
+    private val entryPoint = EntryPointAccessors.fromApplication(
+        applicationContext,
+        GifticonExpiryNotificationWorkerEntryPoint::class.java
+    )
+    private val gifticonRepository: GifticonRepository = entryPoint.gifticonRepository()
+    private val notificationSettingsRepository: NotificationSettingsRepository = entryPoint.notificationSettingsRepository()
+    private val calculateDdayUseCase: CalculateDdayUseCase = entryPoint.calculateDdayUseCase()
+    private val notificationDispatcher: GifticonNotificationDispatcher = entryPoint.notificationDispatcher()
 
     override suspend fun doWork(): Result {
         return runCatching {
@@ -46,4 +51,13 @@ class GifticonExpiryNotificationWorker @AssistedInject constructor(
             Result.retry()
         }
     }
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface GifticonExpiryNotificationWorkerEntryPoint {
+    fun gifticonRepository(): GifticonRepository
+    fun notificationSettingsRepository(): NotificationSettingsRepository
+    fun calculateDdayUseCase(): CalculateDdayUseCase
+    fun notificationDispatcher(): GifticonNotificationDispatcher
 }
