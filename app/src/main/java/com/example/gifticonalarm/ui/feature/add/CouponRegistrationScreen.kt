@@ -56,6 +56,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +72,8 @@ import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationIn
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.oned.Code128Writer
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 
@@ -78,6 +83,7 @@ private val RegistrationTextPrimary = Color(0xFF111827)
 private val RegistrationTextSecondary = Color(0xFF9CA3AF)
 private val RegistrationDivider = Color(0xFFF1F5F9)
 private val RegistrationSurface = Color(0xFFF3F4F6)
+private const val UNREGISTERED_BARCODE = "미등록"
 
 enum class CouponType {
     EXCHANGE,
@@ -591,21 +597,19 @@ private fun BarcodePreviewCard(barcode: String) {
                 .padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                modifier = Modifier.height(26.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                val pattern = listOf(2, 1, 3, 1, 4, 2, 1, 3, 2, 1, 4, 2, 1, 3, 2, 4, 1, 2, 3, 1, 4)
-                pattern.forEach { width ->
-                    Box(
-                        modifier = Modifier
-                            .width(width.dp)
-                            .height(24.dp)
-                            .background(Color.Black)
-                    )
-                }
-            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(30.dp)
+                    .drawBehind {
+                        val modules = encodeRegistrationCode128ModulesOrNull(barcode)
+                        if (modules != null) {
+                            drawRegistrationCode128Bars(modules)
+                        } else {
+                            drawRegistrationFallbackBars()
+                        }
+                    }
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = barcode,
@@ -616,4 +620,67 @@ private fun BarcodePreviewCard(barcode: String) {
             )
         }
     }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRegistrationCode128Bars(modules: BooleanArray) {
+    if (modules.isEmpty()) {
+        drawRegistrationFallbackBars()
+        return
+    }
+
+    val horizontalPadding = 8.dp.toPx()
+    val topPadding = 3.dp.toPx()
+    val height = size.height - (topPadding * 2f)
+    val availableWidth = size.width - (horizontalPadding * 2f)
+    if (availableWidth <= 0f || height <= 0f) return
+
+    val targetWidth = availableWidth * 0.62f
+    val startX = horizontalPadding + ((availableWidth - targetWidth) / 2f)
+    val moduleWidth = (targetWidth / modules.size.toFloat()).coerceAtMost(1.35.dp.toPx())
+    modules.forEachIndexed { index, isBlack ->
+        if (!isBlack) return@forEachIndexed
+        drawRect(
+            color = Color.Black,
+            topLeft = Offset(startX + (index * moduleWidth), topPadding),
+            size = Size(moduleWidth, height)
+        )
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRegistrationFallbackBars() {
+    val widths = listOf(1.dp, 2.dp, 1.dp, 1.dp, 2.dp, 1.dp, 1.dp, 1.dp, 2.dp, 1.dp, 2.dp, 1.dp, 2.dp, 1.dp, 2.dp, 1.dp)
+    val horizontalPadding = 8.dp.toPx()
+    val topPadding = 3.dp.toPx()
+    val barHeight = size.height - (topPadding * 2f)
+    val gap = 1.dp.toPx()
+    val availableWidth = size.width - (horizontalPadding * 2f)
+    if (availableWidth <= 0f || barHeight <= 0f) return
+
+    val totalPatternWidth = widths.sumOf { it.toPx().toDouble() }.toFloat() + gap * (widths.size - 1)
+    if (totalPatternWidth <= 0f) return
+
+    val targetWidth = availableWidth * 0.5f
+    val scale = targetWidth / totalPatternWidth
+    var x = horizontalPadding + ((availableWidth - targetWidth) / 2f)
+    widths.forEach { widthDp ->
+        val barWidth = widthDp.toPx() * scale
+        drawRect(
+            color = Color.Black,
+            topLeft = Offset(x, topPadding),
+            size = Size(barWidth, barHeight)
+        )
+        x += barWidth + (gap * scale)
+    }
+}
+
+private fun encodeRegistrationCode128ModulesOrNull(barcodeNumber: String): BooleanArray? {
+    val normalizedBarcode = barcodeNumber.trim()
+    if (normalizedBarcode.isBlank() || normalizedBarcode == UNREGISTERED_BARCODE) return null
+    if (!normalizedBarcode.all { it.code in 32..126 }) return null
+
+    return runCatching {
+        val bitMatrix = Code128Writer().encode(normalizedBarcode, BarcodeFormat.CODE_128, 600, 1)
+        val row = bitMatrix.height / 2
+        BooleanArray(bitMatrix.width) { x -> bitMatrix.get(x, row) }
+    }.getOrNull()
 }
