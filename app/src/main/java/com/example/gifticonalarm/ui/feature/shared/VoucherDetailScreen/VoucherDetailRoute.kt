@@ -33,6 +33,7 @@ fun VoucherDetailRoute(
     onNavigateBack: () -> Unit,
     onEditClick: (String) -> Unit,
     onNavigateToLargeBarcode: (String) -> Unit,
+    onNavigateToCashUsageAdd: (String) -> Unit,
     onDeleteCompleted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: VoucherDetailViewModel = hiltViewModel()
@@ -95,6 +96,7 @@ fun VoucherDetailRoute(
                     onNavigateBack = onNavigateBack,
                     modifier = Modifier.fillMaxSize(),
                     uiModel = state.uiModel,
+                    onAddUsageClick = { onNavigateToCashUsageAdd(couponId) },
                     onShowBarcodeClick = {
                         viewModel.requestOpenLargeBarcode(
                             couponId = couponId,

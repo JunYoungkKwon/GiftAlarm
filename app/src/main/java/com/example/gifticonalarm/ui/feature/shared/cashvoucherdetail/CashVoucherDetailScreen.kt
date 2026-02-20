@@ -117,7 +117,8 @@ fun CashVoucherDetailScreen(
                         text = "금액권 상세 정보",
                         style = MaterialTheme.typography.titleMedium,
                         color = CouponTextPrimary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold ,
+                        modifier = Modifier.padding(top = 3.dp)
                     )
                 },
                 navigationIcon = {
@@ -160,7 +161,7 @@ fun CashVoucherDetailScreen(
                 onImageClick = onImageClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = 24.dp, vertical = 18.dp)
             )
 
             CashVoucherBottomSection(

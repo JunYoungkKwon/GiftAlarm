@@ -28,6 +28,7 @@ import com.example.gifticonalarm.ui.feature.notification.NotificationRoute
 import com.example.gifticonalarm.ui.feature.settings.SettingsRoute
 import com.example.gifticonalarm.ui.feature.settings.SettingsTimeRoute
 import com.example.gifticonalarm.ui.feature.shared.barcodelarge.BarcodeLargeRoute
+import com.example.gifticonalarm.ui.feature.shared.cashusage.CashUsageAddRoute
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailRoute
 import com.example.gifticonalarm.ui.onboarding.OnboardingRoute
 import kotlinx.coroutines.delay
@@ -58,6 +59,9 @@ sealed class Screen(val route: String) {
     data object Notification : Screen("notification")
     data object BarcodeLarge : Screen("barcode_large/{couponId}") {
         fun createRoute(couponId: String) = "barcode_large/$couponId"
+    }
+    data object CashUsageAdd : Screen("cash_usage_add/{couponId}") {
+        fun createRoute(couponId: String) = "cash_usage_add/$couponId"
     }
     data object CashVoucherDetail : Screen("cash_voucher_detail/{couponId}") {
         fun createRoute(couponId: String) = "cash_voucher_detail/$couponId"
@@ -204,6 +208,9 @@ fun NavGraph(
                 onNavigateToLargeBarcode = { selectedCouponId ->
                     navController.navigate(Screen.BarcodeLarge.createRoute(selectedCouponId))
                 },
+                onNavigateToCashUsageAdd = { selectedCouponId ->
+                    navController.navigate(Screen.CashUsageAdd.createRoute(selectedCouponId))
+                },
                 onDeleteCompleted = {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
@@ -224,6 +231,17 @@ fun NavGraph(
             BarcodeLargeRoute(
                 couponId = couponId,
                 onCloseClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.CashUsageAdd.route,
+            arguments = listOf(navArgument("couponId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val couponId = backStackEntry.arguments?.getString("couponId") ?: return@composable
+            CashUsageAddRoute(
+                couponId = couponId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

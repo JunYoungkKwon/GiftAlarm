@@ -1,6 +1,7 @@
 package com.example.gifticonalarm.ui.feature.add.bottomsheet
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +19,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +36,7 @@ private val BottomSheetAccent = Color(0xFF191970)
 private val BottomSheetActiveText = Color(0xFF111827)
 private val BottomSheetInactiveText = Color(0xFFCBD5E1)
 private val BottomSheetHighlight = Color(0xFFF3F4F6)
-private val BottomSheetSubtleText = Color(0xFF6B7280)
+private val BottomSheetBorder = Color(0xFFE5E7EB)
 private const val YearRangeSize = 30
 private const val WheelVisibleCount = 5
 
@@ -92,8 +92,9 @@ fun ExpirationDateSelectionBottomSheet(
     onDateSelected: (ExpirationDate) -> Unit,
     onConfirmClick: () -> Unit,
     onDismissRequest: () -> Unit,
-    onNoExpiryClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    titleText: String = "유효기간 설정",
+    confirmButtonText: (ExpirationDate) -> String = { it.toConfirmText() }
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -105,7 +106,7 @@ fun ExpirationDateSelectionBottomSheet(
         dragHandle = {
             Box(
                 modifier = Modifier
-                    .padding(top = 10.dp, bottom = 22.dp)
+                    .padding(top = 10.dp, bottom = 8.dp)
                     .width(40.dp)
                     .height(6.dp)
                     .background(Color(0xFFD1D5DB), RoundedCornerShape(999.dp))
@@ -116,7 +117,8 @@ fun ExpirationDateSelectionBottomSheet(
             selectedDate = selectedDate,
             onDateSelected = onDateSelected,
             onConfirmClick = onConfirmClick,
-            onNoExpiryClick = onNoExpiryClick,
+            titleText = titleText,
+            confirmButtonText = confirmButtonText,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -127,7 +129,8 @@ private fun ExpirationDateSelectionContent(
     selectedDate: ExpirationDate,
     onDateSelected: (ExpirationDate) -> Unit,
     onConfirmClick: () -> Unit,
-    onNoExpiryClick: () -> Unit,
+    titleText: String,
+    confirmButtonText: (ExpirationDate) -> String,
     modifier: Modifier = Modifier
 ) {
     val currentYear = ExpirationDate.today().year
@@ -149,27 +152,37 @@ private fun ExpirationDateSelectionContent(
     Column(
         modifier = modifier
             .background(BottomSheetBackground)
-            .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
+            .padding(start = 20.dp, end = 20.dp, bottom = 20.dp)
     ) {
         Text(
-            text = "유효기간을 선택해 주세요.",
-            style = MaterialTheme.typography.headlineSmall,
+            text = titleText,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = BottomSheetActiveText,
-            modifier = Modifier.padding(bottom = 22.dp)
+            modifier = Modifier.padding(bottom = 6.dp)
         )
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 18.dp)
+                .padding(vertical = 14.dp)
+                .border(
+                    width = 1.dp,
+                    color = BottomSheetBorder,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .background(
+                    color = Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 12.dp, vertical = 14.dp)
         ) {
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
                     .height(48.dp)
-                    .background(BottomSheetHighlight, RoundedCornerShape(12.dp))
+                    .background(BottomSheetHighlight, RoundedCornerShape(10.dp))
             )
 
             Row(
@@ -200,24 +213,14 @@ private fun ExpirationDateSelectionContent(
             }
         }
 
-        TextButton(
-            onClick = onNoExpiryClick,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(bottom = 18.dp)
-        ) {
-            Text(
-                text = "유효기간이 없습니다.",
-                color = BottomSheetSubtleText,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
+
 
         Button(
             onClick = onConfirmClick,
             modifier = Modifier
+                .padding(top = 14.dp)
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(52.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = BottomSheetAccent,
@@ -225,7 +228,7 @@ private fun ExpirationDateSelectionContent(
             )
         ) {
             Text(
-                text = normalizedDate.toConfirmText(),
+                text = confirmButtonText(normalizedDate),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -293,8 +296,8 @@ private fun DateWheelColumn(
                     .clickable { onValueChange(value) }
                     .padding(vertical = 12.dp),
                 color = if (isSelected) BottomSheetActiveText else BottomSheetInactiveText,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                 textAlign = TextAlign.Center
             )
         }

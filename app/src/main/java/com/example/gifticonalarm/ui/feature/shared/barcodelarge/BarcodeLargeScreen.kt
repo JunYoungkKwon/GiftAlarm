@@ -34,7 +34,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -112,8 +111,7 @@ fun BarcodeLargeScreen(
                 text = uiModel.barcodeNumber,
                 style = MaterialTheme.typography.headlineMedium,
                 color = Primary,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
+                fontWeight = FontWeight.Bold
             )
             Text(
                 text = "바코드가 읽히지 않으면 번호를 입력해주세요.",

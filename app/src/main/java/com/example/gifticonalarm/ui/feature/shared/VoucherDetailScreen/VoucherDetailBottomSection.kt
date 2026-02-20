@@ -38,7 +38,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
@@ -182,8 +181,7 @@ private fun BarcodeCard(
                     text = barcodeNumber,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryText,
-                    fontFamily = FontFamily.Monospace
+                    color = PrimaryText
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(

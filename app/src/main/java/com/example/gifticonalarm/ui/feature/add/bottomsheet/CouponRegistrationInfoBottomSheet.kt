@@ -76,7 +76,7 @@ fun CouponRegistrationInfoBottomSheet(
             onCloseClick = onDismissRequest,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp)
         )
     }
 }
@@ -101,7 +101,7 @@ private fun InfoSheetContent(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
             text = title,

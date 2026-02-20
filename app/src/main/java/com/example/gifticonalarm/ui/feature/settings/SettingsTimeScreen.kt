@@ -2,6 +2,7 @@ package com.example.gifticonalarm.ui.feature.settings
 
 import android.widget.NumberPicker
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,14 +13,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -37,6 +40,8 @@ private val Surface = Color.White
 private val Primary = Color(0xFF191970)
 private val SubText = Color(0xFF64748B)
 private val PickerHighlight = Color(0x1A191970)
+private val PickerBorder = Color(0xFFE2E8F0)
+private val PickerSurface = Color(0xFFFDFEFF)
 
 /**
  * 알림 수신 시간 선택 화면.
@@ -69,17 +74,40 @@ fun SettingsTimeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Text(
+                text = "선택한 시간",
+                style = MaterialTheme.typography.labelLarge,
+                color = SubText
+            )
+            Text(
+                text = "${if (selectedPeriod == 0) "오전" else "오후"} %02d:%02d".format(selectedHour, selectedMinute),
+                style = MaterialTheme.typography.headlineSmall,
+                color = Primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 4.dp, bottom = 18.dp)
+            )
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp)
+                    .height(244.dp)
+                    .border(
+                        width = 1.dp,
+                        color = PickerBorder,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .background(
+                        color = PickerSurface,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(horizontal = 10.dp, vertical = 12.dp)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp)
+                        .height(50.dp)
                         .align(Alignment.Center)
-                        .background(PickerHighlight, RoundedCornerShape(12.dp))
+                        .background(PickerHighlight, RoundedCornerShape(10.dp))
                 )
                 Row(
                     modifier = Modifier
@@ -106,6 +134,7 @@ fun SettingsTimeScreen(
                         text = ":",
                         style = MaterialTheme.typography.headlineMedium,
                         color = Primary,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                     WheelPicker(
@@ -122,7 +151,8 @@ fun SettingsTimeScreen(
             Text(
                 text = "설정한 시간에 맞춰 매일 알림을 보내드립니다.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = SubText
+                color = SubText,
+                textAlign = TextAlign.Center
             )
         }
 
@@ -157,25 +187,30 @@ fun SettingsTimeScreen(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun Header(onBackClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Surface)
-            .padding(top = 14.dp, bottom = 12.dp, start = 8.dp, end = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onBackClick) {
-            Icon(
-                imageVector = Icons.Outlined.ArrowBackIosNew,
-                contentDescription = "뒤로가기"
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface),
+        title = {
+            Text(
+                text = "알림 수신 시간 설정",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color(0xFF111827),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 3.dp)
             )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Text(
+                    text = "‹",
+                    color = Color(0xFF111827),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
-        Text(
-            text = "알림 수신 시간 설정",
-            style = MaterialTheme.typography.titleMedium
-        )
-    }
+    )
 }
 
 @Composable

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -32,16 +33,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 private val SettingsBackground = Color(0xFFF6F6F8)
 private val SettingsSurface = Color.White
 private val SettingsPrimary = Color(0xFF191971)
 private val SettingsTitle = Color(0xFF0F172A)
 private val SettingsSubText = Color(0xFF64748B)
-private val SettingsCaption = Color(0xFF94A3B8)
 private val SettingsDivider = Color(0xFFE2E8F0)
 private val DangerBadge = Color(0xFFDC2626)
 private val DangerBadgeBg = Color(0xFFFEE2E2)
+private val PageHorizontalPadding = 20.dp
+private val CardHorizontalPadding = 16.dp
+private val SectionSpacing = 18.dp
 
 /**
  * 알림 설정 화면.
@@ -67,8 +71,8 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = PageHorizontalPadding, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(SectionSpacing)
         ) {
             PushToggleSection(
                 enabled = uiState.isPushEnabled,
@@ -86,14 +90,6 @@ fun SettingsScreen(
                 onTimeClick = onNotificationTimeClick
             )
             SoundAndVibrationSection()
-            Text(
-                text = "설정 변경 사항은 자동으로 저장됩니다.",
-                style = MaterialTheme.typography.bodySmall,
-                color = SettingsCaption,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 16.dp)
-            )
         }
     }
 }
@@ -101,10 +97,10 @@ fun SettingsScreen(
 @Composable
 private fun SettingsHeader() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(SettingsSurface)
-            .padding(horizontal = 20.dp, vertical = 18.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(SettingsSurface)
+                .padding(horizontal = PageHorizontalPadding, vertical = 18.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -125,7 +121,7 @@ private fun PushToggleSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = CardHorizontalPadding, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -205,12 +201,6 @@ private fun NotificationCycleSection(
                 )
             }
         }
-        Text(
-            text = "선택한 날짜의 오전에 알림을 보내드립니다.",
-            style = MaterialTheme.typography.bodySmall,
-            color = SettingsCaption,
-            modifier = Modifier.padding(horizontal = 2.dp)
-        )
     }
 }
 
@@ -226,11 +216,13 @@ private fun NotificationOptionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .heightIn(min = 54.dp)
+            .padding(horizontal = CardHorizontalPadding, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
+            modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -243,7 +235,7 @@ private fun NotificationOptionRow(
             Box(
                 modifier = Modifier
                     .background(badgeBg, CircleShape)
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -279,7 +271,7 @@ private fun NotificationTimeSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onTimeClick)
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = CardHorizontalPadding, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -308,7 +300,8 @@ private fun NotificationTimeSection(
                     Icon(
                         imageVector = Icons.Outlined.ChevronRight,
                         contentDescription = null,
-                        tint = Color(0xFF94A3B8)
+                        tint = Color(0xFF94A3B8),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -322,7 +315,7 @@ private fun SoundAndVibrationSection() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
+                .padding(horizontal = CardHorizontalPadding, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -335,7 +328,8 @@ private fun SoundAndVibrationSection() {
             Icon(
                 imageVector = Icons.Outlined.ChevronRight,
                 contentDescription = null,
-                tint = Color(0xFF94A3B8)
+                tint = Color(0xFF94A3B8),
+                modifier = Modifier.size(18.dp)
             )
         }
     }
@@ -345,10 +339,10 @@ private fun SoundAndVibrationSection() {
 private fun SectionTitle(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
         color = SettingsSubText,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(horizontal = 2.dp)
+        modifier = Modifier.padding(start = 4.dp)
     )
 }
 
@@ -368,6 +362,7 @@ private fun RowDivider() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = CardHorizontalPadding)
             .height(1.dp)
             .background(SettingsDivider.copy(alpha = 0.5f))
     )

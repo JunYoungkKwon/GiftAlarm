@@ -49,6 +49,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -100,7 +103,9 @@ fun CouponBoxScreen(
     onCouponClick: (Long) -> Unit = {}
 ) {
     Surface(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.statusBars),
         color = CouponBackground
     ) {
         Column(
@@ -121,7 +126,7 @@ fun CouponBoxScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(CouponListBackground),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(coupons, key = { it.id }) { coupon ->
@@ -153,24 +158,30 @@ private fun CouponBoxHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(CouponBackground)
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "쿠폰 목록",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 color = CouponAccent,
                 fontWeight = FontWeight.Bold
             )
-            IconButton(onClick = onAddClick) {
+            IconButton(
+                onClick = onAddClick,
+                modifier = Modifier.size(36.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.Add,
                     contentDescription = "쿠폰 추가",
-                    tint = CouponAccent
+                    tint = CouponAccent,
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -180,7 +191,6 @@ private fun CouponBoxHeader(
             onValueChange = onSearchQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 1.dp)
                 .height(66.dp)
                 .padding(top = 10.dp)
                 .padding(bottom = 10.dp),

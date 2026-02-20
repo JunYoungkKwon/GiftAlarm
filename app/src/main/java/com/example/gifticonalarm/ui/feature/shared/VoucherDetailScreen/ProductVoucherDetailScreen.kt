@@ -114,7 +114,8 @@ fun ProductVoucherDetailScreen(
                         text = "교환권 상세 정보",
                         style = MaterialTheme.typography.titleMedium,
                         color = PrimaryText,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 3.dp)
                     )
                 },
                 navigationIcon = {

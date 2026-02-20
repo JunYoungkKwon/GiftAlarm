@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -111,7 +112,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(HomeBackground),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 92.dp)
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 28.dp)
         ) {
             item {
                 HomeHeader(
@@ -153,7 +154,8 @@ private fun HomeHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .height(36.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -176,13 +178,13 @@ private fun HomeHeader(
         ) {
             IconButton(
                 onClick = onNotificationClick,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     imageVector = Icons.Outlined.NotificationsNone,
                     contentDescription = "알림",
                     tint = HomeTextSecondary,
-                    modifier = Modifier.size(25.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -204,8 +206,8 @@ private fun FocusSection(
     ) {
         Text(
             text = "오늘의 포커스",
-            style = MaterialTheme.typography.labelMedium,
-            color = HomePrimary.copy(alpha = 0.85f),
+            style = MaterialTheme.typography.titleMedium,
+            color = HomeTextPrimary,
             fontWeight = FontWeight.Bold
         )
 
@@ -391,7 +393,10 @@ private fun CouponSection(
             )
             Box {
                 Row(
-                    modifier = Modifier.clickable(onClick = { sortMenuExpanded = true }),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = { sortMenuExpanded = true })
+                        .padding(horizontal = 2.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -404,7 +409,9 @@ private fun CouponSection(
                         imageVector = Icons.Outlined.ExpandMore,
                         contentDescription = null,
                         tint = GifticonTextTertiary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier
+                            .size(16.dp)
+                            .padding(top = 1.dp)
                     )
                 }
 
@@ -514,30 +521,36 @@ private fun CouponCard(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = item.brand,
-                style = MaterialTheme.typography.labelSmall,
-                color = if (item.isUsed) GifticonTextTertiary else HomePrimary,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (item.isUsed) GifticonTextTertiary else HomeTextPrimary,
-                fontWeight = FontWeight.Bold,
-                textDecoration = if (item.isUsed) TextDecoration.LineThrough else TextDecoration.None,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-            Text(
-                text = item.expireText,
-                style = MaterialTheme.typography.labelSmall,
-                color = GifticonTextTertiary,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp)
+            ) {
+                Text(
+                    text = item.brand,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (item.isUsed) GifticonTextTertiary else HomePrimary,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (item.isUsed) GifticonTextTertiary else HomeTextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = if (item.isUsed) TextDecoration.LineThrough else TextDecoration.None,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+                Text(
+                    text = item.expireText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = GifticonTextTertiary,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
         }
     }
 }

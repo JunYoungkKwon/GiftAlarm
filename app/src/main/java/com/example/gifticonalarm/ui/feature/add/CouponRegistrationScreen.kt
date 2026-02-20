@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -57,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -84,6 +86,11 @@ private val RegistrationTextSecondary = Color(0xFF9CA3AF)
 private val RegistrationDivider = Color(0xFFF1F5F9)
 private val RegistrationSurface = Color(0xFFF3F4F6)
 private const val UNREGISTERED_BARCODE = "미등록"
+private val RegistrationPageHorizontalPadding = 20.dp
+private val RegistrationSectionSpacing = 20.dp
+private val RegistrationFieldSpacing = 6.dp
+private val RegistrationAlignedStartPadding = 4.dp
+private val RegistrationSectionTitleSize = 16.sp
 
 enum class CouponType {
     EXCHANGE,
@@ -222,7 +229,7 @@ fun CouponRegistrationScreen(
                     .background(RegistrationBackground)
                     .verticalScroll(rememberScrollState())
                     .padding(innerPadding)
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .padding(horizontal = RegistrationPageHorizontalPadding, vertical = 16.dp)
             ) {
             ThumbnailSection(
                 thumbnailUri = formState.thumbnailUri,
@@ -233,14 +240,15 @@ fun CouponRegistrationScreen(
                     )
                 }
             )
-            Spacer(modifier = Modifier.height(26.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "바코드 번호",
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
                 fontWeight = FontWeight.Bold,
-                color = RegistrationTextPrimary
+                color = RegistrationTextPrimary,
+                modifier = Modifier.padding(start = RegistrationAlignedStartPadding)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
             UnderlineInputField(
                 value = if (formState.withoutBarcode) "바코드 번호 없음" else formState.barcode,
                 onValueChange = registrationViewModel::updateBarcode,
@@ -252,25 +260,35 @@ fun CouponRegistrationScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             BarcodePreviewCard(barcode = formState.barcode)
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 40.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Spacer(modifier = Modifier.width(8.dp))
                 Checkbox(
                     checked = formState.withoutBarcode,
-                    onCheckedChange = registrationViewModel::updateWithoutBarcode
+                    onCheckedChange = registrationViewModel::updateWithoutBarcode,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .scale(0.65f)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "바코드 번호 없이 등록하기",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF6B7280)
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    color = Color(0xFF9CA3AF),
+                    modifier = Modifier.padding(top = 1.dp)
                 )
+                Spacer(modifier = Modifier.width(2.dp))
                 IconButton(
                     onClick = {
                         onNoBarcodeInfoClick()
                         registrationViewModel.showBarcodeInfoSheet()
                     },
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(20.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Info,
@@ -281,26 +299,27 @@ fun CouponRegistrationScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
             Text(
                 text = "쿠폰 정보",
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
                 fontWeight = FontWeight.Bold,
-                color = RegistrationTextPrimary
+                color = RegistrationTextPrimary,
+                modifier = Modifier.padding(start = RegistrationAlignedStartPadding)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
             UnderlineInputField(
                 value = formState.place,
                 onValueChange = registrationViewModel::updatePlace,
                 placeholder = "사용처를 입력해 주세요. (필수)"
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
             UnderlineInputField(
                 value = formState.couponName,
                 onValueChange = registrationViewModel::updateCouponName,
                 placeholder = "쿠폰명을 입력해 주세요. (필수)"
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
             UnderlineInputField(
                 value = expiryDate,
                 onValueChange = {},
@@ -313,28 +332,30 @@ fun CouponRegistrationScreen(
                 showExpandIcon = true
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
             Text(
                 text = "메모",
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
                 fontWeight = FontWeight.Bold,
-                color = RegistrationTextPrimary
+                color = RegistrationTextPrimary,
+                modifier = Modifier.padding(start = RegistrationAlignedStartPadding)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
             UnderlineInputField(
                 value = formState.memo,
                 onValueChange = registrationViewModel::updateMemo,
                 placeholder = "메모를 입력해주세요"
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
             Text(
                 text = "쿠폰 타입",
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
                 fontWeight = FontWeight.Bold,
-                color = RegistrationTextPrimary
+                color = RegistrationTextPrimary,
+                modifier = Modifier.padding(start = RegistrationAlignedStartPadding)
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -365,11 +386,11 @@ fun CouponRegistrationScreen(
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(
                     text = "금액 입력",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
                     fontWeight = FontWeight.Bold,
                     color = RegistrationTextPrimary
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
                 UnderlineInputField(
                     value = formState.amount,
                     onValueChange = registrationViewModel::updateAmount,
@@ -385,28 +406,26 @@ fun CouponRegistrationScreen(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = {
-                        registrationViewModel.showNotificationInfoSheet()
-                    },
-                    modifier = Modifier.size(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Info,
-                        contentDescription = "만료일 알람 안내",
-                        tint = Color(0xFFCBD5E1),
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = "만료일 알람 안내",
+                    tint = Color(0xFFCBD5E1),
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable {
+                            registrationViewModel.showNotificationInfoSheet()
+                        }
+                )
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "만료일 알람은 언제 오나요?",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                     color = Color(0xFF9CA3AF)
                 )
             }
                 Spacer(modifier = Modifier.height(24.dp))
             }
+
         }
 
         toastMessage?.let { message ->
@@ -424,8 +443,7 @@ fun CouponRegistrationScreen(
             selectedDate = draftExpiryDate,
             onDateSelected = registrationViewModel::updateDraftExpiryDate,
             onConfirmClick = registrationViewModel::confirmExpiryDate,
-            onDismissRequest = registrationViewModel::dismissExpiryBottomSheet,
-            onNoExpiryClick = registrationViewModel::dismissExpiryBottomSheet
+            onDismissRequest = registrationViewModel::dismissExpiryBottomSheet
         )
     }
 
@@ -522,6 +540,8 @@ private fun UnderlineInputField(
         onValueChange = onValueChange,
         modifier = Modifier
             .fillMaxWidth()
+            .padding(start = RegistrationAlignedStartPadding)
+            .heightIn(min = 20.dp)
             .let { baseModifier ->
                 if (readOnly && onClick != null) {
                     baseModifier.clickable(onClick = onClick)
@@ -533,7 +553,7 @@ private fun UnderlineInputField(
             Text(
                 text = placeholder,
                 color = RegistrationTextSecondary,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp)
             )
         },
         singleLine = true,
@@ -543,12 +563,14 @@ private fun UnderlineInputField(
             if (showExpandIcon) {
                 IconButton(
                     onClick = { onClick?.invoke() },
-                    enabled = onClick != null
+                    enabled = onClick != null,
+                    modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.ExpandMore,
                         contentDescription = "유효기한 선택",
-                        tint = Color(0xFF94A3B8)
+                        tint = Color(0xFF94A3B8),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -557,14 +579,15 @@ private fun UnderlineInputField(
             if (suffixText != null) {
                 Text(
                     text = suffixText,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                     color = RegistrationTextSecondary
                 )
             }
         },
         textStyle = MaterialTheme.typography.bodyMedium.copy(
             color = RegistrationTextPrimary,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp
         ),
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
@@ -578,7 +601,11 @@ private fun UnderlineInputField(
         ),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
     )
-    HorizontalDivider(color = RegistrationDivider, thickness = 1.dp)
+    HorizontalDivider(
+        modifier = Modifier.padding(start = RegistrationAlignedStartPadding),
+        color = RegistrationDivider,
+        thickness = 1.dp
+    )
 }
 
 @Composable
@@ -600,7 +627,7 @@ private fun BarcodePreviewCard(barcode: String) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(30.dp)
+                    .height(45.dp)
                     .drawBehind {
                         val modules = encodeRegistrationCode128ModulesOrNull(barcode)
                         if (modules != null) {
@@ -634,7 +661,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRegistrationCod
     val availableWidth = size.width - (horizontalPadding * 2f)
     if (availableWidth <= 0f || height <= 0f) return
 
-    val targetWidth = availableWidth * 0.62f
+    val targetWidth = availableWidth * 0.66f
     val startX = horizontalPadding + ((availableWidth - targetWidth) / 2f)
     val moduleWidth = (targetWidth / modules.size.toFloat()).coerceAtMost(1.35.dp.toPx())
     modules.forEachIndexed { index, isBlack ->
@@ -659,7 +686,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRegistrationFal
     val totalPatternWidth = widths.sumOf { it.toPx().toDouble() }.toFloat() + gap * (widths.size - 1)
     if (totalPatternWidth <= 0f) return
 
-    val targetWidth = availableWidth * 0.5f
+    val targetWidth = availableWidth * 0.54f
     val scale = targetWidth / totalPatternWidth
     var x = horizontalPadding + ((availableWidth - targetWidth) / 2f)
     widths.forEach { widthDp ->
