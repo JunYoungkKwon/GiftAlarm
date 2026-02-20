@@ -1,6 +1,4 @@
 package com.example.gifticonalarm.ui.feature.settings
-
-import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -57,7 +54,7 @@ fun SettingsScreen(
     onNotify7DaysChange: (Boolean) -> Unit,
     onNotify3DaysChange: (Boolean) -> Unit,
     onNotify1DayChange: (Boolean) -> Unit,
-    onNotificationTimeChange: (Int, Int) -> Unit
+    onNotificationTimeClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -86,9 +83,7 @@ fun SettingsScreen(
             )
             NotificationTimeSection(
                 timeText = uiState.notificationTimeText,
-                hour = uiState.notificationHour,
-                minute = uiState.notificationMinute,
-                onTimeSelected = onNotificationTimeChange
+                onTimeClick = onNotificationTimeClick
             )
             SoundAndVibrationSection()
             Text(
@@ -275,28 +270,15 @@ private fun NotificationOptionRow(
 @Composable
 private fun NotificationTimeSection(
     timeText: String,
-    hour: Int,
-    minute: Int,
-    onTimeSelected: (Int, Int) -> Unit
+    onTimeClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    val openTimePicker = {
-        TimePickerDialog(
-            context,
-            { _, selectedHour, selectedMinute ->
-                onTimeSelected(selectedHour, selectedMinute)
-            },
-            hour,
-            minute,
-            true
-        ).show()
-    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle(title = "알림 수신 시간")
         RoundedSurface {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable(onClick = onTimeClick)
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -308,7 +290,6 @@ private fun NotificationTimeSection(
                     fontWeight = FontWeight.Medium
                 )
                 Row(
-                    modifier = Modifier.clickable(onClick = openTimePicker),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(

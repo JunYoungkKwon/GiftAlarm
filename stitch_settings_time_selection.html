@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>알림 수신 시간 설정 - Gift Alarm</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#191970",
+                        "primary-light": "#F0F0F7",
+                        "background-light": "#FFFFFF",
+                        "neutral-surface": "#F9F9FB",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "Apple SD Gothic Neo", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        @layer utilities {
+            .ios-picker-gradient {
+                background: linear-gradient(to bottom, 
+                    rgba(255,255,255,1) 0%, 
+                    rgba(255,255,255,0) 40%, 
+                    rgba(255,255,255,0) 60%, 
+                    rgba(255,255,255,1) 100%);
+            }
+            .time-wheel-item {
+                @apply h-12 flex items-center justify-center text-xl text-slate-400;
+            }
+            .time-wheel-selected {
+                @apply text-primary font-bold text-2xl;
+            }
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-overflow-scrolling: touch;
+        }.no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-slate-50 font-display text-slate-900 min-h-screen flex justify-center">
+<div class="w-full max-w-md bg-white min-h-screen relative flex flex-col shadow-sm">
+<header class="bg-white px-4 pt-12 pb-4 flex items-center justify-between sticky top-0 z-20 border-b border-slate-100">
+<button class="p-2 -ml-2 rounded-full active:bg-slate-100 transition-colors text-slate-800">
+<span class="material-icons text-[22px]">arrow_back_ios_new</span>
+</button>
+<h1 class="text-[17px] font-bold text-center flex-1 pr-8">알림 수신 시간 설정</h1>
+</header>
+<main class="flex-1 flex flex-col px-6 py-10">
+<div class="relative w-full max-w-[280px] mx-auto h-64 flex items-center justify-center overflow-hidden">
+<div class="absolute inset-x-0 h-12 bg-primary-light/50 rounded-xl pointer-events-none"></div>
+<div class="relative w-full h-full flex z-10">
+<div class="flex-1 h-full overflow-y-auto no-scrollbar snap-y snap-mandatory py-24">
+<div class="time-wheel-item snap-center"></div>
+<div class="time-wheel-item snap-center">오전</div>
+<div class="time-wheel-item snap-center time-wheel-selected">오후</div>
+<div class="time-wheel-item snap-center"></div>
+</div>
+<div class="flex-1 h-full overflow-y-auto no-scrollbar snap-y snap-mandatory py-24">
+<div class="time-wheel-item snap-center">07</div>
+<div class="time-wheel-item snap-center">08</div>
+<div class="time-wheel-item snap-center time-wheel-selected">09</div>
+<div class="time-wheel-item snap-center">10</div>
+<div class="time-wheel-item snap-center">11</div>
+</div>
+<div class="flex items-center justify-center px-1">
+<span class="text-2xl font-bold text-primary mb-1">:</span>
+</div>
+<div class="flex-1 h-full overflow-y-auto no-scrollbar snap-y snap-mandatory py-24">
+<div class="time-wheel-item snap-center">50</div>
+<div class="time-wheel-item snap-center">55</div>
+<div class="time-wheel-item snap-center time-wheel-selected">00</div>
+<div class="time-wheel-item snap-center">05</div>
+<div class="time-wheel-item snap-center">10</div>
+</div>
+</div>
+<div class="absolute inset-0 ios-picker-gradient pointer-events-none"></div>
+</div>
+<div class="mt-12 text-center">
+<p class="text-[15px] text-slate-500 leading-relaxed">
+                설정한 시간에 맞춰 매일 알림을 보내드립니다.
+            </p>
+</div>
+</main>
+<div class="p-6 pb-10 bg-white">
+<button class="w-full bg-primary text-white py-4 px-6 rounded-full font-bold text-[17px] shadow-lg shadow-primary/20 active:scale-[0.98] transition-all">
+            저장하기
+        </button>
+</div>
+</div>
+
+</body></html>

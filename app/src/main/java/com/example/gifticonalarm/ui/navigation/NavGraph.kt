@@ -22,6 +22,7 @@ import com.example.gifticonalarm.ui.feature.coupons.CouponsRoute
 import com.example.gifticonalarm.ui.feature.home.HomeRoute
 import com.example.gifticonalarm.ui.feature.notification.NotificationRoute
 import com.example.gifticonalarm.ui.feature.settings.SettingsRoute
+import com.example.gifticonalarm.ui.feature.settings.SettingsTimeRoute
 import com.example.gifticonalarm.ui.feature.shared.barcodelarge.BarcodeLargeRoute
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailRoute
 import com.example.gifticonalarm.ui.onboarding.OnboardingRoute
@@ -48,6 +49,7 @@ sealed class Screen(val route: String) {
         }
     }
     data object SettingsTab : Screen("settings")
+    data object SettingsNotificationTime : Screen("settings_notification_time")
     data object Notification : Screen("notification")
     data object BarcodeLarge : Screen("barcode_large/{couponId}") {
         fun createRoute(couponId: String) = "barcode_large/$couponId"
@@ -148,7 +150,17 @@ fun NavGraph(
         }
 
         composable(Screen.SettingsTab.route) {
-            SettingsRoute()
+            SettingsRoute(
+                onNavigateToNotificationTime = {
+                    navController.navigate(Screen.SettingsNotificationTime.route)
+                }
+            )
+        }
+
+        composable(Screen.SettingsNotificationTime.route) {
+            SettingsTimeRoute(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(Screen.Notification.route) {

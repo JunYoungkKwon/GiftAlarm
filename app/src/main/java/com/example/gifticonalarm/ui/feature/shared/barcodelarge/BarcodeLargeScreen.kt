@@ -73,6 +73,7 @@ fun BarcodeLargeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
             Box(
                 modifier = Modifier
                     .size(192.dp)

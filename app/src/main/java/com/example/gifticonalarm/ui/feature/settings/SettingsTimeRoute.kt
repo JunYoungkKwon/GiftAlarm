@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -18,20 +18,24 @@ import com.example.gifticonalarm.ui.common.components.ToastBanner
 import kotlinx.coroutines.delay
 
 /**
- * 설정 라우트 진입점.
+ * 알림 수신 시간 설정 라우트.
  */
 @Composable
-fun SettingsRoute(
-    onNavigateToNotificationTime: () -> Unit,
-    viewModel: SettingsViewModel = hiltViewModel()
+fun SettingsTimeRoute(
+    onNavigateBack: () -> Unit,
+    viewModel: SettingsTimeViewModel = hiltViewModel()
 ) {
-    val uiState = viewModel.uiState.observeAsState(SettingsUiState()).value
+    val uiState by viewModel.uiState.observeAsState(SettingsTimeUiState())
     val effect by viewModel.effect.observeAsState()
     var toastMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(effect) {
         when (val currentEffect = effect) {
-            is SettingsEffect.ShowMessage -> {
+            SettingsTimeEffect.NavigateBack -> {
+                onNavigateBack()
+                viewModel.consumeEffect()
+            }
+            is SettingsTimeEffect.ShowMessage -> {
                 toastMessage = currentEffect.message
                 viewModel.consumeEffect()
             }
@@ -46,14 +50,10 @@ fun SettingsRoute(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        SettingsScreen(
+        SettingsTimeScreen(
             uiState = uiState,
-            onPushEnabledChange = viewModel::updatePushEnabled,
-            onNotify30DaysChange = viewModel::updateNotify30Days,
-            onNotify7DaysChange = viewModel::updateNotify7Days,
-            onNotify3DaysChange = viewModel::updateNotify3Days,
-            onNotify1DayChange = viewModel::updateNotify1Day,
-            onNotificationTimeClick = onNavigateToNotificationTime
+            onBackClick = onNavigateBack,
+            onSaveClick = viewModel::saveNotificationTime
         )
         toastMessage?.let { message ->
             ToastBanner(
