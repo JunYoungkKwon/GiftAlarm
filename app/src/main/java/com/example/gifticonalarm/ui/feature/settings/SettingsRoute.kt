@@ -18,6 +18,7 @@ fun SettingsRoute(
         onNotify30DaysChange = viewModel::updateNotify30Days,
         onNotify7DaysChange = viewModel::updateNotify7Days,
         onNotify3DaysChange = viewModel::updateNotify3Days,
-        onNotify1DayChange = viewModel::updateNotify1Day
+        onNotify1DayChange = viewModel::updateNotify1Day,
+        onNotificationTimeChange = viewModel::updateNotificationTime
     )
 }

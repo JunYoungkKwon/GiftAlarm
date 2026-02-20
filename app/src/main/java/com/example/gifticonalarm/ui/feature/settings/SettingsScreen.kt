@@ -1,11 +1,13 @@
 package com.example.gifticonalarm.ui.feature.settings
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -29,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -52,7 +56,8 @@ fun SettingsScreen(
     onNotify30DaysChange: (Boolean) -> Unit,
     onNotify7DaysChange: (Boolean) -> Unit,
     onNotify3DaysChange: (Boolean) -> Unit,
-    onNotify1DayChange: (Boolean) -> Unit
+    onNotify1DayChange: (Boolean) -> Unit,
+    onNotificationTimeChange: (Int, Int) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -79,7 +84,12 @@ fun SettingsScreen(
                 onNotify3DaysChange = onNotify3DaysChange,
                 onNotify1DayChange = onNotify1DayChange
             )
-            NotificationTimeSection(timeText = uiState.notificationTimeText)
+            NotificationTimeSection(
+                timeText = uiState.notificationTimeText,
+                hour = uiState.notificationHour,
+                minute = uiState.notificationMinute,
+                onTimeSelected = onNotificationTimeChange
+            )
             SoundAndVibrationSection()
             Text(
                 text = "설정 변경 사항은 자동으로 저장됩니다.",
@@ -263,7 +273,13 @@ private fun NotificationOptionRow(
 }
 
 @Composable
-private fun NotificationTimeSection(timeText: String) {
+private fun NotificationTimeSection(
+    timeText: String,
+    hour: Int,
+    minute: Int,
+    onTimeSelected: (Int, Int) -> Unit
+) {
+    val context = LocalContext.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle(title = "알림 수신 시간")
         RoundedSurface {
@@ -283,6 +299,17 @@ private fun NotificationTimeSection(timeText: String) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
+                            .clickable {
+                                TimePickerDialog(
+                                    context,
+                                    { _, selectedHour, selectedMinute ->
+                                        onTimeSelected(selectedHour, selectedMinute)
+                                    },
+                                    hour,
+                                    minute,
+                                    true
+                                ).show()
+                            }
                             .background(Color(0xFFE8E8F0), RoundedCornerShape(8.dp))
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
@@ -294,7 +321,7 @@ private fun NotificationTimeSection(timeText: String) {
                         )
                     }
                     Spacer(modifier = Modifier.size(8.dp))
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = Icons.Outlined.ChevronRight,
                         contentDescription = null,
                         tint = Color(0xFF94A3B8)
@@ -321,7 +348,7 @@ private fun SoundAndVibrationSection() {
                 color = SettingsTitle,
                 fontWeight = FontWeight.Medium
             )
-            androidx.compose.material3.Icon(
+            Icon(
                 imageVector = Icons.Outlined.ChevronRight,
                 contentDescription = null,
                 tint = Color(0xFF94A3B8)
