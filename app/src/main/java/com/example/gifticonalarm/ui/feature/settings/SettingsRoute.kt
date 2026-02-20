@@ -23,11 +23,16 @@ import kotlinx.coroutines.delay
 @Composable
 fun SettingsRoute(
     onNavigateToNotificationTime: () -> Unit,
+    externalTimeText: String?,
+    externalTimeVersion: Int,
+    externalToastMessage: String?,
+    externalToastVersion: Int,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.uiState.observeAsState(SettingsUiState()).value
     val effect by viewModel.effect.observeAsState()
     var toastMessage by remember { mutableStateOf<String?>(null) }
+    var immediateTimeText by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(effect) {
         when (val currentEffect = effect) {
@@ -45,9 +50,28 @@ fun SettingsRoute(
         toastMessage = null
     }
 
+    LaunchedEffect(externalToastVersion) {
+        if (externalToastMessage.isNullOrBlank()) return@LaunchedEffect
+        toastMessage = externalToastMessage
+    }
+
+    LaunchedEffect(externalTimeVersion) {
+        if (externalTimeText.isNullOrBlank()) return@LaunchedEffect
+        immediateTimeText = externalTimeText
+    }
+
+    LaunchedEffect(uiState.notificationTimeText, immediateTimeText) {
+        if (immediateTimeText == null) return@LaunchedEffect
+        if (uiState.notificationTimeText == immediateTimeText) {
+            immediateTimeText = null
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         SettingsScreen(
-            uiState = uiState,
+            uiState = uiState.copy(
+                notificationTimeText = immediateTimeText ?: uiState.notificationTimeText
+            ),
             onPushEnabledChange = viewModel::updatePushEnabled,
             onNotify30DaysChange = viewModel::updateNotify30Days,
             onNotify7DaysChange = viewModel::updateNotify7Days,

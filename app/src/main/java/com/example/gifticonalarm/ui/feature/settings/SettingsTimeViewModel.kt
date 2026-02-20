@@ -22,11 +22,11 @@ import javax.inject.Inject
 data class SettingsTimeUiState(
     val periodIndex: Int = 0,
     val hour12: Int = 9,
-    val minuteStep: Int = 0
+    val minute: Int = 0
 )
 
 sealed interface SettingsTimeEffect {
-    data object NavigateBack : SettingsTimeEffect
+    data class NavigateBack(val savedTimeText: String) : SettingsTimeEffect
     data class ShowMessage(val message: String) : SettingsTimeEffect
 }
 
@@ -48,9 +48,9 @@ class SettingsTimeViewModel @Inject constructor(
         .mapToTimeUiState()
         .asLiveData()
 
-    fun saveNotificationTime(periodIndex: Int, hour12: Int, minuteStep: Int) {
+    fun saveNotificationTime(periodIndex: Int, hour12: Int, minute: Int) {
         val selectedHour12 = hour12.coerceIn(1, 12)
-        val selectedMinute = (minuteStep * 5).coerceIn(0, 55)
+        val selectedMinute = minute.coerceIn(0, 59)
         val hour24 = toHour24(periodIndex = periodIndex, hour12 = selectedHour12)
 
         viewModelScope.launch {
@@ -63,7 +63,9 @@ class SettingsTimeViewModel @Inject constructor(
                 updateNotificationSettingsUseCase(updated)
                 syncNotificationScheduleUseCase(updated)
             }.onSuccess {
-                _effect.value = SettingsTimeEffect.NavigateBack
+                _effect.value = SettingsTimeEffect.NavigateBack(
+                    savedTimeText = "%02d:%02d".format(hour24, selectedMinute)
+                )
             }.onFailure {
                 _effect.value = SettingsTimeEffect.ShowMessage("시간 저장에 실패했어요.")
             }
@@ -78,11 +80,11 @@ class SettingsTimeViewModel @Inject constructor(
         return map { settings ->
             val periodIndex = if (settings.notifyHour >= 12) 1 else 0
             val hour12 = toHour12(settings.notifyHour)
-            val minuteStep = ((settings.notifyMinute.coerceIn(0, 59) + 2) / 5).coerceIn(0, 11)
+            val minute = settings.notifyMinute.coerceIn(0, 59)
             SettingsTimeUiState(
                 periodIndex = periodIndex,
                 hour12 = hour12,
-                minuteStep = minuteStep
+                minute = minute
             )
         }
     }

@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,11 +45,14 @@ private val PickerHighlight = Color(0x1A191970)
 fun SettingsTimeScreen(
     uiState: SettingsTimeUiState,
     onBackClick: () -> Unit,
-    onSaveClick: (periodIndex: Int, hour12: Int, minuteStep: Int) -> Unit
+    onSaveClick: (periodIndex: Int, hour12: Int, minute: Int) -> Unit
 ) {
     var selectedPeriod by remember(uiState.periodIndex) { mutableIntStateOf(uiState.periodIndex) }
     var selectedHour by remember(uiState.hour12) { mutableIntStateOf(uiState.hour12) }
-    var selectedMinuteStep by remember(uiState.minuteStep) { mutableIntStateOf(uiState.minuteStep) }
+    var selectedMinute by remember(uiState.minute) { mutableIntStateOf(uiState.minute) }
+    var periodPickerRef by remember { mutableStateOf<NumberPicker?>(null) }
+    var hourPickerRef by remember { mutableStateOf<NumberPicker?>(null) }
+    var minutePickerRef by remember { mutableStateOf<NumberPicker?>(null) }
 
     Column(
         modifier = Modifier
@@ -88,12 +92,14 @@ fun SettingsTimeScreen(
                         values = arrayOf("오전", "오후"),
                         selectedIndex = selectedPeriod,
                         onSelectedIndexChange = { selectedPeriod = it },
+                        onPickerReady = { periodPickerRef = it },
                         modifier = Modifier.weight(1f)
                     )
                     WheelPicker(
                         values = (1..12).map { "%02d".format(it) }.toTypedArray(),
                         selectedIndex = selectedHour - 1,
                         onSelectedIndexChange = { selectedHour = it + 1 },
+                        onPickerReady = { hourPickerRef = it },
                         modifier = Modifier.weight(1f)
                     )
                     Text(
@@ -103,9 +109,10 @@ fun SettingsTimeScreen(
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                     WheelPicker(
-                        values = (0..11).map { "%02d".format(it * 5) }.toTypedArray(),
-                        selectedIndex = selectedMinuteStep,
-                        onSelectedIndexChange = { selectedMinuteStep = it },
+                        values = (0..59).map { "%02d".format(it) }.toTypedArray(),
+                        selectedIndex = selectedMinute,
+                        onSelectedIndexChange = { selectedMinute = it },
+                        onPickerReady = { minutePickerRef = it },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -127,7 +134,10 @@ fun SettingsTimeScreen(
         ) {
             Button(
                 onClick = {
-                    onSaveClick(selectedPeriod, selectedHour, selectedMinuteStep)
+                    val actualPeriod = periodPickerRef?.value ?: selectedPeriod
+                    val actualHour = (hourPickerRef?.value ?: (selectedHour - 1)) + 1
+                    val actualMinute = minutePickerRef?.value ?: selectedMinute
+                    onSaveClick(actualPeriod, actualHour, actualMinute)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -173,6 +183,7 @@ private fun WheelPicker(
     values: Array<String>,
     selectedIndex: Int,
     onSelectedIndexChange: (Int) -> Unit,
+    onPickerReady: (NumberPicker) -> Unit,
     modifier: Modifier = Modifier
 ) {
     AndroidView(
@@ -188,6 +199,7 @@ private fun WheelPicker(
                 setOnValueChangedListener { _, _, newVal ->
                     onSelectedIndexChange(newVal)
                 }
+                onPickerReady(this)
             }
         },
         update = { picker ->

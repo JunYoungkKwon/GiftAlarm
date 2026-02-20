@@ -4,6 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -32,6 +36,7 @@ private const val TOAST_MESSAGE_KEY = "toast_message"
 private const val TOAST_REGISTERED = "쿠폰이 등록되었어요."
 private const val TOAST_UPDATED = "변경사항이 저장되었어요."
 private const val TOAST_DELETED = "쿠폰이 삭제되었어요."
+private const val SETTINGS_TIME_SAVED_TOAST = "알림 시간 설정이 완료되었어요."
 
 sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
@@ -68,6 +73,11 @@ fun NavGraph(
     startDestination: String,
     modifier: Modifier = Modifier
 ) {
+    var settingsExternalTimeText by rememberSaveable { mutableStateOf<String?>(null) }
+    var settingsExternalTimeVersion by rememberSaveable { mutableIntStateOf(0) }
+    var settingsExternalToastMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var settingsExternalToastVersion by rememberSaveable { mutableIntStateOf(0) }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -151,15 +161,24 @@ fun NavGraph(
 
         composable(Screen.SettingsTab.route) {
             SettingsRoute(
-                onNavigateToNotificationTime = {
-                    navController.navigate(Screen.SettingsNotificationTime.route)
-                }
+                onNavigateToNotificationTime = { navController.navigate(Screen.SettingsNotificationTime.route) },
+                externalTimeText = settingsExternalTimeText,
+                externalTimeVersion = settingsExternalTimeVersion,
+                externalToastMessage = settingsExternalToastMessage,
+                externalToastVersion = settingsExternalToastVersion
             )
         }
 
         composable(Screen.SettingsNotificationTime.route) {
             SettingsTimeRoute(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onSaveCompleted = { savedTimeText ->
+                    settingsExternalTimeText = savedTimeText
+                    settingsExternalToastMessage = SETTINGS_TIME_SAVED_TOAST
+                    settingsExternalTimeVersion += 1
+                    settingsExternalToastVersion += 1
+                    navController.popBackStack()
+                }
             )
         }
 

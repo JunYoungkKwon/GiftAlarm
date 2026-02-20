@@ -23,6 +23,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun SettingsTimeRoute(
     onNavigateBack: () -> Unit,
+    onSaveCompleted: (String) -> Unit,
     viewModel: SettingsTimeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.observeAsState(SettingsTimeUiState())
@@ -31,8 +32,8 @@ fun SettingsTimeRoute(
 
     LaunchedEffect(effect) {
         when (val currentEffect = effect) {
-            SettingsTimeEffect.NavigateBack -> {
-                onNavigateBack()
+            is SettingsTimeEffect.NavigateBack -> {
+                onSaveCompleted(currentEffect.savedTimeText)
                 viewModel.consumeEffect()
             }
             is SettingsTimeEffect.ShowMessage -> {
