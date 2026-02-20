@@ -14,6 +14,7 @@ import com.example.gifticonalarm.ui.feature.home.model.HomeUiState
 fun HomeRoute(
     onNavigateToAdd: () -> Unit = {},
     onNavigateToCashVoucherDetail: (String) -> Unit = {},
+    onNavigateToNotification: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.observeAsState(
@@ -26,6 +27,7 @@ fun HomeRoute(
 
     HomeScreen(
         state = state,
+        onNotificationClick = onNavigateToNotification,
         onSortSelected = viewModel::onSortSelected,
         onPrimaryActionClick = onNavigateToAdd,
         onFocusClick = { focusId ->

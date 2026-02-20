@@ -280,6 +280,17 @@ private fun NotificationTimeSection(
     onTimeSelected: (Int, Int) -> Unit
 ) {
     val context = LocalContext.current
+    val openTimePicker = {
+        TimePickerDialog(
+            context,
+            { _, selectedHour, selectedMinute ->
+                onTimeSelected(selectedHour, selectedMinute)
+            },
+            hour,
+            minute,
+            true
+        ).show()
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle(title = "알림 수신 시간")
         RoundedSurface {
@@ -296,20 +307,12 @@ private fun NotificationTimeSection(
                     color = SettingsTitle,
                     fontWeight = FontWeight.Medium
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.clickable(onClick = openTimePicker),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
-                            .clickable {
-                                TimePickerDialog(
-                                    context,
-                                    { _, selectedHour, selectedMinute ->
-                                        onTimeSelected(selectedHour, selectedMinute)
-                                    },
-                                    hour,
-                                    minute,
-                                    true
-                                ).show()
-                            }
                             .background(Color(0xFFE8E8F0), RoundedCornerShape(8.dp))
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {

@@ -105,6 +105,7 @@ class SettingsViewModel @Inject constructor(
                 notifyMinute = minute.coerceIn(0, 59)
             )
         }
+        _effect.value = SettingsEffect.ShowMessage("알림 시간이 저장되었어요.")
     }
 
     private fun Flow<NotificationSettings>.mapToUiState(): Flow<SettingsUiState> {

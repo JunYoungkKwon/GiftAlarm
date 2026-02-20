@@ -1,5 +1,6 @@
 package com.example.gifticonalarm.data.notification
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -25,6 +26,7 @@ class GifticonNotificationDispatcher @Inject constructor(
     private val context: Context
 ) {
 
+    @SuppressLint("MissingPermission")
     fun notifyExpiringGifticons(gifticons: List<Gifticon>) {
         if (gifticons.isEmpty()) return
         if (!canPostNotification()) return
@@ -63,13 +65,6 @@ class GifticonNotificationDispatcher @Inject constructor(
             .build()
 
         val notificationManager = NotificationManagerCompat.from(context)
-        val hasPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        if (!hasPermission) return
-
         try {
             notificationManager.notify(NOTIFICATION_ID, notification)
         } catch (_: SecurityException) {

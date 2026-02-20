@@ -2,11 +2,13 @@ package com.example.gifticonalarm.di
 
 import com.example.gifticonalarm.data.repository.GifticonRepositoryImpl
 import com.example.gifticonalarm.data.repository.ImageStorageRepositoryImpl
+import com.example.gifticonalarm.data.repository.NotificationInboxRepositoryImpl
 import com.example.gifticonalarm.data.repository.NotificationSettingsRepositoryImpl
 import com.example.gifticonalarm.data.repository.OnboardingRepositoryImpl
 import com.example.gifticonalarm.data.notification.WorkManagerNotificationScheduler
 import com.example.gifticonalarm.domain.repository.GifticonRepository
 import com.example.gifticonalarm.domain.repository.ImageStorageRepository
+import com.example.gifticonalarm.domain.repository.NotificationInboxRepository
 import com.example.gifticonalarm.domain.repository.NotificationScheduler
 import com.example.gifticonalarm.domain.repository.NotificationSettingsRepository
 import com.example.gifticonalarm.domain.repository.OnboardingRepository
@@ -47,6 +49,12 @@ abstract class RepositoryModule {
     abstract fun bindNotificationSettingsRepository(
         notificationSettingsRepositoryImpl: NotificationSettingsRepositoryImpl
     ): NotificationSettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationInboxRepository(
+        notificationInboxRepositoryImpl: NotificationInboxRepositoryImpl
+    ): NotificationInboxRepository
 
     @Binds
     @Singleton
