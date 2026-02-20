@@ -77,6 +77,7 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+    implementation(libs.zxing.core)
 
     // Test
     testImplementation(libs.junit)

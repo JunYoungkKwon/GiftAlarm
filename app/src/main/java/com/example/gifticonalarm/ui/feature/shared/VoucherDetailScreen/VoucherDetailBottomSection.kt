@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.oned.Code128Writer
 import com.example.gifticonalarm.ui.theme.GifticonBorderSoft
 import com.example.gifticonalarm.ui.theme.GifticonBorderWarm
 import com.example.gifticonalarm.ui.theme.GifticonBlack
@@ -65,6 +67,7 @@ private val CardBorder = GifticonBorderSoft
 private val PrimaryText = GifticonTextPrimary
 private val SecondaryText = GifticonTextMuted
 private val Accent = GifticonBrandPrimary
+private const val UNREGISTERED_BARCODE = "미등록"
 
 private data class ExpireBadgeStyle(
     val containerColor: Color,
@@ -172,7 +175,7 @@ private fun BarcodeCard(
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            BarcodeGraphic()
+            BarcodeGraphic(barcodeNumber = barcodeNumber)
             Spacer(modifier = Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -285,7 +288,7 @@ private fun MemoBlock(memoText: String) {
 }
 
 @Composable
-private fun BarcodeGraphic() {
+private fun BarcodeGraphic(barcodeNumber: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -293,23 +296,76 @@ private fun BarcodeGraphic() {
             .clip(RoundedCornerShape(8.dp))
             .background(GifticonWhite)
             .drawBehind {
-                val widths = listOf(3.dp, 1.dp, 4.dp, 2.dp, 1.dp, 5.dp, 2.dp, 1.dp, 3.dp, 1.dp, 4.dp, 2.dp)
-                val unit = 1.dp.toPx()
-                var x = 8.dp.toPx()
-                while (x < size.width - 8.dp.toPx()) {
-                    widths.forEach { widthDp ->
-                        if (x >= size.width - 8.dp.toPx()) return@forEach
-                        drawRect(
-                            color = GifticonBlack,
-                            topLeft = Offset(x, 8.dp.toPx()),
-                            size = Size(widthDp.toPx(), size.height - 16.dp.toPx())
-                        )
-                        x += widthDp.toPx() + unit
-                    }
+                val modules = encodeCode128ModulesOrNull(barcodeNumber)
+                if (modules != null) {
+                    drawCode128Bars(modules)
+                } else {
+                    drawFallbackBars()
                 }
             }
             .border(1.dp, CardBorder, RoundedCornerShape(8.dp))
     )
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCode128Bars(modules: BooleanArray) {
+    if (modules.isEmpty()) {
+        drawFallbackBars()
+        return
+    }
+
+    val horizontalPadding = 8.dp.toPx()
+    val topPadding = 8.dp.toPx()
+    val height = size.height - (topPadding * 2f)
+    val availableWidth = size.width - (horizontalPadding * 2f)
+    if (availableWidth <= 0f || height <= 0f) return
+
+    val moduleWidth = availableWidth / modules.size.toFloat()
+    modules.forEachIndexed { index, isBlack ->
+        if (!isBlack) return@forEachIndexed
+        drawRect(
+            color = GifticonBlack,
+            topLeft = Offset(horizontalPadding + (index * moduleWidth), topPadding),
+            size = Size(moduleWidth, height)
+        )
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFallbackBars() {
+    val widths = listOf(1.dp, 2.dp, 1.dp, 1.dp, 2.dp, 1.dp, 1.dp, 1.dp, 2.dp, 1.dp, 2.dp, 1.dp, 2.dp, 1.dp, 2.dp, 1.dp)
+    val horizontalPadding = 8.dp.toPx()
+    val topPadding = 8.dp.toPx()
+    val barHeight = size.height - (topPadding * 2f)
+    val gap = 1.dp.toPx()
+    val availableWidth = size.width - (horizontalPadding * 2f)
+    if (availableWidth <= 0f || barHeight <= 0f) return
+
+    val totalPatternWidth = widths.sumOf { it.toPx().toDouble() }.toFloat() + gap * (widths.size - 1)
+    if (totalPatternWidth <= 0f) return
+
+    val targetWidth = availableWidth * 0.5f
+    val scale = targetWidth / totalPatternWidth
+    var x = horizontalPadding + ((availableWidth - targetWidth) / 2f)
+    widths.forEach { widthDp ->
+        val barWidth = widthDp.toPx() * scale
+        drawRect(
+            color = GifticonBlack,
+            topLeft = Offset(x, topPadding),
+            size = Size(barWidth, barHeight)
+        )
+        x += barWidth + (gap * scale)
+    }
+}
+
+private fun encodeCode128ModulesOrNull(barcodeNumber: String): BooleanArray? {
+    val normalizedBarcode = barcodeNumber.trim()
+    if (normalizedBarcode.isBlank() || normalizedBarcode == UNREGISTERED_BARCODE) return null
+    if (!normalizedBarcode.all { it.code in 32..126 }) return null
+
+    return runCatching {
+        val bitMatrix = Code128Writer().encode(normalizedBarcode, BarcodeFormat.CODE_128, 600, 1)
+        val row = bitMatrix.height / 2
+        BooleanArray(bitMatrix.width) { x -> bitMatrix.get(x, row) }
+    }.getOrNull()
 }
 
 private fun resolveExpireBadgeStyle(expireBadgeText: String): ExpireBadgeStyle {
