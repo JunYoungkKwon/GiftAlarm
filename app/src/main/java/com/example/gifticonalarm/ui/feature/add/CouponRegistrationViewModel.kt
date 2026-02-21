@@ -50,6 +50,8 @@ class CouponRegistrationViewModel @Inject constructor(
     private companion object {
         const val AMOUNT_MEMO_PREFIX = "금액권:"
         const val NOTE_PREFIX = "메모:"
+        const val USAGE_HISTORY_PREFIX = "사용내역:"
+        const val LEGACY_USAGE_PREFIX = "최근 사용:"
     }
 
     private val _isLoading = MutableLiveData(false)
@@ -156,7 +158,7 @@ class CouponRegistrationViewModel @Inject constructor(
         }
 
         val memo = when (state.couponType) {
-            CouponType.AMOUNT -> buildAmountMemo(state.amount, state.memo)
+            CouponType.AMOUNT -> buildAmountMemo(state.amount, state.memo, existingGifticonForSave?.memo)
             CouponType.EXCHANGE -> state.memo.trim().ifBlank { null }
         }
 
@@ -301,22 +303,62 @@ class CouponRegistrationViewModel @Inject constructor(
             ?.removePrefix(NOTE_PREFIX)
             ?.trim()
         if (!noteLine.isNullOrBlank()) {
+            if (type == GifticonType.AMOUNT) {
+                if (noteLine.startsWith(LEGACY_USAGE_PREFIX)) return ""
+                return noteLine.substringBefore(" | $LEGACY_USAGE_PREFIX").trim()
+            }
             return noteLine
         }
 
         if (lines.firstOrNull()?.startsWith(AMOUNT_MEMO_PREFIX) == true) {
-            return lines.drop(1).joinToString("\n").trim()
+            val memoCandidates = lines.drop(1)
+                .filterNot { it.startsWith(USAGE_HISTORY_PREFIX) }
+                .filterNot { it.startsWith(LEGACY_USAGE_PREFIX) }
+            return memoCandidates.joinToString("\n").trim()
         }
         return rawMemo
     }
 
-    private fun buildAmountMemo(amount: String, note: String): String? {
+    private fun buildAmountMemo(amount: String, note: String, previousMemo: String?): String? {
         val amountPart = amount.ifBlank { null }?.let { "$AMOUNT_MEMO_PREFIX ${it}원" }
         val notePart = note.trim().ifBlank { null }?.let { "$NOTE_PREFIX $it" }
+        val usageLines = previousMemo.orEmpty()
+            .lines()
+            .map { it.trim() }
+            .filter { it.startsWith(USAGE_HISTORY_PREFIX) && it.removePrefix(USAGE_HISTORY_PREFIX).trim().isNotBlank() }
+            .ifEmpty {
+                val legacyUsage = previousMemo.orEmpty()
+                    .lines()
+                    .map { it.trim() }
+                    .firstOrNull { it.startsWith(NOTE_PREFIX) }
+                    ?.removePrefix(NOTE_PREFIX)
+                    ?.trim()
+                    .orEmpty()
+                when {
+                    legacyUsage.contains("| $LEGACY_USAGE_PREFIX") -> {
+                        listOf("$USAGE_HISTORY_PREFIX ${legacyUsage.substringAfter("| $LEGACY_USAGE_PREFIX").trim()}")
+                    }
+                    legacyUsage.startsWith(LEGACY_USAGE_PREFIX) -> {
+                        listOf("$USAGE_HISTORY_PREFIX ${legacyUsage.removePrefix(LEGACY_USAGE_PREFIX).trim()}")
+                    }
+                    else -> emptyList()
+                }.filter { it.removePrefix(USAGE_HISTORY_PREFIX).trim().isNotBlank() }
+            }
+
         return when {
-            amountPart != null && notePart != null -> "$amountPart\n$notePart"
-            amountPart != null -> amountPart
-            notePart != null -> notePart
+            amountPart != null || notePart != null || usageLines.isNotEmpty() -> {
+                buildString {
+                    amountPart?.let { append(it) }
+                    notePart?.let {
+                        if (isNotEmpty()) append('\n')
+                        append(it)
+                    }
+                    usageLines.forEach { usageLine ->
+                        if (isNotEmpty()) append('\n')
+                        append(usageLine)
+                    }
+                }
+            }
             else -> null
         }
     }

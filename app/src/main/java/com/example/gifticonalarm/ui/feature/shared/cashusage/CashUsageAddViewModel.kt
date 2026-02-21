@@ -17,6 +17,8 @@ import kotlinx.coroutines.launch
 
 private const val AMOUNT_MEMO_PREFIX = "금액권:"
 private const val AMOUNT_NOTE_PREFIX = "메모:"
+private const val USAGE_HISTORY_PREFIX = "사용내역:"
+private const val LEGACY_USAGE_PREFIX = "최근 사용:"
 
 /**
  * 금액권 사용 내역 추가 화면 상태.
@@ -115,6 +117,7 @@ class CashUsageAddViewModel @Inject constructor(
         val updatedMemo = buildAmountMemo(
             previousMemo = gifticon.memo,
             remainAmount = remaining,
+            usedAmount = usedAmount,
             store = store,
             usedAtText = usedAt
         )
@@ -149,35 +152,79 @@ class CashUsageAddViewModel @Inject constructor(
     private fun buildAmountMemo(
         previousMemo: String?,
         remainAmount: Int,
+        usedAmount: Int,
         store: String,
         usedAtText: String
     ): String {
         val customMemo = extractMemoNote(previousMemo)
-        val usageSummary = buildString {
-            append("최근 사용: ")
-            if (store.isNotBlank()) append(store) else append("사용처 미입력")
-            if (usedAtText.isNotBlank()) append(" / $usedAtText")
-        }
+        val previousUsageHistory = extractUsageHistory(previousMemo)
+        val latestUsage = buildUsageEntry(
+            store = store,
+            usedAtText = usedAtText,
+            usedAmount = usedAmount
+        )
+        val mergedUsageHistory = listOf(latestUsage) + previousUsageHistory
 
         return buildString {
             append("$AMOUNT_MEMO_PREFIX ${formatAmount(remainAmount)}원")
-            append('\n')
-            append("$AMOUNT_NOTE_PREFIX ")
             if (customMemo.isNotBlank()) {
-                append(customMemo)
-                append(" | ")
+                append('\n')
+                append("$AMOUNT_NOTE_PREFIX $customMemo")
             }
-            append(usageSummary)
+            mergedUsageHistory.forEach { history ->
+                if (history.isBlank()) return@forEach
+                append('\n')
+                append("$USAGE_HISTORY_PREFIX $history")
+            }
         }
     }
 
     private fun extractMemoNote(memo: String?): String {
         val lines = memo.orEmpty().lines().map { it.trim() }.filter { it.isNotBlank() }
-        return lines.firstOrNull { it.startsWith(AMOUNT_NOTE_PREFIX) }
+        val memoLine = lines.firstOrNull { it.startsWith(AMOUNT_NOTE_PREFIX) }
             ?.removePrefix(AMOUNT_NOTE_PREFIX)
-            ?.substringBefore(" | ")
             ?.trim()
             .orEmpty()
+        if (memoLine.isBlank()) return ""
+        if (memoLine.startsWith(LEGACY_USAGE_PREFIX)) return ""
+        return memoLine.substringBefore(" | $LEGACY_USAGE_PREFIX").trim()
+    }
+
+    private fun extractUsageHistory(memo: String?): List<String> {
+        val lines = memo.orEmpty().lines().map { it.trim() }.filter { it.isNotBlank() }
+        val usageLines = lines
+            .filter { it.startsWith(USAGE_HISTORY_PREFIX) }
+            .map { it.removePrefix(USAGE_HISTORY_PREFIX).trim() }
+            .filter { it.isNotBlank() }
+
+        if (usageLines.isNotEmpty()) return usageLines
+
+        val legacyUsage = lines.firstOrNull { it.startsWith(AMOUNT_NOTE_PREFIX) }
+            ?.removePrefix(AMOUNT_NOTE_PREFIX)
+            ?.trim()
+            .orEmpty()
+
+        if (legacyUsage.isBlank()) return emptyList()
+        return when {
+            legacyUsage.contains("| $LEGACY_USAGE_PREFIX") -> {
+                listOf(
+                    legacyUsage.substringAfter("| $LEGACY_USAGE_PREFIX")
+                        .trim()
+                )
+            }
+            legacyUsage.startsWith(LEGACY_USAGE_PREFIX) -> {
+                listOf(legacyUsage.removePrefix(LEGACY_USAGE_PREFIX).trim())
+            }
+            else -> emptyList()
+        }.filter { it.isNotBlank() }
+    }
+
+    private fun buildUsageEntry(store: String, usedAtText: String, usedAmount: Int): String {
+        return buildString {
+            if (store.isNotBlank()) append(store) else append("사용처 미입력")
+            if (usedAtText.isNotBlank()) append(" / $usedAtText")
+            append(" / ${formatAmount(usedAmount)}원 사용")
+        }.trim()
     }
 
     private fun formatAmount(amount: Int): String {

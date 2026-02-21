@@ -19,8 +19,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Fullscreen
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -79,6 +81,7 @@ private data class ExpireBadgeStyle(
  */
 data class VoucherDetailBottomSectionUiModel(
     val barcodeNumber: String,
+    val usageHistoryText: String? = null,
     val expireDateText: String,
     val expireBadgeText: String,
     val exchangePlaceText: String,
@@ -98,7 +101,8 @@ fun VoucherDetailBottomSection(
     actionButtonContainerColor: Color = Accent,
     actionButtonContentColor: Color = GifticonWhite,
     actionButtonBorderColor: Color? = null,
-    showActionButtonIcon: Boolean = true
+    showActionButtonIcon: Boolean = true,
+    showActionButton: Boolean = true
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
         Surface(
@@ -110,48 +114,58 @@ fun VoucherDetailBottomSection(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 120.dp)),
+                    .padding(
+                        PaddingValues(
+                            start = 24.dp,
+                            end = 24.dp,
+                            top = 24.dp,
+                            bottom = if (showActionButton) 120.dp else 28.dp
+                        )
+                    ),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 BarcodeCard(
                     barcodeNumber = uiModel.barcodeNumber,
                     onCopyBarcodeClick = onCopyBarcodeClick
                 )
+                UsageHistoryBlock(usageHistoryText = uiModel.usageHistoryText)
                 ExpireInfo(expireDateText = uiModel.expireDateText, expireBadgeText = uiModel.expireBadgeText)
                 InfoBlock(content = uiModel.exchangePlaceText)
                 MemoBlock(memoText = uiModel.memoText)
             }
         }
 
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter),
-            color = GifticonWhite,
-            shadowElevation = 10.dp
-        ) {
-            Button(
-                onClick = onShowBarcodeClick,
+        if (showActionButton) {
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                shape = RoundedCornerShape(16.dp),
-                border = actionButtonBorderColor?.let { BorderStroke(1.dp, it) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = actionButtonContainerColor,
-                    contentColor = actionButtonContentColor
-                ),
-                contentPadding = PaddingValues(vertical = 14.dp)
+                    .align(Alignment.BottomCenter),
+                color = GifticonWhite,
+                shadowElevation = 10.dp
             ) {
-                if (showActionButtonIcon) {
-                    Icon(
-                        imageVector = Icons.Outlined.Fullscreen,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                Button(
+                    onClick = onShowBarcodeClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = actionButtonBorderColor?.let { BorderStroke(1.dp, it) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = actionButtonContainerColor,
+                        contentColor = actionButtonContentColor
+                    ),
+                    contentPadding = PaddingValues(vertical = 14.dp)
+                ) {
+                    if (showActionButtonIcon) {
+                        Icon(
+                            imageVector = Icons.Outlined.Fullscreen,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(text = actionButtonText, style = MaterialTheme.typography.titleMedium)
                 }
-                Text(text = actionButtonText, style = MaterialTheme.typography.titleMedium)
             }
         }
     }
@@ -198,6 +212,141 @@ private fun BarcodeCard(
             }
         }
     }
+}
+
+@Composable
+private fun UsageHistoryBlock(usageHistoryText: String?) {
+    val usageItems = usageHistoryText
+        ?.lines()
+        ?.map { rawLine ->
+            val line = rawLine.trim().removePrefix("•").trim()
+            val chunks = line.split(" / ").map { it.trim() }.filter { it.isNotBlank() }
+            UsageHistoryUiItem(
+                store = chunks.getOrNull(0).orEmpty(),
+                usedAt = chunks.getOrNull(1).orEmpty(),
+                amount = chunks.getOrNull(2).orEmpty()
+            )
+        }
+        ?.filter { it.store.isNotBlank() || it.usedAt.isNotBlank() || it.amount.isNotBlank() }
+        .orEmpty()
+    if (usageItems.isEmpty()) return
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = "사용내역",
+            style = MaterialTheme.typography.labelSmall,
+            color = SecondaryText,
+            fontWeight = FontWeight.Bold
+        )
+        Card(
+            colors = CardDefaults.cardColors(containerColor = GifticonWhite),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.dp, GifticonSurfaceSoft)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                usageItems.forEachIndexed { index, item ->
+                    UsageHistoryRow(
+                        item = item,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp)
+                    )
+                    if (index != usageItems.lastIndex) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(GifticonSurfaceSoft)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private data class UsageHistoryUiItem(
+    val store: String,
+    val usedAt: String,
+    val amount: String
+)
+
+@Composable
+private fun UsageHistoryRow(
+    item: UsageHistoryUiItem,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Storefront,
+                    contentDescription = null,
+                    tint = SecondaryText,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = item.store.ifBlank { "사용처 미입력" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = PrimaryText,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Surface(
+                color = Accent.copy(alpha = 0.06f),
+                shape = RoundedCornerShape(999.dp)
+            ) {
+                Text(
+                    text = formatUsageAmountText(item.amount),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Accent,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
+        }
+
+        if (item.usedAt.isNotBlank()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.CalendarToday,
+                    contentDescription = null,
+                    tint = SecondaryText,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = item.usedAt,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = GifticonTextMuted
+                )
+            }
+        }
+    }
+}
+
+private fun formatUsageAmountText(rawAmount: String): String {
+    val numeric = Regex("""([0-9,]+)""")
+        .find(rawAmount)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.trim()
+        .orEmpty()
+    if (numeric.isBlank()) return rawAmount
+    return "-${numeric}원"
 }
 
 @Composable
@@ -259,27 +408,25 @@ private fun InfoBlock(content: String) {
 
 @Composable
 private fun MemoBlock(memoText: String) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = GifticonWhite),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, GifticonSurfaceSoft)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = "메모",
+            style = MaterialTheme.typography.labelSmall,
+            color = SecondaryText,
+            fontWeight = FontWeight.Bold
+        )
+        Card(
+            colors = CardDefaults.cardColors(containerColor = GifticonWhite),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.dp, GifticonSurfaceSoft)
         ) {
-            Text(
-                text = "메모",
-                style = MaterialTheme.typography.labelSmall,
-                color = SecondaryText,
-                fontWeight = FontWeight.Bold
-            )
             Text(
                 text = memoText,
                 style = MaterialTheme.typography.bodyMedium,
-                color = GifticonTextSlateStrong
+                color = GifticonTextSlateStrong,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 14.dp)
             )
         }
     }

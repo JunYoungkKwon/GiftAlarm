@@ -16,7 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Fullscreen
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -63,6 +63,7 @@ data class CashVoucherDetailUiModel(
     val title: String,
     val status: String,
     val remainAmountText: String,
+    val usageHistoryText: String,
     val expireDateText: String,
     val expireBadgeText: String,
     val barcodeNumber: String,
@@ -77,6 +78,7 @@ data class CashVoucherDetailUiModel(
             title = "e카드 5만원 교환권",
             status = "사용 가능",
             remainAmountText = "32,500",
+            usageHistoryText = "스타벅스 강남점 / 2026-02-21 / 4,500원 사용",
             expireDateText = "2024. 12. 31 까지",
             expireBadgeText = "D-45",
             barcodeNumber = "1234 5678 9012",
@@ -98,7 +100,6 @@ fun CashVoucherDetailScreen(
     modifier: Modifier = Modifier,
     uiModel: CashVoucherDetailUiModel = CashVoucherDetailUiModel.placeholder(couponId),
     onAddUsageClick: () -> Unit = {},
-    onImageClick: () -> Unit = {},
     onShowBarcodeClick: () -> Unit = {},
     onCopyBarcodeClick: (String) -> Unit = {},
     onEditClick: () -> Unit = {},
@@ -158,7 +159,7 @@ fun CashVoucherDetailScreen(
             CashVoucherTopSection(
                 uiModel = uiModel,
                 onAddUsageClick = onAddUsageClick,
-                onImageClick = onImageClick,
+                onShowBarcodeClick = onShowBarcodeClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 18.dp)
@@ -178,7 +179,7 @@ fun CashVoucherDetailScreen(
 private fun CashVoucherTopSection(
     uiModel: CashVoucherDetailUiModel,
     onAddUsageClick: () -> Unit,
-    onImageClick: () -> Unit,
+    onShowBarcodeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -188,7 +189,7 @@ private fun CashVoucherTopSection(
         BalanceCard(uiModel = uiModel)
         ActionButtons(
             onAddUsageClick = onAddUsageClick,
-            onImageClick = onImageClick
+            onShowBarcodeClick = onShowBarcodeClick
         )
     }
 }
@@ -203,6 +204,7 @@ private fun CashVoucherBottomSection(
     VoucherDetailBottomSection(
         uiModel = VoucherDetailBottomSectionUiModel(
             barcodeNumber = uiModel.barcodeNumber,
+            usageHistoryText = uiModel.usageHistoryText,
             expireDateText = uiModel.expireDateText,
             expireBadgeText = uiModel.expireBadgeText,
             exchangePlaceText = uiModel.exchangePlaceText,
@@ -210,6 +212,7 @@ private fun CashVoucherBottomSection(
         ),
         onShowBarcodeClick = onShowBarcodeClick,
         onCopyBarcodeClick = onCopyBarcodeClick,
+        showActionButton = false,
         modifier = modifier
     )
 }
@@ -323,7 +326,7 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
 @Composable
 private fun ActionButtons(
     onAddUsageClick: () -> Unit,
-    onImageClick: () -> Unit
+    onShowBarcodeClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -346,7 +349,7 @@ private fun ActionButtons(
 
         Button(
             modifier = Modifier.weight(1f),
-            onClick = onImageClick,
+            onClick = onShowBarcodeClick,
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = GifticonSurfaceSoft,
@@ -354,9 +357,9 @@ private fun ActionButtons(
             ),
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
-            Icon(imageVector = Icons.Outlined.Image, contentDescription = null, modifier = Modifier.size(16.dp))
+            Icon(imageVector = Icons.Outlined.Fullscreen, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("교환권 이미지", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+            Text("바코드 크게 보기", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
         }
     }
 }

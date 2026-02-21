@@ -23,6 +23,8 @@ import javax.inject.Inject
 
 private const val AMOUNT_MEMO_PREFIX = "금액권:"
 private const val AMOUNT_NOTE_PREFIX = "메모:"
+private const val USAGE_HISTORY_PREFIX = "사용내역:"
+private const val LEGACY_USAGE_PREFIX = "최근 사용:"
 private const val DEFAULT_EXCHANGE_PLACE = "사용처 정보 없음"
 private const val UNREGISTERED_BARCODE = "미등록"
 
@@ -154,6 +156,7 @@ class VoucherDetailViewModel @Inject constructor(
             title = name,
             status = statusLabel(isUsed, expiryDate),
             remainAmountText = extractAmountText(memo),
+            usageHistoryText = extractUsageHistoryText(memo),
             expireDateText = "${formatGifticonDateUseCase(expiryDate, "yyyy. MM. dd")} 까지",
             expireBadgeText = detailBadgeLabel(expiryDate, isUsed),
             barcodeNumber = barcode.ifBlank { "미등록" },
@@ -208,13 +211,50 @@ class VoucherDetailViewModel @Inject constructor(
             ?.removePrefix(AMOUNT_NOTE_PREFIX)
             ?.trim()
         if (!explicitNote.isNullOrBlank()) {
+            if (type == GifticonType.AMOUNT) {
+                if (explicitNote.startsWith(LEGACY_USAGE_PREFIX)) return ""
+                return explicitNote.substringBefore(" | $LEGACY_USAGE_PREFIX").trim()
+            }
             return explicitNote
         }
 
         if (lines.firstOrNull()?.startsWith(AMOUNT_MEMO_PREFIX) == true) {
-            return lines.drop(1).joinToString("\n").trim()
+            val memoCandidates = lines.drop(1)
+                .filterNot { it.startsWith(USAGE_HISTORY_PREFIX) }
+                .filterNot { it.startsWith(LEGACY_USAGE_PREFIX) }
+            return memoCandidates.joinToString("\n").trim()
         }
         return rawMemo
+    }
+
+    private fun extractUsageHistoryText(memo: String?): String {
+        val lines = memo.orEmpty().lines().map { it.trim() }.filter { it.isNotBlank() }
+        val usageHistoryLines = lines
+            .filter { it.startsWith(USAGE_HISTORY_PREFIX) }
+            .map { it.removePrefix(USAGE_HISTORY_PREFIX).trim() }
+            .filter { it.isNotBlank() }
+
+        if (usageHistoryLines.isNotEmpty()) {
+            return usageHistoryLines.joinToString(separator = "\n") { "• $it" }
+        }
+
+        val legacyNote = lines.firstOrNull { it.startsWith(AMOUNT_NOTE_PREFIX) }
+            ?.removePrefix(AMOUNT_NOTE_PREFIX)
+            ?.trim()
+            .orEmpty()
+        if (legacyNote.isBlank()) return ""
+
+        val parsedLegacy = when {
+            legacyNote.contains("| $LEGACY_USAGE_PREFIX") -> {
+                legacyNote.substringAfter("| $LEGACY_USAGE_PREFIX").trim()
+            }
+            legacyNote.startsWith(LEGACY_USAGE_PREFIX) -> {
+                legacyNote.removePrefix(LEGACY_USAGE_PREFIX).trim()
+            }
+            else -> ""
+        }
+        if (parsedLegacy.isBlank()) return ""
+        return "• $parsedLegacy"
     }
 
     private fun detailBadgeLabel(expiryDate: java.util.Date, isUsed: Boolean): String {
