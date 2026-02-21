@@ -1,4 +1,4 @@
-package com.example.gifticonalarm.ui.common.components
+package com.example.gifticonalarm.ui.feature.shared.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

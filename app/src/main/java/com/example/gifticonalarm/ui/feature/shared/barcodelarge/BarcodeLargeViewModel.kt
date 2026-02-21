@@ -1,12 +1,17 @@
 package com.example.gifticonalarm.ui.feature.shared.barcodelarge
+import com.example.gifticonalarm.ui.feature.shared.text.TextFormatters
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
+import com.example.gifticonalarm.domain.model.DateFormatPolicy
 import com.example.gifticonalarm.domain.usecase.FormatGifticonDateUseCase
 import com.example.gifticonalarm.domain.usecase.GetGifticonByIdUseCase
 import com.example.gifticonalarm.domain.usecase.ResolveGifticonImageUrlUseCase
+import com.example.gifticonalarm.ui.feature.shared.livedata.liveDataOf
+import com.example.gifticonalarm.ui.feature.shared.util.parseCouponIdOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -21,7 +26,7 @@ class BarcodeLargeViewModel @Inject constructor(
 ) : ViewModel() {
 
     fun getUiState(couponId: String): LiveData<BarcodeLargeUiState> {
-        val id = couponId.toLongOrNull() ?: return androidx.lifecycle.MutableLiveData(BarcodeLargeUiState.NotFound)
+        val id = parseCouponIdOrNull(couponId) ?: return liveDataOf(BarcodeLargeUiState.NotFound)
         return getGifticonByIdUseCase(id).asLiveData().map { gifticon ->
             if (gifticon == null) {
                 BarcodeLargeUiState.NotFound
@@ -30,10 +35,12 @@ class BarcodeLargeViewModel @Inject constructor(
                     uiModel = BarcodeLargeUiModel(
                         couponId = couponId,
                         title = gifticon.name,
-                        exchangePlaceText = gifticon.brand.ifBlank { "사용처 정보 없음" },
+                        exchangePlaceText = gifticon.brand.ifBlank { CommonText.DEFAULT_EXCHANGE_PLACE },
                         productImageUrl = resolveGifticonImageUrlUseCase(gifticon.id, gifticon.imageUri),
                         barcodeNumber = gifticon.barcode,
-                        expireDateText = "${formatGifticonDateUseCase(gifticon.expiryDate, "yyyy.MM.dd")} 까지"
+                        expireDateText = TextFormatters.untilDateWithPostfix(
+                            formatGifticonDateUseCase(gifticon.expiryDate, DateFormatPolicy.YMD_DOT)
+                        )
                     )
                 )
             }

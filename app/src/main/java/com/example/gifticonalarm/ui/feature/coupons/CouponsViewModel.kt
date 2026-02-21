@@ -6,8 +6,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import com.example.gifticonalarm.domain.model.Gifticon
-import com.example.gifticonalarm.domain.model.GifticonAvailability
-import com.example.gifticonalarm.domain.model.GifticonType
 import com.example.gifticonalarm.domain.usecase.BuildGifticonStatusLabelUseCase
 import com.example.gifticonalarm.domain.usecase.CalculateDdayUseCase
 import com.example.gifticonalarm.domain.usecase.FormatGifticonDateUseCase
@@ -18,6 +16,9 @@ import com.example.gifticonalarm.ui.feature.coupons.model.CouponCategoryType
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponFilterType
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponStatus
 import com.example.gifticonalarm.ui.feature.coupons.model.CouponUiModel
+import com.example.gifticonalarm.ui.feature.coupons.model.toCouponCategoryType
+import com.example.gifticonalarm.ui.feature.coupons.model.toCouponStatus
+import com.example.gifticonalarm.ui.feature.shared.text.TextFormatters
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.map
@@ -56,27 +57,10 @@ class CouponsViewModel @Inject constructor(
             val filter = _selectedFilter.value ?: CouponFilterType.ALL
             val category = _selectedCategory.value ?: CouponCategoryType.ALL
 
-            val byCategory = when (category) {
-                CouponCategoryType.ALL -> sourceCoupons
-                CouponCategoryType.EXCHANGE -> sourceCoupons.filter { it.category == CouponCategoryType.EXCHANGE }
-                CouponCategoryType.AMOUNT -> sourceCoupons.filter { it.category == CouponCategoryType.AMOUNT }
-            }
-
-            val byFilter = when (filter) {
-                CouponFilterType.ALL -> byCategory
-                CouponFilterType.AVAILABLE -> byCategory.filter { it.status == CouponStatus.AVAILABLE }
-                CouponFilterType.USED -> byCategory.filter { it.status == CouponStatus.USED }
-                CouponFilterType.EXPIRED -> byCategory.filter { it.status == CouponStatus.EXPIRED }
-            }
-
-            value = if (query.isBlank()) {
-                byFilter
-            } else {
-                byFilter.filter {
-                    it.brand.contains(query, ignoreCase = true) ||
-                        it.name.contains(query, ignoreCase = true)
-                }
-            }
+            value = sourceCoupons
+                .filterByCategory(category)
+                .filterByStatus(filter)
+                .filterByQuery(query)
         }
 
         addSource(allCoupons) { update() }
@@ -103,19 +87,16 @@ class CouponsViewModel @Inject constructor(
             isUsed = gifticon.isUsed,
             expiryDate = gifticon.expiryDate
         )
-        val status = when (availability) {
-            GifticonAvailability.USED -> CouponStatus.USED
-            GifticonAvailability.EXPIRED -> CouponStatus.EXPIRED
-            GifticonAvailability.AVAILABLE -> CouponStatus.AVAILABLE
-        }
+        val status = availability.toCouponStatus()
+        val formattedDate = formatGifticonDateUseCase(gifticon.expiryDate)
 
         return CouponUiModel(
             id = gifticon.id,
             brand = gifticon.brand,
             name = gifticon.name,
             expiryText = when (status) {
-                CouponStatus.USED -> "${formatGifticonDateUseCase(gifticon.expiryDate)} 사용"
-                else -> "~${formatGifticonDateUseCase(gifticon.expiryDate)} 까지"
+                CouponStatus.USED -> TextFormatters.usedOn(formattedDate)
+                else -> TextFormatters.untilDateWithPostfix(formattedDate)
             },
             statusBadge = buildGifticonStatusLabelUseCase(
                 isUsed = gifticon.isUsed,
@@ -124,10 +105,32 @@ class CouponsViewModel @Inject constructor(
             imageUrl = resolveGifticonImageUrlUseCase(gifticon.id, gifticon.imageUri),
             dday = dday,
             status = status,
-            category = when (gifticon.type) {
-                GifticonType.EXCHANGE -> CouponCategoryType.EXCHANGE
-                GifticonType.AMOUNT -> CouponCategoryType.AMOUNT
-            }
+            category = gifticon.type.toCouponCategoryType()
         )
+    }
+
+    private fun List<CouponUiModel>.filterByCategory(category: CouponCategoryType): List<CouponUiModel> {
+        return when (category) {
+            CouponCategoryType.ALL -> this
+            CouponCategoryType.EXCHANGE -> filter { it.category == CouponCategoryType.EXCHANGE }
+            CouponCategoryType.AMOUNT -> filter { it.category == CouponCategoryType.AMOUNT }
+        }
+    }
+
+    private fun List<CouponUiModel>.filterByStatus(filter: CouponFilterType): List<CouponUiModel> {
+        return when (filter) {
+            CouponFilterType.ALL -> this
+            CouponFilterType.AVAILABLE -> filter { it.status == CouponStatus.AVAILABLE }
+            CouponFilterType.USED -> filter { it.status == CouponStatus.USED }
+            CouponFilterType.EXPIRED -> filter { it.status == CouponStatus.EXPIRED }
+        }
+    }
+
+    private fun List<CouponUiModel>.filterByQuery(query: String): List<CouponUiModel> {
+        if (query.isBlank()) return this
+        return filter {
+            it.brand.contains(query, ignoreCase = true) ||
+                it.name.contains(query, ignoreCase = true)
+        }
     }
 }

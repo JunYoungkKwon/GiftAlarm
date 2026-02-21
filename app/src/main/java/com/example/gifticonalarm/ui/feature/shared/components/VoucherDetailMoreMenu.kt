@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.gifticonalarm.ui.feature.shared.text.VoucherText
 import com.example.gifticonalarm.ui.theme.GifticonBorderSoft
 import com.example.gifticonalarm.ui.theme.GifticonSurfaceSoft
 import com.example.gifticonalarm.ui.theme.GifticonTextSlate
@@ -63,7 +64,7 @@ fun VoucherDetailMoreMenu(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             VoucherBottomSheetAction(
-                text = "수정하기",
+                text = VoucherText.ACTION_EDIT,
                 tint = GifticonTextSlateStrong,
                 icon = {
                     Icon(
@@ -83,7 +84,7 @@ fun VoucherDetailMoreMenu(
                 thickness = 1.dp
             )
             VoucherBottomSheetAction(
-                text = "삭제하기",
+                text = VoucherText.ACTION_DELETE,
                 tint = MaterialTheme.colorScheme.error,
                 icon = {
                     Icon(

@@ -1,4 +1,6 @@
 package com.example.gifticonalarm.ui.feature.shared.barcodelarge
+import com.example.gifticonalarm.ui.feature.shared.text.TextFormatters
+import com.example.gifticonalarm.ui.feature.shared.text.VoucherText
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +23,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -43,8 +44,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.gifticonalarm.R
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.oned.Code128Writer
+import com.example.gifticonalarm.ui.feature.shared.components.BackNavigationIcon
+import com.example.gifticonalarm.ui.feature.shared.util.encodeCode128ModulesOrNull
+import com.example.gifticonalarm.ui.feature.shared.util.formatBarcodeNumberForDisplay
 
 private val ScreenBackground = Color(0xFFFFFFFF)
 private val Primary = Color(0xFF191971)
@@ -69,7 +71,7 @@ fun BarcodeLargeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = ScreenBackground),
                 title = {
                     Text(
-                        text = "바코드 크게 보기",
+                        text = VoucherText.BARCODE_TITLE,
                         style = MaterialTheme.typography.titleMedium,
                         color = TitleColor,
                         fontWeight = FontWeight.Bold,
@@ -77,14 +79,7 @@ fun BarcodeLargeScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onCloseClick) {
-                        Text(
-                            text = "‹",
-                            color = Primary,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                    BackNavigationIcon(onClick = onCloseClick, tint = Primary)
                 },
                 actions = {
                     Surface(
@@ -104,7 +99,7 @@ fun BarcodeLargeScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "밝기 최대",
+                                text = VoucherText.BARCODE_BRIGHTNESS_MAX,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = SubText,
                                 fontWeight = FontWeight.Bold
@@ -135,7 +130,7 @@ fun BarcodeLargeScreen(
             ) {
                 AsyncImage(
                     model = uiModel.productImageUrl,
-                    contentDescription = "기프티콘 이미지",
+                    contentDescription = VoucherText.BARCODE_IMAGE_DESCRIPTION,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                     error = painterResource(id = R.drawable.default_coupon_image),
@@ -151,7 +146,7 @@ fun BarcodeLargeScreen(
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "교환처: ${uiModel.exchangePlaceText}",
+                text = TextFormatters.exchangePlaceLabel(uiModel.exchangePlaceText),
                 style = MaterialTheme.typography.bodySmall,
                 color = SubText
             )
@@ -167,7 +162,7 @@ fun BarcodeLargeScreen(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "바코드가 읽히지 않으면 번호를 입력해주세요.",
+                text = VoucherText.BARCODE_HINT_INPUT_NUMBER,
                 style = MaterialTheme.typography.bodySmall,
                 color = Caption
             )
@@ -229,30 +224,11 @@ private fun ExpireChip(expireDateText: String) {
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "유효기간: $expireDateText",
+                text = TextFormatters.expireDateLabel(expireDateText),
                 style = MaterialTheme.typography.bodySmall,
                 color = SubText,
                 fontWeight = FontWeight.Medium
             )
         }
     }
-}
-
-private fun encodeCode128ModulesOrNull(barcodeNumber: String): BooleanArray? {
-    val normalized = barcodeNumber.trim()
-    if (normalized.isBlank()) return null
-    if (!normalized.all { it.code in 32..126 }) return null
-
-    return runCatching {
-        val bitMatrix = Code128Writer().encode(normalized, BarcodeFormat.CODE_128, 800, 1)
-        val row = bitMatrix.height / 2
-        BooleanArray(bitMatrix.width) { x -> bitMatrix.get(x, row) }
-    }.getOrNull()
-}
-
-private fun formatBarcodeNumberForDisplay(rawBarcodeNumber: String): String {
-    val normalized = rawBarcodeNumber.trim()
-    if (normalized.isBlank()) return normalized
-    val compact = normalized.replace(" ", "")
-    return compact.chunked(4).joinToString(" ")
 }

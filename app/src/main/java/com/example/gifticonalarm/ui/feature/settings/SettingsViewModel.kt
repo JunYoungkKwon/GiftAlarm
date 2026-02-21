@@ -10,6 +10,10 @@ import com.example.gifticonalarm.domain.usecase.GetNotificationSettingsUseCase
 import com.example.gifticonalarm.domain.usecase.ObserveNotificationSettingsUseCase
 import com.example.gifticonalarm.domain.usecase.SyncNotificationScheduleUseCase
 import com.example.gifticonalarm.domain.usecase.UpdateNotificationSettingsUseCase
+import com.example.gifticonalarm.ui.feature.shared.livedata.consumeEffect
+import com.example.gifticonalarm.ui.feature.shared.livedata.emitEffect
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
+import com.example.gifticonalarm.ui.feature.shared.util.formatHourMinute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -27,7 +31,7 @@ data class SettingsUiState(
     val notify1DayBefore: Boolean = true,
     val notificationHour: Int = 9,
     val notificationMinute: Int = 0,
-    val notificationTimeText: String = "09:00"
+    val notificationTimeText: String = formatHourMinute(9, 0)
 )
 
 sealed interface SettingsEffect {
@@ -53,59 +57,33 @@ class SettingsViewModel @Inject constructor(
 
     fun updatePushEnabled(enabled: Boolean) {
         updateSettings { copy(pushEnabled = enabled) }
-        _effect.value = SettingsEffect.ShowMessage(
-            if (enabled) "푸시 알림을 켰어요." else "푸시 알림을 껐어요."
-        )
+        _effect.emitEffect(SettingsEffect.ShowMessage(
+            if (enabled) CommonText.MESSAGE_PUSH_ENABLED else CommonText.MESSAGE_PUSH_DISABLED
+        ))
     }
 
     fun updateNotify30Days(enabled: Boolean) {
-        updateSettings {
-            copy(
-                selectedDays = selectedDays.toMutableSet().apply {
-                    if (enabled) add(30) else remove(30)
-                }
-            )
-        }
+        updateNotifyDay(day = 30, enabled = enabled)
     }
 
     fun updateNotify7Days(enabled: Boolean) {
-        updateSettings {
-            copy(
-                selectedDays = selectedDays.toMutableSet().apply {
-                    if (enabled) add(7) else remove(7)
-                }
-            )
-        }
+        updateNotifyDay(day = 7, enabled = enabled)
     }
 
     fun updateNotify3Days(enabled: Boolean) {
-        updateSettings {
-            copy(
-                selectedDays = selectedDays.toMutableSet().apply {
-                    if (enabled) add(3) else remove(3)
-                }
-            )
-        }
+        updateNotifyDay(day = 3, enabled = enabled)
     }
 
     fun updateNotify1Day(enabled: Boolean) {
-        updateSettings {
-            copy(
-                selectedDays = selectedDays.toMutableSet().apply {
-                    if (enabled) add(1) else remove(1)
-                }
-            )
-        }
+        updateNotifyDay(day = 1, enabled = enabled)
     }
 
-    fun updateNotificationTime(hour: Int, minute: Int) {
+    private fun updateNotifyDay(day: Int, enabled: Boolean) {
         updateSettings {
             copy(
-                notifyHour = hour.coerceIn(0, 23),
-                notifyMinute = minute.coerceIn(0, 59)
+                selectedDays = selectedDays.updateDaySelection(day, enabled)
             )
         }
-        _effect.value = SettingsEffect.ShowMessage("알림 시간이 저장되었어요.")
     }
 
     private fun Flow<NotificationSettings>.mapToUiState(): Flow<SettingsUiState> {
@@ -118,7 +96,7 @@ class SettingsViewModel @Inject constructor(
                 notify1DayBefore = 1 in settings.selectedDays,
                 notificationHour = settings.notifyHour,
                 notificationMinute = settings.notifyMinute,
-                notificationTimeText = "%02d:%02d".format(settings.notifyHour, settings.notifyMinute)
+                notificationTimeText = formatHourMinute(settings.notifyHour, settings.notifyMinute)
             )
         }
     }
@@ -132,7 +110,13 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private fun Set<Int>.updateDaySelection(day: Int, enabled: Boolean): Set<Int> {
+        return toMutableSet().apply {
+            if (enabled) add(day) else remove(day)
+        }
+    }
+
     fun consumeEffect() {
-        _effect.value = null
+        _effect.consumeEffect()
     }
 }

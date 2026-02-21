@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.gifticonalarm.ui.feature.shared.text.SettingsText
+import com.example.gifticonalarm.ui.feature.shared.text.TextFormatters
 
 private val SettingsBackground = Color(0xFFF6F6F8)
 private val SettingsSurface = Color.White
@@ -43,9 +45,19 @@ private val SettingsSubText = Color(0xFF64748B)
 private val SettingsDivider = Color(0xFFE2E8F0)
 private val DangerBadge = Color(0xFFDC2626)
 private val DangerBadgeBg = Color(0xFFFEE2E2)
+private val DefaultCycleBadgeBg = Color(0xFFEFF6FF)
 private val PageHorizontalPadding = 20.dp
 private val CardHorizontalPadding = 16.dp
 private val SectionSpacing = 18.dp
+
+private data class NotificationCycleOption(
+    val title: String,
+    val day: Int,
+    val checked: Boolean,
+    val onCheckedChange: (Boolean) -> Unit,
+    val badgeBg: Color,
+    val badgeTextColor: Color
+)
 
 /**
  * 알림 설정 화면.
@@ -104,7 +116,7 @@ private fun SettingsHeader() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "알림 설정",
+            text = SettingsText.TITLE,
             style = MaterialTheme.typography.titleMedium,
             color = SettingsTitle,
             fontWeight = FontWeight.Bold
@@ -127,13 +139,13 @@ private fun PushToggleSection(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "푸시 알림 받기",
+                    text = SettingsText.PUSH_TITLE,
                     style = MaterialTheme.typography.bodyLarge,
                     color = SettingsTitle,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "기프티콘 만료 전 알림을 받아보세요.",
+                    text = SettingsText.PUSH_DESCRIPTION,
                     style = MaterialTheme.typography.bodySmall,
                     color = SettingsSubText
                 )
@@ -160,45 +172,58 @@ private fun NotificationCycleSection(
     onNotify3DaysChange: (Boolean) -> Unit,
     onNotify1DayChange: (Boolean) -> Unit
 ) {
+    val cycleOptions = listOf(
+        NotificationCycleOption(
+            title = SettingsText.NOTIFY_30_DAYS,
+            day = 30,
+            checked = uiState.notify30DaysBefore,
+            onCheckedChange = onNotify30DaysChange,
+            badgeBg = DefaultCycleBadgeBg,
+            badgeTextColor = SettingsPrimary
+        ),
+        NotificationCycleOption(
+            title = SettingsText.NOTIFY_7_DAYS,
+            day = 7,
+            checked = uiState.notify7DaysBefore,
+            onCheckedChange = onNotify7DaysChange,
+            badgeBg = DefaultCycleBadgeBg,
+            badgeTextColor = SettingsPrimary
+        ),
+        NotificationCycleOption(
+            title = SettingsText.NOTIFY_3_DAYS,
+            day = 3,
+            checked = uiState.notify3DaysBefore,
+            onCheckedChange = onNotify3DaysChange,
+            badgeBg = DefaultCycleBadgeBg,
+            badgeTextColor = SettingsPrimary
+        ),
+        NotificationCycleOption(
+            title = SettingsText.NOTIFY_1_DAY,
+            day = 1,
+            checked = uiState.notify1DayBefore,
+            onCheckedChange = onNotify1DayChange,
+            badgeBg = DangerBadgeBg,
+            badgeTextColor = DangerBadge
+        )
+    )
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle(title = "알림 주기")
+        SectionTitle(title = SettingsText.CYCLE_TITLE)
         RoundedSurface {
             Column {
-                NotificationOptionRow(
-                    title = "만료 30일 전",
-                    badgeText = "D-30",
-                    badgeBg = Color(0xFFEFF6FF),
-                    badgeTextColor = SettingsPrimary,
-                    checked = uiState.notify30DaysBefore,
-                    onCheckedChange = onNotify30DaysChange
-                )
-                RowDivider()
-                NotificationOptionRow(
-                    title = "만료 7일 전",
-                    badgeText = "D-7",
-                    badgeBg = Color(0xFFEFF6FF),
-                    badgeTextColor = SettingsPrimary,
-                    checked = uiState.notify7DaysBefore,
-                    onCheckedChange = onNotify7DaysChange
-                )
-                RowDivider()
-                NotificationOptionRow(
-                    title = "만료 3일 전",
-                    badgeText = "D-3",
-                    badgeBg = Color(0xFFEFF6FF),
-                    badgeTextColor = SettingsPrimary,
-                    checked = uiState.notify3DaysBefore,
-                    onCheckedChange = onNotify3DaysChange
-                )
-                RowDivider()
-                NotificationOptionRow(
-                    title = "만료 1일 전",
-                    badgeText = "D-1",
-                    badgeBg = DangerBadgeBg,
-                    badgeTextColor = DangerBadge,
-                    checked = uiState.notify1DayBefore,
-                    onCheckedChange = onNotify1DayChange
-                )
+                cycleOptions.forEachIndexed { index, option ->
+                    NotificationOptionRow(
+                        title = option.title,
+                        badgeText = TextFormatters.ddayLabel(option.day),
+                        badgeBg = option.badgeBg,
+                        badgeTextColor = option.badgeTextColor,
+                        checked = option.checked,
+                        onCheckedChange = option.onCheckedChange
+                    )
+                    if (index != cycleOptions.lastIndex) {
+                        RowDivider()
+                    }
+                }
             }
         }
     }
@@ -265,7 +290,7 @@ private fun NotificationTimeSection(
     onTimeClick: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle(title = "알림 수신 시간")
+        SectionTitle(title = SettingsText.TIME_TITLE)
         RoundedSurface {
             Row(
                 modifier = Modifier
@@ -276,7 +301,7 @@ private fun NotificationTimeSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "시간 선택",
+                    text = SettingsText.TIME_PICKER,
                     style = MaterialTheme.typography.bodyMedium,
                     color = SettingsTitle,
                     fontWeight = FontWeight.Medium
@@ -320,7 +345,7 @@ private fun SoundAndVibrationSection() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "소리 및 진동 설정",
+                text = SettingsText.SOUND_AND_VIBRATION,
                 style = MaterialTheme.typography.bodyMedium,
                 color = SettingsTitle,
                 fontWeight = FontWeight.Medium

@@ -20,7 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsActive
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Icon
+import com.example.gifticonalarm.ui.feature.shared.components.BackNavigationIcon
+import com.example.gifticonalarm.ui.feature.shared.text.NotificationText
 
 private val NotificationBackground = Color(0xFFFFFFFF)
 private val NotificationUnreadBackground = Color(0xFFF0F4FF)
@@ -44,6 +45,19 @@ private val NotificationBody = Color(0xFF4B5563)
 private val NotificationSubText = Color(0xFF9CA3AF)
 private val NotificationDivider = Color(0xFFF3F4F6)
 private val NotificationCardShape = RoundedCornerShape(16.dp)
+private val NotificationReadBackground = Color(0xFFFDFDFE)
+private val NotificationReadIconContainer = Color(0xFFF6F6F8)
+private val NotificationShadowAmbient = Color(0x14000000)
+private val NotificationShadowSpot = Color(0x1A000000)
+
+private data class NotificationVisualStyle(
+    val cardElevation: androidx.compose.ui.unit.Dp,
+    val cardBackgroundColor: Color,
+    val iconContainerColor: Color,
+    val iconTintColor: Color,
+    val titleColor: Color,
+    val messageColor: Color
+)
 
 /**
  * 알림 내역 화면.
@@ -71,7 +85,7 @@ fun NotificationScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "표시할 알림이 없어요.",
+                    text = NotificationText.EMPTY,
                     style = MaterialTheme.typography.bodyMedium,
                     color = NotificationSubText
                 )
@@ -105,7 +119,7 @@ private fun NotificationHeader(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = NotificationBackground),
         title = {
             Text(
-                text = "알림",
+                text = NotificationText.SCREEN_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 color = NotificationTitle,
                 fontWeight = FontWeight.Bold,
@@ -113,14 +127,7 @@ private fun NotificationHeader(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Text(
-                    text = "‹",
-                    color = NotificationTitle,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            BackNavigationIcon(onClick = onBackClick, tint = NotificationTitle)
         },
         actions = {
             Row(
@@ -128,7 +135,7 @@ private fun NotificationHeader(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "모두 읽음",
+                    text = NotificationText.MARK_ALL_READ,
                     style = MaterialTheme.typography.bodySmall,
                     color = NotificationSubText,
                     textAlign = TextAlign.Center,
@@ -142,7 +149,7 @@ private fun NotificationHeader(
                         .background(NotificationDivider)
                 )
                 Text(
-                    text = "전체 삭제",
+                    text = NotificationText.DELETE_ALL,
                     style = MaterialTheme.typography.bodySmall,
                     color = NotificationPrimary,
                     textAlign = TextAlign.Center,
@@ -158,18 +165,20 @@ private fun NotificationHeader(
 private fun NotificationRow(
     item: NotificationItem
 ) {
+    val style = item.toVisualStyle()
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .shadow(
-                elevation = if (item.isUnread) 6.dp else 4.dp,
+                elevation = style.cardElevation,
                 shape = NotificationCardShape,
-                ambientColor = Color(0x14000000),
-                spotColor = Color(0x1A000000)
+                ambientColor = NotificationShadowAmbient,
+                spotColor = NotificationShadowSpot
             )
             .background(
-                color = if (item.isUnread) NotificationUnreadBackground else Color(0xFFFDFDFE),
+                color = style.cardBackgroundColor,
                 shape = NotificationCardShape
             )
     ) {
@@ -184,26 +193,15 @@ private fun NotificationRow(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        color = if (item.isUnread) Color.White else Color(0xFFF6F6F8),
+                        color = style.iconContainerColor,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = when (item.type) {
-                        NotificationType.EXPIRING_SOON -> {
-                            if (item.isUnread) {
-                                Icons.Outlined.NotificationsActive
-                            } else {
-                                Icons.Outlined.Notifications
-                            }
-                        }
-
-                        NotificationType.NEW_COUPON -> Icons.Outlined.CardGiftcard
-                        NotificationType.INFO -> Icons.Outlined.Notifications
-                    },
+                    imageVector = item.resolveIcon(),
                     contentDescription = null,
-                    tint = if (item.isUnread) NotificationPrimary else NotificationSubText
+                    tint = style.iconTintColor
                 )
             }
 
@@ -219,7 +217,7 @@ private fun NotificationRow(
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (item.isUnread) NotificationPrimary else NotificationSubText,
+                        color = style.titleColor,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.alignByBaseline()
                     )
@@ -233,9 +231,43 @@ private fun NotificationRow(
                 Text(
                     text = item.message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (item.isUnread) NotificationTitle else NotificationBody
+                    color = style.messageColor
                 )
             }
         }
+    }
+}
+
+private fun NotificationItem.resolveIcon() = when (type) {
+    NotificationType.EXPIRING_SOON -> {
+        if (isUnread) {
+            Icons.Outlined.NotificationsActive
+        } else {
+            Icons.Outlined.Notifications
+        }
+    }
+    NotificationType.NEW_COUPON -> Icons.Outlined.CardGiftcard
+    NotificationType.INFO -> Icons.Outlined.Notifications
+}
+
+private fun NotificationItem.toVisualStyle(): NotificationVisualStyle {
+    return if (isUnread) {
+        NotificationVisualStyle(
+            cardElevation = 6.dp,
+            cardBackgroundColor = NotificationUnreadBackground,
+            iconContainerColor = Color.White,
+            iconTintColor = NotificationPrimary,
+            titleColor = NotificationPrimary,
+            messageColor = NotificationTitle
+        )
+    } else {
+        NotificationVisualStyle(
+            cardElevation = 4.dp,
+            cardBackgroundColor = NotificationReadBackground,
+            iconContainerColor = NotificationReadIconContainer,
+            iconTintColor = NotificationSubText,
+            titleColor = NotificationSubText,
+            messageColor = NotificationBody
+        )
     }
 }

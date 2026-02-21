@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.gifticonalarm.data.notification.GifticonNotificationDispatcher
+import com.example.gifticonalarm.domain.model.NotificationPolicy
 import com.example.gifticonalarm.domain.repository.GifticonRepository
 import com.example.gifticonalarm.domain.repository.NotificationSettingsRepository
 import com.example.gifticonalarm.domain.usecase.CalculateDdayUseCase
@@ -34,14 +35,15 @@ class GifticonExpiryNotificationWorker(
             val settings = notificationSettingsRepository.getNotificationSettings()
             if (!settings.pushEnabled) return Result.success()
 
-            val selectedDays = settings.selectedDays.filter { it in 1..30 }.toSet()
+            val selectedDays = settings.normalizedSelectedDays()
             if (selectedDays.isEmpty()) return Result.success()
 
             val expiringGifticons = gifticonRepository.getAllGifticons()
                 .asSequence()
                 .filter { !it.isUsed }
                 .filter { gifticon ->
-                    calculateDdayUseCase(gifticon.expiryDate).toInt() in selectedDays
+                    val dday = calculateDdayUseCase(gifticon.expiryDate).toInt()
+                    dday in NotificationPolicy.NOTIFICATION_DAY_RANGE && dday in selectedDays
                 }
                 .toList()
 

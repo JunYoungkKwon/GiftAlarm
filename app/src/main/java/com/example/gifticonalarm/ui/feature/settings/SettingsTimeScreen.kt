@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,6 +33,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.gifticonalarm.ui.feature.shared.components.BackNavigationIcon
+import com.example.gifticonalarm.ui.feature.shared.text.SettingsText
+import com.example.gifticonalarm.ui.feature.shared.util.formatHourMinute
+import com.example.gifticonalarm.ui.feature.shared.util.formatTwoDigits
 
 private val ScreenBackground = Color(0xFFF8FAFC)
 private val Surface = Color.White
@@ -75,12 +78,16 @@ fun SettingsTimeScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "선택한 시간",
+                text = SettingsText.TIME_SELECTED,
                 style = MaterialTheme.typography.labelLarge,
                 color = SubText
             )
             Text(
-                text = "${if (selectedPeriod == 0) "오전" else "오후"} %02d:%02d".format(selectedHour, selectedMinute),
+                text = selectedTimeLabel(
+                    periodIndex = selectedPeriod,
+                    hour = selectedHour,
+                    minute = selectedMinute
+                ),
                 style = MaterialTheme.typography.headlineSmall,
                 color = Primary,
                 fontWeight = FontWeight.Bold,
@@ -117,14 +124,14 @@ fun SettingsTimeScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     WheelPicker(
-                        values = arrayOf("오전", "오후"),
+                        values = arrayOf(SettingsText.PERIOD_AM, SettingsText.PERIOD_PM),
                         selectedIndex = selectedPeriod,
                         onSelectedIndexChange = { selectedPeriod = it },
                         onPickerReady = { periodPickerRef = it },
                         modifier = Modifier.weight(1f)
                     )
                     WheelPicker(
-                        values = (1..12).map { "%02d".format(it) }.toTypedArray(),
+                        values = (1..12).map(::formatTwoDigits).toTypedArray(),
                         selectedIndex = selectedHour - 1,
                         onSelectedIndexChange = { selectedHour = it + 1 },
                         onPickerReady = { hourPickerRef = it },
@@ -138,7 +145,7 @@ fun SettingsTimeScreen(
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                     WheelPicker(
-                        values = (0..59).map { "%02d".format(it) }.toTypedArray(),
+                        values = (0..59).map(::formatTwoDigits).toTypedArray(),
                         selectedIndex = selectedMinute,
                         onSelectedIndexChange = { selectedMinute = it },
                         onPickerReady = { minutePickerRef = it },
@@ -149,7 +156,7 @@ fun SettingsTimeScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
             Text(
-                text = "설정한 시간에 맞춰 매일 알림을 보내드립니다.",
+                text = SettingsText.TIME_GUIDE,
                 style = MaterialTheme.typography.bodyMedium,
                 color = SubText,
                 textAlign = TextAlign.Center
@@ -178,12 +185,17 @@ fun SettingsTimeScreen(
                 )
             ) {
                 Text(
-                    text = "저장하기",
+                    text = SettingsText.TIME_SAVE,
                     style = MaterialTheme.typography.titleMedium
                 )
             }
         }
     }
+}
+
+private fun selectedTimeLabel(periodIndex: Int, hour: Int, minute: Int): String {
+    val periodLabel = if (periodIndex == 0) SettingsText.PERIOD_AM else SettingsText.PERIOD_PM
+    return "$periodLabel ${formatHourMinute(hour, minute)}"
 }
 
 @Composable
@@ -193,7 +205,7 @@ private fun Header(onBackClick: () -> Unit) {
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface),
         title = {
             Text(
-                text = "알림 수신 시간 설정",
+                text = SettingsText.TIME_SCREEN_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 color = Color(0xFF111827),
                 fontWeight = FontWeight.Bold,
@@ -201,14 +213,10 @@ private fun Header(onBackClick: () -> Unit) {
             )
         },
         navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Text(
-                    text = "‹",
-                    color = Color(0xFF111827),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            BackNavigationIcon(
+                onClick = onBackClick,
+                tint = Color(0xFF111827)
+            )
         }
     )
 }

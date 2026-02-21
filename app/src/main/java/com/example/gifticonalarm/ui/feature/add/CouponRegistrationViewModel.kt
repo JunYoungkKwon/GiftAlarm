@@ -1,4 +1,5 @@
 package com.example.gifticonalarm.ui.feature.add
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -8,11 +9,20 @@ import androidx.lifecycle.viewModelScope
 import com.example.gifticonalarm.domain.model.Gifticon
 import com.example.gifticonalarm.domain.model.GifticonType
 import com.example.gifticonalarm.domain.usecase.AddGifticonUseCase
+import com.example.gifticonalarm.domain.usecase.BuildAmountGifticonMemoUseCase
 import com.example.gifticonalarm.domain.usecase.GetGifticonByIdUseCase
+import com.example.gifticonalarm.domain.usecase.ParseGifticonMemoUseCase
 import com.example.gifticonalarm.domain.usecase.SaveGifticonImageUseCase
 import com.example.gifticonalarm.domain.usecase.UpdateGifticonUseCase
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
+import com.example.gifticonalarm.ui.feature.shared.livedata.consumeEffect
+import com.example.gifticonalarm.ui.feature.shared.livedata.emitEffect
+import com.example.gifticonalarm.ui.feature.shared.livedata.nullLiveData
+import com.example.gifticonalarm.ui.feature.shared.util.parseCouponIdOrNull
+import com.example.gifticonalarm.ui.feature.shared.validation.ValidationMessages
+import com.example.gifticonalarm.ui.feature.shared.validation.firstValidationError
+import com.example.gifticonalarm.ui.feature.shared.validation.validateRequired
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -40,20 +50,27 @@ sealed interface CouponRegistrationEffect {
     data object RegistrationCompleted : CouponRegistrationEffect
 }
 
+private data class GifticonSavePayload(
+    val couponId: String?,
+    val existingGifticon: Gifticon?,
+    val name: String,
+    val brand: String,
+    val barcode: String,
+    val expiryDate: Date,
+    val imageUri: String?,
+    val memo: String?,
+    val type: GifticonType
+)
+
 @HiltViewModel
 class CouponRegistrationViewModel @Inject constructor(
     private val addGifticonUseCase: AddGifticonUseCase,
     private val updateGifticonUseCase: UpdateGifticonUseCase,
     private val getGifticonByIdUseCase: GetGifticonByIdUseCase,
-    private val saveGifticonImageUseCase: SaveGifticonImageUseCase
+    private val saveGifticonImageUseCase: SaveGifticonImageUseCase,
+    private val parseGifticonMemoUseCase: ParseGifticonMemoUseCase,
+    private val buildAmountGifticonMemoUseCase: BuildAmountGifticonMemoUseCase
 ) : ViewModel() {
-    private companion object {
-        const val AMOUNT_MEMO_PREFIX = "금액권:"
-        const val NOTE_PREFIX = "메모:"
-        const val USAGE_HISTORY_PREFIX = "사용내역:"
-        const val LEGACY_USAGE_PREFIX = "최근 사용:"
-    }
-
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
 
@@ -88,20 +105,10 @@ class CouponRegistrationViewModel @Inject constructor(
         if (editTarget == null) return
         if (initializedCouponId == couponId) return
 
-        _formState.value = CouponRegistrationFormState(
-            couponId = couponId,
-            isEditMode = true,
-            barcode = editTarget.barcode,
-            place = editTarget.brand,
-            couponName = editTarget.name,
-            withoutBarcode = editTarget.barcode.isBlank(),
-            couponType = if (editTarget.type == GifticonType.AMOUNT) CouponType.AMOUNT else CouponType.EXCHANGE,
-            amount = if (editTarget.type == GifticonType.AMOUNT) extractAmountFromMemo(editTarget.memo) else "",
-            memo = extractNoteFromMemo(editTarget.memo, editTarget.type),
-            thumbnailUri = editTarget.imageUri
-        )
-        _selectedExpiryDate.value = editTarget.expiryDate.toExpirationDate()
-        _draftExpiryDate.value = editTarget.expiryDate.toExpirationDate()
+        val expiryDate = editTarget.expiryDate.toExpirationDate()
+        _formState.value = editTarget.toEditFormState(couponId)
+        _selectedExpiryDate.value = expiryDate
+        _draftExpiryDate.value = expiryDate
         initializedCouponId = couponId
         existingGifticonForSave = editTarget
     }
@@ -153,29 +160,12 @@ class CouponRegistrationViewModel @Inject constructor(
         val selectedExpiryDate = _selectedExpiryDate.value
         val validationMessage = validate(state, selectedExpiryDate)
         if (validationMessage != null) {
-            _effect.value = CouponRegistrationEffect.ShowMessage(validationMessage)
+            _effect.emitEffect(CouponRegistrationEffect.ShowMessage(validationMessage))
             return
         }
 
-        val memo = when (state.couponType) {
-            CouponType.AMOUNT -> buildAmountMemo(state.amount, state.memo, existingGifticonForSave?.memo)
-            CouponType.EXCHANGE -> state.memo.trim().ifBlank { null }
-        }
-
-        saveGifticon(
-            couponId = state.couponId,
-            existingGifticon = existingGifticonForSave,
-            name = state.couponName.trim(),
-            brand = state.place.trim(),
-            barcode = if (state.withoutBarcode) "" else state.barcode.trim(),
-            expiryDate = selectedExpiryDate!!.toEndOfDayDate(),
-            imageUri = state.thumbnailUri,
-            memo = memo,
-            type = when (state.couponType) {
-                CouponType.EXCHANGE -> GifticonType.EXCHANGE
-                CouponType.AMOUNT -> GifticonType.AMOUNT
-            }
-        )
+        val confirmedExpiryDate = selectedExpiryDate ?: return
+        saveGifticon(state.toSavePayload(confirmedExpiryDate, existingGifticonForSave))
     }
 
     fun openExpiryBottomSheet() {
@@ -208,48 +198,30 @@ class CouponRegistrationViewModel @Inject constructor(
         _infoSheetType.value = CouponRegistrationInfoSheetType.NONE
     }
 
-    private fun saveGifticon(
-        couponId: String?,
-        existingGifticon: Gifticon?,
-        name: String,
-        brand: String,
-        barcode: String,
-        expiryDate: Date,
-        imageUri: String?,
-        memo: String?,
-        type: GifticonType
-    ) {
+    private fun saveGifticon(payload: GifticonSavePayload) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val persistedImageUri = imageUri
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { selectedImageUri ->
-                        if (selectedImageUri == existingGifticon?.imageUri) {
-                            selectedImageUri
-                        } else {
-                            saveGifticonImageUseCase(selectedImageUri)
-                        }
-                    }
+                val persistedImageUri = resolvePersistedImageUri(payload.imageUri, payload.existingGifticon)
                 val gifticon = Gifticon(
-                    id = couponId?.toLongOrNull() ?: 0L,
-                    name = name,
-                    brand = brand,
-                    expiryDate = expiryDate,
-                    barcode = barcode,
+                    id = payload.couponId?.toLongOrNull() ?: 0L,
+                    name = payload.name,
+                    brand = payload.brand,
+                    expiryDate = payload.expiryDate,
+                    barcode = payload.barcode,
                     imageUri = persistedImageUri,
-                    memo = memo,
-                    isUsed = existingGifticon?.isUsed ?: false,
-                    type = type
+                    memo = payload.memo,
+                    isUsed = payload.existingGifticon?.isUsed ?: false,
+                    type = payload.type
                 )
-                if (couponId == null) {
+                if (payload.couponId == null) {
                     addGifticonUseCase(gifticon)
                 } else {
                     updateGifticonUseCase(gifticon)
                 }
-                _effect.value = CouponRegistrationEffect.RegistrationCompleted
+                _effect.emitEffect(CouponRegistrationEffect.RegistrationCompleted)
             } catch (e: Exception) {
-                _effect.value = CouponRegistrationEffect.ShowMessage(e.message ?: "쿠폰 저장에 실패했어요.")
+                _effect.emitEffect(CouponRegistrationEffect.ShowMessage(e.message ?: CommonText.MESSAGE_COUPON_SAVE_FAILED))
             } finally {
                 _isLoading.value = false
             }
@@ -260,12 +232,12 @@ class CouponRegistrationViewModel @Inject constructor(
      * 수정 대상 쿠폰을 조회한다.
      */
     fun getGifticonForEdit(couponId: String?): LiveData<Gifticon?> {
-        val id = couponId?.toLongOrNull() ?: return MutableLiveData(null)
+        val id = parseCouponIdOrNull(couponId) ?: return nullLiveData()
         return getGifticonByIdUseCase(id).asLiveData()
     }
 
     fun consumeEffect() {
-        _effect.value = null
+        _effect.consumeEffect()
     }
 
     private fun updateFormState(update: CouponRegistrationFormState.() -> CouponRegistrationFormState) {
@@ -281,97 +253,77 @@ class CouponRegistrationViewModel @Inject constructor(
         existingGifticonForSave = null
     }
 
-    private fun extractAmountFromMemo(memo: String?): String {
-        if (memo.isNullOrBlank()) return ""
-        val amountRegex = Regex("""금액권:\s*([0-9,]+)\s*원""")
-        return amountRegex.find(memo)
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.replace(",", "")
-            .orEmpty()
-    }
-
-    private fun extractNoteFromMemo(memo: String?, type: GifticonType): String {
-        val rawMemo = memo.orEmpty().trim()
-        if (rawMemo.isBlank()) return ""
-        if (type == GifticonType.EXCHANGE && !rawMemo.startsWith(AMOUNT_MEMO_PREFIX)) {
-            return rawMemo
-        }
-
-        val lines = rawMemo.lines().map { it.trim() }.filter { it.isNotBlank() }
-        val noteLine = lines.firstOrNull { it.startsWith(NOTE_PREFIX) }
-            ?.removePrefix(NOTE_PREFIX)
-            ?.trim()
-        if (!noteLine.isNullOrBlank()) {
-            if (type == GifticonType.AMOUNT) {
-                if (noteLine.startsWith(LEGACY_USAGE_PREFIX)) return ""
-                return noteLine.substringBefore(" | $LEGACY_USAGE_PREFIX").trim()
-            }
-            return noteLine
-        }
-
-        if (lines.firstOrNull()?.startsWith(AMOUNT_MEMO_PREFIX) == true) {
-            val memoCandidates = lines.drop(1)
-                .filterNot { it.startsWith(USAGE_HISTORY_PREFIX) }
-                .filterNot { it.startsWith(LEGACY_USAGE_PREFIX) }
-            return memoCandidates.joinToString("\n").trim()
-        }
-        return rawMemo
-    }
-
-    private fun buildAmountMemo(amount: String, note: String, previousMemo: String?): String? {
-        val amountPart = amount.ifBlank { null }?.let { "$AMOUNT_MEMO_PREFIX ${it}원" }
-        val notePart = note.trim().ifBlank { null }?.let { "$NOTE_PREFIX $it" }
-        val usageLines = previousMemo.orEmpty()
-            .lines()
-            .map { it.trim() }
-            .filter { it.startsWith(USAGE_HISTORY_PREFIX) && it.removePrefix(USAGE_HISTORY_PREFIX).trim().isNotBlank() }
-            .ifEmpty {
-                val legacyUsage = previousMemo.orEmpty()
-                    .lines()
-                    .map { it.trim() }
-                    .firstOrNull { it.startsWith(NOTE_PREFIX) }
-                    ?.removePrefix(NOTE_PREFIX)
-                    ?.trim()
-                    .orEmpty()
-                when {
-                    legacyUsage.contains("| $LEGACY_USAGE_PREFIX") -> {
-                        listOf("$USAGE_HISTORY_PREFIX ${legacyUsage.substringAfter("| $LEGACY_USAGE_PREFIX").trim()}")
-                    }
-                    legacyUsage.startsWith(LEGACY_USAGE_PREFIX) -> {
-                        listOf("$USAGE_HISTORY_PREFIX ${legacyUsage.removePrefix(LEGACY_USAGE_PREFIX).trim()}")
-                    }
-                    else -> emptyList()
-                }.filter { it.removePrefix(USAGE_HISTORY_PREFIX).trim().isNotBlank() }
-            }
-
-        return when {
-            amountPart != null || notePart != null || usageLines.isNotEmpty() -> {
-                buildString {
-                    amountPart?.let { append(it) }
-                    notePart?.let {
-                        if (isNotEmpty()) append('\n')
-                        append(it)
-                    }
-                    usageLines.forEach { usageLine ->
-                        if (isNotEmpty()) append('\n')
-                        append(usageLine)
-                    }
-                }
-            }
-            else -> null
-        }
-    }
-
     private fun validate(
         state: CouponRegistrationFormState,
         selectedExpiryDate: ExpirationDate?
     ): String? {
-        return when {
-            state.place.isBlank() -> "사용처를 입력해 주세요."
-            state.couponName.isBlank() -> "쿠폰명을 입력해 주세요."
-            selectedExpiryDate == null -> "유효기한을 선택해 주세요."
-            else -> null
+        return firstValidationError(
+            validateRequired(state.place, ValidationMessages.STORE_REQUIRED),
+            validateRequired(state.couponName, ValidationMessages.COUPON_NAME_REQUIRED),
+            if (selectedExpiryDate == null) ValidationMessages.EXPIRY_DATE_REQUIRED else null
+        )
+    }
+
+    private fun Gifticon.toEditFormState(couponId: String): CouponRegistrationFormState {
+        val amountCoupon = type == GifticonType.AMOUNT
+        return CouponRegistrationFormState(
+            couponId = couponId,
+            isEditMode = true,
+            barcode = barcode,
+            place = brand,
+            couponName = name,
+            withoutBarcode = barcode.isBlank(),
+            couponType = if (amountCoupon) CouponType.AMOUNT else CouponType.EXCHANGE,
+            amount = if (amountCoupon) parseGifticonMemoUseCase.extractAmountDigits(memo) else "",
+            memo = parseGifticonMemoUseCase.extractDisplayMemo(memo, type),
+            thumbnailUri = imageUri
+        )
+    }
+
+    private fun CouponRegistrationFormState.toSavePayload(
+        selectedExpiryDate: ExpirationDate,
+        existingGifticon: Gifticon?
+    ): GifticonSavePayload {
+        return GifticonSavePayload(
+            couponId = couponId,
+            existingGifticon = existingGifticon,
+            name = couponName.trim(),
+            brand = place.trim(),
+            barcode = if (withoutBarcode) "" else barcode.trim(),
+            expiryDate = selectedExpiryDate.toEndOfDayDate(),
+            imageUri = thumbnailUri,
+            memo = toPersistedMemo(existingGifticon),
+            type = couponType.toGifticonType()
+        )
+    }
+
+    private fun CouponRegistrationFormState.toPersistedMemo(existingGifticon: Gifticon?): String? {
+        return when (couponType) {
+            CouponType.AMOUNT -> buildAmountGifticonMemoUseCase.forRegistration(
+                amountDigits = amount,
+                note = memo,
+                previousMemo = existingGifticon?.memo
+            )
+            CouponType.EXCHANGE -> memo.trim().ifBlank { null }
+        }
+    }
+
+    private fun CouponType.toGifticonType(): GifticonType {
+        return when (this) {
+            CouponType.EXCHANGE -> GifticonType.EXCHANGE
+            CouponType.AMOUNT -> GifticonType.AMOUNT
+        }
+    }
+
+    private suspend fun resolvePersistedImageUri(
+        imageUri: String?,
+        existingGifticon: Gifticon?
+    ): String? {
+        val selectedImageUri = imageUri?.takeIf { it.isNotBlank() } ?: return null
+        return if (selectedImageUri == existingGifticon?.imageUri) {
+            selectedImageUri
+        } else {
+            saveGifticonImageUseCase(selectedImageUri)
         }
     }
 

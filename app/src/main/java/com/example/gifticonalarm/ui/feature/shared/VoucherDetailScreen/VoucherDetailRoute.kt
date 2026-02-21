@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -13,15 +12,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.gifticonalarm.ui.common.components.ToastBanner
+import com.example.gifticonalarm.ui.feature.shared.components.BottomToastBanner
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailScreen
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailUiModel
-import kotlinx.coroutines.delay
+import com.example.gifticonalarm.ui.feature.shared.effect.AutoDismissToast
+import com.example.gifticonalarm.ui.feature.shared.effect.HandleRouteEffect
 
 /**
  * 쿠폰 상세 진입 라우트.
@@ -59,32 +57,27 @@ fun VoucherDetailRoute(
         }
     }
 
-    LaunchedEffect(effect) {
-        when (val currentEffect = effect) {
+    HandleRouteEffect(
+        effect = effect,
+        onConsumed = viewModel::consumeEffect
+    ) { currentEffect ->
+        when (currentEffect) {
             is VoucherDetailEffect.CopyBarcode -> {
                 clipboardManager.setPrimaryClip(
                     ClipData.newPlainText("barcode_number", currentEffect.barcodeNumber)
                 )
                 toastMessage = currentEffect.message
-                viewModel.consumeEffect()
             }
             is VoucherDetailEffect.ShowMessage -> {
                 toastMessage = currentEffect.message
-                viewModel.consumeEffect()
             }
             is VoucherDetailEffect.OpenLargeBarcode -> {
                 onNavigateToLargeBarcode(currentEffect.couponId)
-                viewModel.consumeEffect()
             }
-            null -> Unit
         }
     }
 
-    LaunchedEffect(toastMessage) {
-        if (toastMessage == null) return@LaunchedEffect
-        delay(1900L)
-        toastMessage = null
-    }
+    AutoDismissToast(message = toastMessage, onDismiss = { toastMessage = null })
 
     Box(
         modifier = modifier.fillMaxSize()
@@ -123,13 +116,6 @@ fun VoucherDetailRoute(
             }
         }
 
-        toastMessage?.let { message ->
-            ToastBanner(
-                message = message,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
-            )
-        }
+        BottomToastBanner(message = toastMessage)
     }
 }

@@ -1,4 +1,6 @@
 package com.example.gifticonalarm.ui.feature.shared.cashusage
+import com.example.gifticonalarm.ui.feature.shared.text.VoucherText
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,7 +26,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,10 +44,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
+import com.example.gifticonalarm.ui.feature.shared.components.BackNavigationIcon
+import com.example.gifticonalarm.ui.feature.shared.util.formatAmountWithComma
+import com.example.gifticonalarm.ui.feature.shared.util.parseUsedAtTextOrToday
+import com.example.gifticonalarm.ui.feature.shared.util.toUsedAtText
 import com.example.gifticonalarm.ui.theme.GifticonTextPrimary
-import java.util.Locale
 
 private val Primary = Color(0xFF191970)
 private val Background = Color.White
@@ -74,11 +77,11 @@ fun CashUsageAddScreen(
     onSaveClick: () -> Unit
 ) {
     var isUsedDateBottomSheetVisible by remember { mutableStateOf(false) }
-    val draftUsedDateState = remember { mutableStateOf(uiState.usedAtText.toExpirationDateOrToday()) }
+    val draftUsedDateState = remember { mutableStateOf(parseUsedAtTextOrToday(uiState.usedAtText)) }
 
     LaunchedEffect(uiState.usedAtText, isUsedDateBottomSheetVisible) {
         if (!isUsedDateBottomSheetVisible) {
-            draftUsedDateState.value = uiState.usedAtText.toExpirationDateOrToday()
+            draftUsedDateState.value = parseUsedAtTextOrToday(uiState.usedAtText)
         }
     }
 
@@ -89,7 +92,7 @@ fun CashUsageAddScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface),
                 title = {
                     Text(
-                        text = "사용 내역 추가",
+                        text = VoucherText.ACTION_ADD_USAGE,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = FieldText,
@@ -97,14 +100,7 @@ fun CashUsageAddScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Text(
-                            text = "‹",
-                            color = FieldText,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                    BackNavigationIcon(onClick = onBackClick, tint = FieldText)
                 }
             )
         },
@@ -125,7 +121,7 @@ fun CashUsageAddScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = Primary)
                 ) {
                     Text(
-                        text = "기록하기",
+                        text = VoucherText.ACTION_RECORD_USAGE,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -152,7 +148,7 @@ fun CashUsageAddScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Label("사용 금액")
+                        Label(VoucherText.LABEL_USAGE_AMOUNT)
                         MoneyUnderlineField(
                             value = uiState.amountText,
                             onValueChange = onAmountChange
@@ -160,11 +156,11 @@ fun CashUsageAddScreen(
                     }
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Label("사용처")
+                        Label(VoucherText.LABEL_USAGE_STORE)
                         UnderlineField(
                             value = uiState.storeText,
                             onValueChange = onStoreChange,
-                            placeholder = "어디서 사용하셨나요?",
+                            placeholder = VoucherText.PLACEHOLDER_USAGE_STORE,
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Storefront,
@@ -177,20 +173,20 @@ fun CashUsageAddScreen(
                     }
 
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Label("사용 날짜")
+                        Label(VoucherText.LABEL_USAGE_DATE)
                         UnderlineField(
                             value = uiState.usedAtText,
                             onValueChange = {},
-                            placeholder = "yyyy-MM-dd",
+                            placeholder = VoucherText.PLACEHOLDER_DATE_DASH,
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.CalendarToday,
-                                    contentDescription = "날짜 선택",
+                                    contentDescription = VoucherText.DESCRIPTION_SELECT_DATE,
                                     tint = FieldHint,
                                     modifier = Modifier
                                         .size(16.dp)
                                         .clickable {
-                                            draftUsedDateState.value = uiState.usedAtText.toExpirationDateOrToday()
+                                            draftUsedDateState.value = parseUsedAtTextOrToday(uiState.usedAtText)
                                             isUsedDateBottomSheetVisible = true
                                         }
                                 )
@@ -211,7 +207,7 @@ fun CashUsageAddScreen(
                 isUsedDateBottomSheetVisible = false
             },
             onDismissRequest = { isUsedDateBottomSheetVisible = false },
-            titleText = "사용 날짜 설정",
+            titleText = VoucherText.TITLE_USAGE_DATE_PICKER,
             confirmButtonText = { it.toUsedAtText() }
         )
     }
@@ -233,19 +229,19 @@ private fun BalanceCard(currentBalance: Int) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "현재 잔액",
+                text = VoucherText.LABEL_CURRENT_BALANCE,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF64748B)
             )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = String.format(Locale.getDefault(), "%,d", currentBalance),
+                    text = formatAmountWithComma(currentBalance),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = FieldText
                 )
                 Text(
-                    text = "원",
+                    text = CommonText.UNIT_WON,
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF64748B),
                     modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
@@ -289,7 +285,7 @@ private fun MoneyUnderlineField(
             decorationBox = { innerTextField ->
                 if (value.isBlank()) {
                     Text(
-                        text = "0",
+                        text = CommonText.PLACEHOLDER_AMOUNT_ZERO,
                         color = FieldHint,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
@@ -299,7 +295,7 @@ private fun MoneyUnderlineField(
             }
         )
         Text(
-            text = "원",
+            text = CommonText.UNIT_WON,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF64748B)
@@ -357,20 +353,3 @@ private fun UnderlineField(
             .background(FieldLine)
     )
 }
-
-private fun String.toExpirationDateOrToday(): ExpirationDate {
-    val normalized = trim().replace('.', '-')
-    val tokens = normalized.split("-")
-    if (tokens.size != 3) return ExpirationDate.today()
-    val year = tokens[0].toIntOrNull() ?: return ExpirationDate.today()
-    val month = tokens[1].toIntOrNull() ?: return ExpirationDate.today()
-    val day = tokens[2].toIntOrNull() ?: return ExpirationDate.today()
-
-    return ExpirationDate(
-        year = year,
-        month = month.coerceIn(1, 12),
-        day = day.coerceIn(1, ExpirationDate.maxDayOfMonth(year, month.coerceIn(1, 12)))
-    )
-}
-
-private fun ExpirationDate.toUsedAtText(): String = "%04d-%02d-%02d".format(year, month, day)

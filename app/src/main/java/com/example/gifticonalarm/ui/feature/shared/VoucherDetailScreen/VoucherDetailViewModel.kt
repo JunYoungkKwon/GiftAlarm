@@ -7,34 +7,20 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.gifticonalarm.domain.model.Gifticon
-import com.example.gifticonalarm.domain.model.GifticonAvailability
 import com.example.gifticonalarm.domain.model.GifticonType
-import com.example.gifticonalarm.domain.usecase.BuildGifticonStatusLabelUseCase
 import com.example.gifticonalarm.domain.usecase.DeleteGifticonUseCase
-import com.example.gifticonalarm.domain.usecase.FormatGifticonDateUseCase
 import com.example.gifticonalarm.domain.usecase.GetGifticonByIdUseCase
-import com.example.gifticonalarm.domain.usecase.ResolveGifticonAvailabilityUseCase
-import com.example.gifticonalarm.domain.usecase.ResolveGifticonImageUrlUseCase
 import com.example.gifticonalarm.domain.usecase.UpdateGifticonUseCase
 import com.example.gifticonalarm.ui.feature.shared.cashvoucherdetail.CashVoucherDetailUiModel
+import com.example.gifticonalarm.ui.feature.shared.livedata.consumeEffect
+import com.example.gifticonalarm.ui.feature.shared.livedata.emitEffect
+import com.example.gifticonalarm.ui.feature.shared.livedata.nullLiveData
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
+import com.example.gifticonalarm.ui.feature.shared.util.normalizeRegisteredBarcodeOrNull
+import com.example.gifticonalarm.ui.feature.shared.util.parseCouponIdOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-private const val AMOUNT_MEMO_PREFIX = "금액권:"
-private const val AMOUNT_NOTE_PREFIX = "메모:"
-private const val USAGE_HISTORY_PREFIX = "사용내역:"
-private const val LEGACY_USAGE_PREFIX = "최근 사용:"
-private const val DEFAULT_EXCHANGE_PLACE = "사용처 정보 없음"
-private const val UNREGISTERED_BARCODE = "미등록"
-
-/**
- * 상세 분기 타입.
- */
-enum class VoucherType {
-    EXCHANGE,
-    AMOUNT
-}
 
 /**
  * 상세 화면 상태.
@@ -64,10 +50,7 @@ class VoucherDetailViewModel @Inject constructor(
     private val getGifticonByIdUseCase: GetGifticonByIdUseCase,
     private val deleteGifticonUseCase: DeleteGifticonUseCase,
     private val updateGifticonUseCase: UpdateGifticonUseCase,
-    private val resolveGifticonAvailabilityUseCase: ResolveGifticonAvailabilityUseCase,
-    private val resolveGifticonImageUrlUseCase: ResolveGifticonImageUrlUseCase,
-    private val buildGifticonStatusLabelUseCase: BuildGifticonStatusLabelUseCase,
-    private val formatGifticonDateUseCase: FormatGifticonDateUseCase
+    private val voucherDetailUiMapper: VoucherDetailUiMapper
 ) : ViewModel() {
     private val _isDeleted = MutableLiveData(false)
     val isDeleted: LiveData<Boolean> = _isDeleted
@@ -75,18 +58,18 @@ class VoucherDetailViewModel @Inject constructor(
     val effect: LiveData<VoucherDetailEffect?> = _effect
 
     fun getGifticon(couponId: String): LiveData<Gifticon?> {
-        val id = couponId.toLongOrNull() ?: return MutableLiveData(null)
+        val id = parseCouponIdOrNull(couponId) ?: return nullLiveData()
         return getGifticonByIdUseCase(id).asLiveData()
     }
 
     fun getDetailUiState(couponId: String): LiveData<VoucherDetailUiState> {
         return getGifticon(couponId).map { gifticon ->
-            when (resolveVoucherType(gifticon)) {
-                VoucherType.AMOUNT -> VoucherDetailUiState.Cash(
-                    uiModel = gifticon.toCashVoucherUiModel(couponId)
+            when (gifticon?.type) {
+                GifticonType.AMOUNT -> VoucherDetailUiState.Cash(
+                    uiModel = voucherDetailUiMapper.toCashVoucherUiModel(gifticon, couponId)
                 )
-                VoucherType.EXCHANGE -> VoucherDetailUiState.Product(
-                    uiModel = gifticon.toProductVoucherUiModel(couponId)
+                GifticonType.EXCHANGE, null -> VoucherDetailUiState.Product(
+                    uiModel = voucherDetailUiMapper.toProductVoucherUiModel(gifticon, couponId)
                 )
             }
         }
@@ -112,164 +95,23 @@ class VoucherDetailViewModel @Inject constructor(
     }
 
     fun requestBarcodeCopy(barcodeNumber: String) {
-        val normalizedBarcode = barcodeNumber.trim()
-        if (normalizedBarcode.isBlank() || normalizedBarcode == UNREGISTERED_BARCODE) return
-        _effect.value = VoucherDetailEffect.CopyBarcode(
+        val normalizedBarcode = normalizeRegisteredBarcodeOrNull(barcodeNumber) ?: return
+        _effect.emitEffect(VoucherDetailEffect.CopyBarcode(
             barcodeNumber = normalizedBarcode,
-            message = "바코드 번호가 복사되었어요."
-        )
+            message = CommonText.MESSAGE_BARCODE_COPIED
+        ))
     }
 
     fun requestOpenLargeBarcode(couponId: String, barcodeNumber: String) {
-        val normalizedBarcode = barcodeNumber.trim()
-        if (normalizedBarcode.isBlank() || normalizedBarcode == UNREGISTERED_BARCODE) {
-            _effect.value = VoucherDetailEffect.ShowMessage("등록된 바코드 번호가 없어요.")
+        if (normalizeRegisteredBarcodeOrNull(barcodeNumber) == null) {
+            _effect.emitEffect(VoucherDetailEffect.ShowMessage(CommonText.MESSAGE_BARCODE_NOT_REGISTERED))
             return
         }
-        _effect.value = VoucherDetailEffect.OpenLargeBarcode(couponId)
+        _effect.emitEffect(VoucherDetailEffect.OpenLargeBarcode(couponId))
     }
 
     fun consumeEffect() {
-        _effect.value = null
+        _effect.consumeEffect()
     }
 
-    private fun resolveVoucherType(gifticon: Gifticon?): VoucherType {
-        return when (gifticon?.type) {
-            GifticonType.AMOUNT -> VoucherType.AMOUNT
-            GifticonType.EXCHANGE -> VoucherType.EXCHANGE
-            null -> {
-                if (gifticon?.memo.orEmpty().startsWith(AMOUNT_MEMO_PREFIX)) {
-                    VoucherType.AMOUNT
-                } else {
-                    VoucherType.EXCHANGE
-                }
-            }
-        }
-    }
-
-    private fun Gifticon?.toCashVoucherUiModel(couponId: String): CashVoucherDetailUiModel {
-        if (this == null) return CashVoucherDetailUiModel.placeholder(couponId)
-
-        return CashVoucherDetailUiModel(
-            couponId = id.toString(),
-            brand = brand,
-            title = name,
-            status = statusLabel(isUsed, expiryDate),
-            remainAmountText = extractAmountText(memo),
-            usageHistoryText = extractUsageHistoryText(memo),
-            expireDateText = "${formatGifticonDateUseCase(expiryDate, "yyyy. MM. dd")} 까지",
-            expireBadgeText = detailBadgeLabel(expiryDate, isUsed),
-            barcodeNumber = barcode.ifBlank { "미등록" },
-            exchangePlaceText = brand,
-            memo = extractMemoText(memo, GifticonType.AMOUNT).ifBlank { "메모 없음" },
-            brandLogoUrl = resolveGifticonImageUrlUseCase(id, imageUri)
-        )
-    }
-
-    private fun Gifticon?.toProductVoucherUiModel(couponId: String): ProductVoucherDetailUiModel {
-        if (this == null) return ProductVoucherDetailUiModel.placeholder(couponId)
-
-        val productStatus = when (resolveGifticonAvailabilityUseCase(isUsed, expiryDate)) {
-            GifticonAvailability.USED -> ProductVoucherStatus.USED
-            GifticonAvailability.EXPIRED -> ProductVoucherStatus.EXPIRED
-            GifticonAvailability.AVAILABLE -> ProductVoucherStatus.USABLE
-        }
-
-        return ProductVoucherDetailUiModel(
-            couponId = id.toString(),
-            brand = brand,
-            productName = name,
-            status = productStatus,
-            expireDateText = "${formatGifticonDateUseCase(expiryDate, "yyyy. MM. dd")} 까지",
-            expireBadgeText = detailBadgeLabel(expiryDate, isUsed),
-            barcodeNumber = barcode.ifBlank { "미등록" },
-            exchangePlaceText = brand.ifBlank { DEFAULT_EXCHANGE_PLACE },
-            memoText = extractMemoText(memo, GifticonType.EXCHANGE).ifBlank { "메모 없음" },
-            productImageUrl = resolveGifticonImageUrlUseCase(id, imageUri)
-        )
-    }
-
-    private fun extractAmountText(memo: String?): String {
-        val amountRegex = Regex("""금액권:\s*([0-9,]+)\s*원""")
-        val amountValue = amountRegex.find(memo.orEmpty())
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.replace(",", "")
-            ?.ifBlank { null }
-        return amountValue ?: "0"
-    }
-
-    private fun extractMemoText(memo: String?, type: GifticonType): String {
-        val rawMemo = memo.orEmpty().trim()
-        if (rawMemo.isBlank()) return ""
-        if (type == GifticonType.EXCHANGE && !rawMemo.startsWith(AMOUNT_MEMO_PREFIX)) {
-            return rawMemo
-        }
-
-        val lines = rawMemo.lines().map { it.trim() }.filter { it.isNotBlank() }
-        val explicitNote = lines.firstOrNull { it.startsWith(AMOUNT_NOTE_PREFIX) }
-            ?.removePrefix(AMOUNT_NOTE_PREFIX)
-            ?.trim()
-        if (!explicitNote.isNullOrBlank()) {
-            if (type == GifticonType.AMOUNT) {
-                if (explicitNote.startsWith(LEGACY_USAGE_PREFIX)) return ""
-                return explicitNote.substringBefore(" | $LEGACY_USAGE_PREFIX").trim()
-            }
-            return explicitNote
-        }
-
-        if (lines.firstOrNull()?.startsWith(AMOUNT_MEMO_PREFIX) == true) {
-            val memoCandidates = lines.drop(1)
-                .filterNot { it.startsWith(USAGE_HISTORY_PREFIX) }
-                .filterNot { it.startsWith(LEGACY_USAGE_PREFIX) }
-            return memoCandidates.joinToString("\n").trim()
-        }
-        return rawMemo
-    }
-
-    private fun extractUsageHistoryText(memo: String?): String {
-        val lines = memo.orEmpty().lines().map { it.trim() }.filter { it.isNotBlank() }
-        val usageHistoryLines = lines
-            .filter { it.startsWith(USAGE_HISTORY_PREFIX) }
-            .map { it.removePrefix(USAGE_HISTORY_PREFIX).trim() }
-            .filter { it.isNotBlank() }
-
-        if (usageHistoryLines.isNotEmpty()) {
-            return usageHistoryLines.joinToString(separator = "\n") { "• $it" }
-        }
-
-        val legacyNote = lines.firstOrNull { it.startsWith(AMOUNT_NOTE_PREFIX) }
-            ?.removePrefix(AMOUNT_NOTE_PREFIX)
-            ?.trim()
-            .orEmpty()
-        if (legacyNote.isBlank()) return ""
-
-        val parsedLegacy = when {
-            legacyNote.contains("| $LEGACY_USAGE_PREFIX") -> {
-                legacyNote.substringAfter("| $LEGACY_USAGE_PREFIX").trim()
-            }
-            legacyNote.startsWith(LEGACY_USAGE_PREFIX) -> {
-                legacyNote.removePrefix(LEGACY_USAGE_PREFIX).trim()
-            }
-            else -> ""
-        }
-        if (parsedLegacy.isBlank()) return ""
-        return "• $parsedLegacy"
-    }
-
-    private fun detailBadgeLabel(expiryDate: java.util.Date, isUsed: Boolean): String {
-        return if (isUsed) {
-            "사용 완료"
-        } else {
-            buildGifticonStatusLabelUseCase(isUsed = false, expiryDate = expiryDate)
-        }
-    }
-
-    private fun statusLabel(isUsed: Boolean, expiryDate: java.util.Date): String {
-        return when (resolveGifticonAvailabilityUseCase(isUsed, expiryDate)) {
-            GifticonAvailability.USED -> "사용 완료"
-            GifticonAvailability.EXPIRED -> "만료"
-            GifticonAvailability.AVAILABLE -> "사용 가능"
-        }
-    }
 }

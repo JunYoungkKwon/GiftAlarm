@@ -1,26 +1,20 @@
 package com.example.gifticonalarm.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
+import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.compose.ui.unit.dp
-import com.example.gifticonalarm.ui.common.components.ToastBanner
 import com.example.gifticonalarm.ui.feature.add.CouponRegistrationRoute
 import com.example.gifticonalarm.ui.feature.coupons.CouponsRoute
 import com.example.gifticonalarm.ui.feature.home.HomeRoute
@@ -29,44 +23,13 @@ import com.example.gifticonalarm.ui.feature.settings.SettingsRoute
 import com.example.gifticonalarm.ui.feature.settings.SettingsTimeRoute
 import com.example.gifticonalarm.ui.feature.shared.barcodelarge.BarcodeLargeRoute
 import com.example.gifticonalarm.ui.feature.shared.cashusage.CashUsageAddRoute
+import com.example.gifticonalarm.ui.feature.shared.components.BottomToastBanner
+import com.example.gifticonalarm.ui.feature.shared.effect.AutoDismissToast
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailRoute
 import com.example.gifticonalarm.ui.onboarding.OnboardingRoute
-import kotlinx.coroutines.delay
 
 private const val TOAST_MESSAGE_KEY = "toast_message"
-private const val TOAST_REGISTERED = "쿠폰이 등록되었어요."
-private const val TOAST_UPDATED = "변경사항이 저장되었어요."
-private const val TOAST_DELETED = "쿠폰이 삭제되었어요."
-private const val SETTINGS_TIME_SAVED_TOAST = "알림 시간 설정이 완료되었어요."
-
-sealed class Screen(val route: String) {
-    data object Onboarding : Screen("onboarding")
-    data object HomeTab : Screen("home")
-    data object CouponsTab : Screen("coupons")
-    data object AddTab : Screen("coupon_registration") {
-        const val routeWithArgs: String = "coupon_registration?couponId={couponId}"
-
-        fun createRoute(couponId: String? = null): String {
-            return if (couponId.isNullOrBlank()) {
-                "coupon_registration"
-            } else {
-                "coupon_registration?couponId=$couponId"
-            }
-        }
-    }
-    data object SettingsTab : Screen("settings")
-    data object SettingsNotificationTime : Screen("settings_notification_time")
-    data object Notification : Screen("notification")
-    data object BarcodeLarge : Screen("barcode_large/{couponId}") {
-        fun createRoute(couponId: String) = "barcode_large/$couponId"
-    }
-    data object CashUsageAdd : Screen("cash_usage_add/{couponId}") {
-        fun createRoute(couponId: String) = "cash_usage_add/$couponId"
-    }
-    data object CashVoucherDetail : Screen("cash_voucher_detail/{couponId}") {
-        fun createRoute(couponId: String) = "cash_voucher_detail/$couponId"
-    }
-}
 
 /**
  * App navigation graph.
@@ -129,36 +92,16 @@ fun NavGraph(
 
         composable(
             route = Screen.AddTab.routeWithArgs,
-            arguments = listOf(
-                navArgument("couponId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
+            arguments = listOf(couponIdNavArgument(nullable = true))
         ) { backStackEntry ->
-            val couponId = backStackEntry.arguments?.getString("couponId")
+            val couponId = backStackEntry.arguments?.getString(COUPON_ID_ARG)
             CouponRegistrationRoute(
                 couponId = couponId,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
                 onRegistrationCompleted = { isEditMode ->
-                    val toastMessage = if (isEditMode) {
-                        TOAST_UPDATED
-                    } else {
-                        TOAST_REGISTERED
-                    }
-                    navController.navigate(Screen.CouponsTab.route) {
-                        launchSingleTop = true
-                    }
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.set(TOAST_MESSAGE_KEY, toastMessage)
-                    runCatching { navController.getBackStackEntry(Screen.HomeTab.route) }
-                        .getOrNull()
-                        ?.savedStateHandle
-                        ?.set(TOAST_MESSAGE_KEY, toastMessage)
+                    navController.navigateToCouponsWithToast(resolveRegistrationToastMessage(isEditMode))
                 }
             )
         }
@@ -177,11 +120,14 @@ fun NavGraph(
             SettingsTimeRoute(
                 onNavigateBack = { navController.popBackStack() },
                 onSaveCompleted = { savedTimeText ->
-                    settingsExternalTimeText = savedTimeText
-                    settingsExternalToastMessage = SETTINGS_TIME_SAVED_TOAST
-                    settingsExternalTimeVersion += 1
-                    settingsExternalToastVersion += 1
-                    navController.popBackStack()
+                    applySavedNotificationTime(
+                        savedTimeText = savedTimeText,
+                        onApplied = { navController.popBackStack() },
+                        onTimeTextChanged = { settingsExternalTimeText = it },
+                        onToastMessageChanged = { settingsExternalToastMessage = it },
+                        onTimeVersionIncrement = { settingsExternalTimeVersion += 1 },
+                        onToastVersionIncrement = { settingsExternalToastVersion += 1 }
+                    )
                 }
             )
         }
@@ -194,9 +140,9 @@ fun NavGraph(
 
         composable(
             route = Screen.CashVoucherDetail.route,
-            arguments = listOf(navArgument("couponId") { type = NavType.StringType })
+            arguments = listOf(couponIdNavArgument())
         ) { backStackEntry ->
-            val couponId = backStackEntry.arguments?.getString("couponId") ?: return@composable
+            val couponId = backStackEntry.arguments?.getString(COUPON_ID_ARG) ?: return@composable
             VoucherDetailRoute(
                 couponId = couponId,
                 onNavigateBack = {
@@ -212,22 +158,16 @@ fun NavGraph(
                     navController.navigate(Screen.CashUsageAdd.createRoute(selectedCouponId))
                 },
                 onDeleteCompleted = {
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set(TOAST_MESSAGE_KEY, TOAST_DELETED)
-                    navController.popBackStack()
-                    navController.currentBackStackEntry
-                        ?.savedStateHandle
-                        ?.set(TOAST_MESSAGE_KEY, TOAST_DELETED)
+                    navController.handleVoucherDeletionCompleted()
                 }
             )
         }
 
         composable(
             route = Screen.BarcodeLarge.route,
-            arguments = listOf(navArgument("couponId") { type = NavType.StringType })
+            arguments = listOf(couponIdNavArgument())
         ) { backStackEntry ->
-            val couponId = backStackEntry.arguments?.getString("couponId") ?: return@composable
+            val couponId = backStackEntry.arguments?.getString(COUPON_ID_ARG) ?: return@composable
             BarcodeLargeRoute(
                 couponId = couponId,
                 onCloseClick = { navController.popBackStack() }
@@ -236,15 +176,59 @@ fun NavGraph(
 
         composable(
             route = Screen.CashUsageAdd.route,
-            arguments = listOf(navArgument("couponId") { type = NavType.StringType })
+            arguments = listOf(couponIdNavArgument())
         ) { backStackEntry ->
-            val couponId = backStackEntry.arguments?.getString("couponId") ?: return@composable
+            val couponId = backStackEntry.arguments?.getString(COUPON_ID_ARG) ?: return@composable
             CashUsageAddRoute(
                 couponId = couponId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
     }
+}
+
+private fun resolveRegistrationToastMessage(isEditMode: Boolean): String {
+    return if (isEditMode) {
+        CommonText.TOAST_CHANGES_SAVED
+    } else {
+        CommonText.TOAST_COUPON_REGISTERED
+    }
+}
+
+private fun NavHostController.navigateToCouponsWithToast(toastMessage: String) {
+    navigate(Screen.CouponsTab.route) {
+        launchSingleTop = true
+    }
+    currentBackStackEntry?.savedStateHandle?.setToastMessage(toastMessage)
+    runCatching { getBackStackEntry(Screen.HomeTab.route) }
+        .getOrNull()
+        ?.savedStateHandle
+        ?.setToastMessage(toastMessage)
+}
+
+private fun NavHostController.handleVoucherDeletionCompleted() {
+    previousBackStackEntry?.savedStateHandle?.setToastMessage(CommonText.TOAST_COUPON_DELETED)
+    popBackStack()
+    currentBackStackEntry?.savedStateHandle?.setToastMessage(CommonText.TOAST_COUPON_DELETED)
+}
+
+private fun SavedStateHandle.setToastMessage(message: String?) {
+    set(TOAST_MESSAGE_KEY, message)
+}
+
+private fun applySavedNotificationTime(
+    savedTimeText: String,
+    onApplied: () -> Unit,
+    onTimeTextChanged: (String) -> Unit,
+    onToastMessageChanged: (String) -> Unit,
+    onTimeVersionIncrement: () -> Unit,
+    onToastVersionIncrement: () -> Unit
+) {
+    onTimeTextChanged(savedTimeText)
+    onToastMessageChanged(CommonText.TOAST_SETTINGS_TIME_SAVED)
+    onTimeVersionIncrement()
+    onToastVersionIncrement()
+    onApplied()
 }
 
 @Composable
@@ -256,21 +240,12 @@ private fun ToastAwareTabContent(
         .getLiveData<String?>(TOAST_MESSAGE_KEY)
         .observeAsState()
 
-    LaunchedEffect(toastMessage) {
-        if (toastMessage == null) return@LaunchedEffect
-        delay(1900L)
+    AutoDismissToast(message = toastMessage, onDismiss = {
         backStackEntry.savedStateHandle[TOAST_MESSAGE_KEY] = null
-    }
+    })
 
     Box(modifier = Modifier.fillMaxSize()) {
         content()
-        toastMessage?.let { message ->
-            ToastBanner(
-                message = message,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
-            )
-        }
+        BottomToastBanner(message = toastMessage)
     }
 }

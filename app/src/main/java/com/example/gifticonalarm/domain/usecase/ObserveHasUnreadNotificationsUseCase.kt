@@ -1,7 +1,9 @@
 package com.example.gifticonalarm.domain.usecase
 
 import com.example.gifticonalarm.domain.model.Gifticon
+import com.example.gifticonalarm.domain.model.NotificationIdPolicy
 import com.example.gifticonalarm.domain.model.NotificationInboxState
+import com.example.gifticonalarm.domain.model.NotificationPolicy
 import com.example.gifticonalarm.domain.model.NotificationSettings
 import com.example.gifticonalarm.domain.repository.GifticonRepository
 import com.example.gifticonalarm.domain.repository.NotificationInboxRepository
@@ -35,7 +37,7 @@ class ObserveHasUnreadNotificationsUseCase @Inject constructor(
         inboxState: NotificationInboxState
     ): Boolean {
         val nowMillis = System.currentTimeMillis()
-        val selectedDays = settings.selectedDays.filter { it in 1..30 }.toSet()
+        val selectedDays = settings.normalizedSelectedDays()
 
         val expiringNotificationIds = if (settings.pushEnabled) {
             gifticons
@@ -44,7 +46,7 @@ class ObserveHasUnreadNotificationsUseCase @Inject constructor(
                 .mapNotNull { gifticon ->
                     val dday = calculateDdayUseCase(gifticon.expiryDate).toInt()
                     if (dday !in selectedDays) return@mapNotNull null
-                    1_000_000L + gifticon.id
+                    NotificationIdPolicy.expiringSoonId(gifticon.id)
                 }
         } else {
             emptySequence()
@@ -53,16 +55,12 @@ class ObserveHasUnreadNotificationsUseCase @Inject constructor(
         val newCouponNotificationIds = gifticons
             .asSequence()
             .filter { !it.isUsed }
-            .filter { nowMillis - it.lastModifiedAt.time <= RECENT_THRESHOLD_MILLIS }
-            .map { 2_000_000L + it.id }
+            .filter { nowMillis - it.lastModifiedAt.time <= NotificationPolicy.RECENT_THRESHOLD_MILLIS }
+            .map { NotificationIdPolicy.newCouponId(it.id) }
 
         return (expiringNotificationIds + newCouponNotificationIds).any { notificationId ->
             notificationId !in inboxState.deletedNotificationIds &&
                 notificationId !in inboxState.readNotificationIds
         }
-    }
-
-    private companion object {
-        const val RECENT_THRESHOLD_MILLIS = 48L * 60L * 60L * 1000L
     }
 }

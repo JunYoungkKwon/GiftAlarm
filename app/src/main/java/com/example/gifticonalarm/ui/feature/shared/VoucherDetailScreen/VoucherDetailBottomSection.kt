@@ -1,4 +1,7 @@
 package com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen
+import com.example.gifticonalarm.ui.feature.shared.text.VoucherText
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
+import com.example.gifticonalarm.ui.feature.shared.text.TextFormatters
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,8 +45,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.oned.Code128Writer
+import com.example.gifticonalarm.ui.feature.shared.util.encodeCode128ModulesOrNull
+import com.example.gifticonalarm.ui.feature.shared.util.formatBarcodeNumberForDisplay
+import com.example.gifticonalarm.ui.feature.shared.util.USAGE_HISTORY_BULLET_PREFIX
+import com.example.gifticonalarm.ui.feature.shared.util.USAGE_HISTORY_SEPARATOR
 import com.example.gifticonalarm.ui.theme.GifticonBorderSoft
 import com.example.gifticonalarm.ui.theme.GifticonBorderWarm
 import com.example.gifticonalarm.ui.theme.GifticonBlack
@@ -68,7 +73,7 @@ private val CardBorder = GifticonBorderSoft
 private val PrimaryText = GifticonTextPrimary
 private val SecondaryText = GifticonTextMuted
 private val Accent = GifticonBrandPrimary
-private const val UNREGISTERED_BARCODE = "미등록"
+private val USAGE_AMOUNT_REGEX = Regex("""([0-9,]+)""")
 
 private data class ExpireBadgeStyle(
     val containerColor: Color,
@@ -97,7 +102,7 @@ fun VoucherDetailBottomSection(
     onShowBarcodeClick: () -> Unit,
     onCopyBarcodeClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    actionButtonText: String = "바코드 크게 보기",
+    actionButtonText: String = VoucherText.ACTION_SHOW_LARGE_BARCODE,
     actionButtonContainerColor: Color = Accent,
     actionButtonContentColor: Color = GifticonWhite,
     actionButtonBorderColor: Color? = null,
@@ -136,37 +141,58 @@ fun VoucherDetailBottomSection(
         }
 
         if (showActionButton) {
-            Surface(
+            BottomActionButtonArea(
+                text = actionButtonText,
+                containerColor = actionButtonContainerColor,
+                contentColor = actionButtonContentColor,
+                borderColor = actionButtonBorderColor,
+                showIcon = showActionButtonIcon,
+                onClick = onShowBarcodeClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.BottomCenter),
-                color = GifticonWhite,
-                shadowElevation = 10.dp
-            ) {
-                Button(
-                    onClick = onShowBarcodeClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 14.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    border = actionButtonBorderColor?.let { BorderStroke(1.dp, it) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = actionButtonContainerColor,
-                        contentColor = actionButtonContentColor
-                    ),
-                    contentPadding = PaddingValues(vertical = 14.dp)
-                ) {
-                    if (showActionButtonIcon) {
-                        Icon(
-                            imageVector = Icons.Outlined.Fullscreen,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
-                    Text(text = actionButtonText, style = MaterialTheme.typography.titleMedium)
-                }
+                    .align(Alignment.BottomCenter)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BottomActionButtonArea(
+    text: String,
+    containerColor: Color,
+    contentColor: Color,
+    borderColor: Color?,
+    showIcon: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        color = GifticonWhite,
+        shadowElevation = 10.dp
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            shape = RoundedCornerShape(16.dp),
+            border = borderColor?.let { BorderStroke(1.dp, it) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = containerColor,
+                contentColor = contentColor
+            ),
+            contentPadding = PaddingValues(vertical = 14.dp)
+        ) {
+            if (showIcon) {
+                Icon(
+                    imageVector = Icons.Outlined.Fullscreen,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
             }
+            Text(text = text, style = MaterialTheme.typography.titleMedium)
         }
     }
 }
@@ -176,7 +202,7 @@ private fun BarcodeCard(
     barcodeNumber: String,
     onCopyBarcodeClick: (String) -> Unit
 ) {
-    val canCopyBarcode = barcodeNumber.trim().isNotBlank() && barcodeNumber.trim() != UNREGISTERED_BARCODE
+    val canCopyBarcode = barcodeNumber.trim().isNotBlank() && barcodeNumber.trim() != CommonText.UNREGISTERED
 
     Card(
         colors = CardDefaults.cardColors(containerColor = GifticonWhite),
@@ -207,7 +233,7 @@ private fun BarcodeCard(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ContentCopy,
-                            contentDescription = "바코드 번호 복사",
+                            contentDescription = VoucherText.BARCODE_COPY_DESCRIPTION,
                             tint = SecondaryText,
                             modifier = Modifier.size(16.dp)
                         )
@@ -222,22 +248,14 @@ private fun BarcodeCard(
 private fun UsageHistoryBlock(usageHistoryText: String?) {
     val usageItems = usageHistoryText
         ?.lines()
-        ?.map { rawLine ->
-            val line = rawLine.trim().removePrefix("•").trim()
-            val chunks = line.split(" / ").map { it.trim() }.filter { it.isNotBlank() }
-            UsageHistoryUiItem(
-                store = chunks.getOrNull(0).orEmpty(),
-                usedAt = chunks.getOrNull(1).orEmpty(),
-                amount = chunks.getOrNull(2).orEmpty()
-            )
-        }
+        ?.map(::parseUsageHistoryLine)
         ?.filter { it.store.isNotBlank() || it.usedAt.isNotBlank() || it.amount.isNotBlank() }
         .orEmpty()
     if (usageItems.isEmpty()) return
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = "사용내역",
+            text = VoucherText.LABEL_USAGE_HISTORY,
             style = MaterialTheme.typography.labelSmall,
             color = SecondaryText,
             fontWeight = FontWeight.Bold
@@ -300,7 +318,7 @@ private fun UsageHistoryRow(
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    text = item.store.ifBlank { "사용처 미입력" },
+                    text = item.store.ifBlank { CommonText.STORE_NOT_PROVIDED },
                     style = MaterialTheme.typography.bodyMedium,
                     color = PrimaryText,
                     fontWeight = FontWeight.Bold
@@ -343,14 +361,24 @@ private fun UsageHistoryRow(
 }
 
 private fun formatUsageAmountText(rawAmount: String): String {
-    val numeric = Regex("""([0-9,]+)""")
+    val numeric = USAGE_AMOUNT_REGEX
         .find(rawAmount)
         ?.groupValues
         ?.getOrNull(1)
         ?.trim()
         .orEmpty()
     if (numeric.isBlank()) return rawAmount
-    return "-${numeric}원"
+    return "-${numeric}${CommonText.UNIT_WON}"
+}
+
+private fun parseUsageHistoryLine(rawLine: String): UsageHistoryUiItem {
+    val line = rawLine.trim().removePrefix(USAGE_HISTORY_BULLET_PREFIX).trim()
+    val chunks = line.split(USAGE_HISTORY_SEPARATOR).map { it.trim() }.filter { it.isNotBlank() }
+    return UsageHistoryUiItem(
+        store = chunks.getOrNull(0).orEmpty(),
+        usedAt = chunks.getOrNull(1).orEmpty(),
+        amount = chunks.getOrNull(2).orEmpty()
+    )
 }
 
 @Composable
@@ -359,7 +387,7 @@ private fun ExpireInfo(expireDateText: String, expireBadgeText: String) {
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = "유효기간",
+            text = VoucherText.LABEL_EXPIRE_DATE,
             style = MaterialTheme.typography.labelSmall,
             color = SecondaryText,
             fontWeight = FontWeight.Bold
@@ -396,7 +424,7 @@ private fun ExpireInfo(expireDateText: String, expireBadgeText: String) {
 private fun InfoBlock(content: String) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = "교환처",
+            text = VoucherText.LABEL_EXCHANGE_PLACE,
             style = MaterialTheme.typography.labelSmall,
             color = SecondaryText,
             fontWeight = FontWeight.Bold
@@ -414,7 +442,7 @@ private fun InfoBlock(content: String) {
 private fun MemoBlock(memoText: String) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            text = "메모",
+            text = VoucherText.LABEL_MEMO,
             style = MaterialTheme.typography.labelSmall,
             color = SecondaryText,
             fontWeight = FontWeight.Bold
@@ -445,7 +473,7 @@ private fun BarcodeGraphic(barcodeNumber: String) {
             .clip(RoundedCornerShape(8.dp))
             .background(GifticonWhite)
             .drawBehind {
-                val modules = encodeCode128ModulesOrNull(barcodeNumber)
+                val modules = encodeCode128ModulesOrNull(barcodeNumber, width = 600)
                 if (modules != null) {
                     drawCode128Bars(modules)
                 } else {
@@ -505,36 +533,17 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFallbackBars() 
     }
 }
 
-private fun encodeCode128ModulesOrNull(barcodeNumber: String): BooleanArray? {
-    val normalizedBarcode = barcodeNumber.trim()
-    if (normalizedBarcode.isBlank() || normalizedBarcode == UNREGISTERED_BARCODE) return null
-    if (!normalizedBarcode.all { it.code in 32..126 }) return null
-
-    return runCatching {
-        val bitMatrix = Code128Writer().encode(normalizedBarcode, BarcodeFormat.CODE_128, 600, 1)
-        val row = bitMatrix.height / 2
-        BooleanArray(bitMatrix.width) { x -> bitMatrix.get(x, row) }
-}.getOrNull()
-}
-
-private fun formatBarcodeNumberForDisplay(rawBarcodeNumber: String): String {
-    val normalized = rawBarcodeNumber.trim()
-    if (normalized.isBlank() || normalized == UNREGISTERED_BARCODE) return normalized
-    val compact = normalized.replace(" ", "")
-    return compact.chunked(4).joinToString(" ")
-}
-
 private fun resolveExpireBadgeStyle(expireBadgeText: String): ExpireBadgeStyle {
     val normalized = expireBadgeText.trim()
-    val dday = normalized.removePrefix("D-").toLongOrNull()
+    val dday = TextFormatters.parseDdayOrNull(normalized)
 
     return when {
-        normalized == "사용 완료" -> ExpireBadgeStyle(
+        normalized == VoucherText.STATUS_USED -> ExpireBadgeStyle(
             containerColor = GifticonBorderSoft,
             borderColor = GifticonBorderSoft,
             textColor = GifticonTextSlate
         )
-        normalized == "만료" || (dday != null && dday < 0) -> ExpireBadgeStyle(
+        normalized == VoucherText.STATUS_EXPIRED || (dday != null && dday < 0) -> ExpireBadgeStyle(
             containerColor = GifticonDangerBackground,
             borderColor = GifticonBorderSoft,
             textColor = GifticonDanger

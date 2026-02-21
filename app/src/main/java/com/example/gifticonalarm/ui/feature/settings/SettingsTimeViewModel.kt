@@ -10,6 +10,10 @@ import com.example.gifticonalarm.domain.usecase.GetNotificationSettingsUseCase
 import com.example.gifticonalarm.domain.usecase.ObserveNotificationSettingsUseCase
 import com.example.gifticonalarm.domain.usecase.SyncNotificationScheduleUseCase
 import com.example.gifticonalarm.domain.usecase.UpdateNotificationSettingsUseCase
+import com.example.gifticonalarm.ui.feature.shared.livedata.consumeEffect
+import com.example.gifticonalarm.ui.feature.shared.livedata.emitEffect
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
+import com.example.gifticonalarm.ui.feature.shared.util.formatHourMinute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -54,37 +58,29 @@ class SettingsTimeViewModel @Inject constructor(
         val hour24 = toHour24(periodIndex = periodIndex, hour12 = selectedHour12)
 
         viewModelScope.launch {
-            runCatching {
-                val current = getNotificationSettingsUseCase()
-                val updated = current.copy(
-                    notifyHour = hour24,
-                    notifyMinute = selectedMinute
-                )
-                updateNotificationSettingsUseCase(updated)
-                syncNotificationScheduleUseCase(updated)
-            }.onSuccess {
-                _effect.value = SettingsTimeEffect.NavigateBack(
-                    savedTimeText = "%02d:%02d".format(hour24, selectedMinute)
+            runCatching { persistNotificationTime(hour24, selectedMinute) }
+                .onSuccess {
+                _effect.emitEffect(
+                    SettingsTimeEffect.NavigateBack(
+                        savedTimeText = formatHourMinute(hour24, selectedMinute)
+                    )
                 )
             }.onFailure {
-                _effect.value = SettingsTimeEffect.ShowMessage("시간 저장에 실패했어요.")
+                _effect.emitEffect(SettingsTimeEffect.ShowMessage(CommonText.MESSAGE_TIME_SAVE_FAILED))
             }
         }
     }
 
     fun consumeEffect() {
-        _effect.value = null
+        _effect.consumeEffect()
     }
 
     private fun Flow<NotificationSettings>.mapToTimeUiState(): Flow<SettingsTimeUiState> {
         return map { settings ->
-            val periodIndex = if (settings.notifyHour >= 12) 1 else 0
-            val hour12 = toHour12(settings.notifyHour)
-            val minute = settings.notifyMinute.coerceIn(0, 59)
             SettingsTimeUiState(
-                periodIndex = periodIndex,
-                hour12 = hour12,
-                minute = minute
+                periodIndex = toPeriodIndex(settings.notifyHour),
+                hour12 = toHour12(settings.notifyHour),
+                minute = normalizeMinute(settings.notifyMinute)
             )
         }
     }
@@ -106,5 +102,33 @@ class SettingsTimeViewModel @Inject constructor(
             hour12 == 12 -> 0
             else -> hour12
         }
+    }
+
+    private fun toPeriodIndex(hour24: Int): Int {
+        return if (hour24 >= 12) 1 else 0
+    }
+
+    private fun normalizeMinute(minute: Int): Int {
+        return minute.coerceIn(0, 59)
+    }
+
+    private fun NotificationSettings.withNotificationTime(
+        notifyHour: Int,
+        notifyMinute: Int
+    ): NotificationSettings {
+        return copy(
+            notifyHour = notifyHour,
+            notifyMinute = notifyMinute
+        )
+    }
+
+    private suspend fun persistNotificationTime(hour24: Int, minute: Int) {
+        val current = getNotificationSettingsUseCase()
+        val updated = current.withNotificationTime(
+            notifyHour = hour24,
+            notifyMinute = minute
+        )
+        updateNotificationSettingsUseCase(updated)
+        syncNotificationScheduleUseCase(updated)
     }
 }

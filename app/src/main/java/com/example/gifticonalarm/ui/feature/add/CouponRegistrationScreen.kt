@@ -1,4 +1,6 @@
 package com.example.gifticonalarm.ui.feature.add
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
+import com.example.gifticonalarm.ui.feature.shared.text.RegistrationText
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -69,15 +71,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.gifticonalarm.ui.common.components.ToastBanner
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoBottomSheet
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.CouponRegistrationInfoSheetType
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDate
 import com.example.gifticonalarm.ui.feature.add.bottomsheet.ExpirationDateSelectionBottomSheet
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.oned.Code128Writer
+import com.example.gifticonalarm.ui.feature.shared.components.BottomToastBanner
+import com.example.gifticonalarm.ui.feature.shared.effect.AutoDismissToast
+import com.example.gifticonalarm.ui.feature.shared.effect.HandleRouteEffect
+import com.example.gifticonalarm.ui.feature.shared.util.encodeCode128ModulesOrNull
+import com.example.gifticonalarm.ui.feature.shared.util.formatBarcodeNumberForDisplay
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.delay
 
 private val RegistrationBackground = Color(0xFFFFFFFF)
 private val RegistrationAccent = Color(0xFF191970)
@@ -85,7 +88,13 @@ private val RegistrationTextPrimary = Color(0xFF111827)
 private val RegistrationTextSecondary = Color(0xFF9CA3AF)
 private val RegistrationDivider = Color(0xFFF1F5F9)
 private val RegistrationSurface = Color(0xFFF3F4F6)
-private const val UNREGISTERED_BARCODE = "미등록"
+private val RegistrationHintTint = Color(0xFF9CA3AF)
+private val RegistrationInfoIconTint = Color(0xFFCBD5E1)
+private val RegistrationThumbnailHintTint = Color(0xFF94A3B8)
+private val RegistrationThumbnailBorder = Color(0xFFE2E8F0)
+private val RegistrationThumbnailWarningTint = Color(0xFFF97316)
+private val RegistrationDisabledContainer = Color(0xFFF3F4F6)
+private val RegistrationDisabledText = Color(0xFF9CA3AF)
 private val RegistrationPageHorizontalPadding = 20.dp
 private val RegistrationSectionSpacing = 20.dp
 private val RegistrationFieldSpacing = 6.dp
@@ -95,6 +104,27 @@ private val RegistrationSectionTitleSize = 16.sp
 enum class CouponType {
     EXCHANGE,
     AMOUNT
+}
+
+private data class BarcodeSectionState(
+    val barcode: String,
+    val withoutBarcode: Boolean
+)
+
+private data class CouponInfoSectionState(
+    val place: String,
+    val couponName: String,
+    val expiryDate: String,
+    val memo: String
+)
+
+private data class CouponTypeSectionState(
+    val couponType: CouponType,
+    val amount: String
+)
+
+private fun registrationActionText(isEditMode: Boolean): String {
+    return if (isEditMode) RegistrationText.TITLE_EDIT else RegistrationText.TITLE_CREATE
 }
 
 /**
@@ -133,25 +163,21 @@ fun CouponRegistrationScreen(
         registrationViewModel.initializeForm(couponId, editTarget)
     }
 
-    LaunchedEffect(effect) {
-        when (val currentEffect = effect) {
+    HandleRouteEffect(
+        effect = effect,
+        onConsumed = registrationViewModel::consumeEffect
+    ) { currentEffect ->
+        when (currentEffect) {
             is CouponRegistrationEffect.ShowMessage -> {
                 toastMessage = currentEffect.message
-                registrationViewModel.consumeEffect()
             }
             CouponRegistrationEffect.RegistrationCompleted -> {
                 onRegisterClick(formState.isEditMode)
-                registrationViewModel.consumeEffect()
             }
-            null -> Unit
         }
     }
 
-    LaunchedEffect(toastMessage) {
-        if (toastMessage == null) return@LaunchedEffect
-        delay(1900L)
-        toastMessage = null
-    }
+    AutoDismissToast(message = toastMessage, onDismiss = { toastMessage = null })
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -164,278 +190,52 @@ fun CouponRegistrationScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = RegistrationBackground,
-        topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = RegistrationBackground
-                ),
-                title = {
-                    Text(
-                        text = if (formState.isEditMode) "수정하기" else "등록하기",
-                        modifier = Modifier.fillMaxWidth(),
-                        color = RegistrationTextPrimary,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onCloseClick) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = "닫기",
-                            tint = RegistrationTextPrimary
-                        )
-                    }
-                },
-                actions = {
-                    Spacer(modifier = Modifier.size(48.dp))
-                }
-            )
-        },
-        bottomBar = {
-            Surface(
-                color = RegistrationBackground,
-                tonalElevation = 0.dp,
-                border = BorderStroke(1.dp, RegistrationDivider)
-            ) {
-                Button(
-                    onClick = { registrationViewModel.submit() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
-                        .height(52.dp),
-                    enabled = !isRegistering,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = RegistrationAccent,
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = if (formState.isEditMode) "수정하기" else "등록하기",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            modifier = Modifier.fillMaxSize(),
+            containerColor = RegistrationBackground,
+            topBar = {
+                RegistrationTopBar(
+                    isEditMode = formState.isEditMode,
+                    onCloseClick = onCloseClick
+                )
+            },
+            bottomBar = {
+                RegistrationBottomBar(
+                    isEditMode = formState.isEditMode,
+                    isRegistering = isRegistering,
+                    onSubmitClick = registrationViewModel::submit
+                )
             }
-        }
-    ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(RegistrationBackground)
-                    .verticalScroll(rememberScrollState())
-                    .padding(innerPadding)
-                    .padding(horizontal = RegistrationPageHorizontalPadding, vertical = 16.dp)
-            ) {
-            ThumbnailSection(
-                thumbnailUri = formState.thumbnailUri,
+        ) { innerPadding ->
+            RegistrationFormContent(
+                formState = formState,
+                expiryDate = expiryDate,
+                innerPadding = innerPadding,
                 onThumbnailClick = {
                     onThumbnailClick()
                     photoPickerLauncher.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
-                }
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "바코드 번호",
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
-                fontWeight = FontWeight.Bold,
-                color = RegistrationTextPrimary,
-                modifier = Modifier.padding(start = RegistrationAlignedStartPadding)
-            )
-            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
-            UnderlineInputField(
-                value = if (formState.withoutBarcode) "바코드 번호 없음" else formState.barcode,
-                onValueChange = registrationViewModel::updateBarcode,
-                placeholder = "바코드 번호를 입력해주세요",
-                keyboardType = KeyboardType.Ascii,
-                enabled = !formState.withoutBarcode,
-                disabledContainerColor = Color(0xFFF3F4F6),
-                disabledTextColor = Color(0xFF9CA3AF)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            BarcodePreviewCard(barcode = formState.barcode)
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 40.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Checkbox(
-                    checked = formState.withoutBarcode,
-                    onCheckedChange = registrationViewModel::updateWithoutBarcode,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .scale(0.65f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "바코드 번호 없이 등록하기",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = Color(0xFF9CA3AF),
-                    modifier = Modifier.padding(top = 1.dp)
-                )
-                Spacer(modifier = Modifier.width(2.dp))
-                IconButton(
-                    onClick = {
-                        onNoBarcodeInfoClick()
-                        registrationViewModel.showBarcodeInfoSheet()
-                    },
-                    modifier = Modifier.size(20.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Info,
-                        contentDescription = "바코드 도움말",
-                        tint = Color(0xFFCBD5E1),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
-            Text(
-                text = "쿠폰 정보",
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
-                fontWeight = FontWeight.Bold,
-                color = RegistrationTextPrimary,
-                modifier = Modifier.padding(start = RegistrationAlignedStartPadding)
-            )
-            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
-            UnderlineInputField(
-                value = formState.place,
-                onValueChange = registrationViewModel::updatePlace,
-                placeholder = "사용처를 입력해 주세요. (필수)"
-            )
-            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
-            UnderlineInputField(
-                value = formState.couponName,
-                onValueChange = registrationViewModel::updateCouponName,
-                placeholder = "쿠폰명을 입력해 주세요. (필수)"
-            )
-            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
-            UnderlineInputField(
-                value = expiryDate,
-                onValueChange = {},
-                placeholder = "유효기한을 선택해주세요. (필수)",
-                readOnly = true,
-                onClick = {
+                },
+                onBarcodeChange = registrationViewModel::updateBarcode,
+                onWithoutBarcodeChange = registrationViewModel::updateWithoutBarcode,
+                onBarcodeInfoClick = {
+                    onNoBarcodeInfoClick()
+                    registrationViewModel.showBarcodeInfoSheet()
+                },
+                onPlaceChange = registrationViewModel::updatePlace,
+                onCouponNameChange = registrationViewModel::updateCouponName,
+                onMemoChange = registrationViewModel::updateMemo,
+                onExpiryDateClick = {
                     onExpiryDateClick()
                     registrationViewModel.openExpiryBottomSheet()
                 },
-                showExpandIcon = true
-            )
-
-            Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
-            Text(
-                text = "메모",
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
-                fontWeight = FontWeight.Bold,
-                color = RegistrationTextPrimary,
-                modifier = Modifier.padding(start = RegistrationAlignedStartPadding)
-            )
-            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
-            UnderlineInputField(
-                value = formState.memo,
-                onValueChange = registrationViewModel::updateMemo,
-                placeholder = "메모를 입력해주세요"
-            )
-
-            Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
-            Text(
-                text = "쿠폰 타입",
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
-                fontWeight = FontWeight.Bold,
-                color = RegistrationTextPrimary,
-                modifier = Modifier.padding(start = RegistrationAlignedStartPadding)
-            )
-            Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = formState.couponType == CouponType.EXCHANGE,
-                    onClick = { registrationViewModel.updateCouponType(CouponType.EXCHANGE) },
-                    label = { Text("교환권") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = RegistrationAccent,
-                        selectedLabelColor = Color.White
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-                FilterChip(
-                    selected = formState.couponType == CouponType.AMOUNT,
-                    onClick = { registrationViewModel.updateCouponType(CouponType.AMOUNT) },
-                    label = { Text("금액권") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = RegistrationAccent,
-                        selectedLabelColor = Color.White
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            if (formState.couponType == CouponType.AMOUNT) {
-                Spacer(modifier = Modifier.height(14.dp))
-                Text(
-                    text = "금액 입력",
-                    style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
-                    fontWeight = FontWeight.Bold,
-                    color = RegistrationTextPrimary
-                )
-                Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
-                UnderlineInputField(
-                    value = formState.amount,
-                    onValueChange = registrationViewModel::updateAmount,
-                    placeholder = "금액을 입력해주세요",
-                    keyboardType = KeyboardType.Number,
-                    suffixText = "원"
-                )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Info,
-                    contentDescription = "만료일 알람 안내",
-                    tint = Color(0xFFCBD5E1),
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clickable {
-                            registrationViewModel.showNotificationInfoSheet()
-                        }
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "만료일 알람은 언제 오나요?",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = Color(0xFF9CA3AF)
-                )
-            }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-        }
-
-        toastMessage?.let { message ->
-            ToastBanner(
-                message = message,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
+                onCouponTypeChange = registrationViewModel::updateCouponType,
+                onAmountChange = registrationViewModel::updateAmount,
+                onNotificationInfoClick = registrationViewModel::showNotificationInfoSheet
             )
         }
+
+        BottomToastBanner(message = toastMessage)
     }
 
     if (isExpiryBottomSheetVisible) {
@@ -456,6 +256,334 @@ fun CouponRegistrationScreen(
 }
 
 @Composable
+private fun RegistrationFormContent(
+    formState: CouponRegistrationFormState,
+    expiryDate: String,
+    innerPadding: androidx.compose.foundation.layout.PaddingValues,
+    onThumbnailClick: () -> Unit,
+    onBarcodeChange: (String) -> Unit,
+    onWithoutBarcodeChange: (Boolean) -> Unit,
+    onBarcodeInfoClick: () -> Unit,
+    onPlaceChange: (String) -> Unit,
+    onCouponNameChange: (String) -> Unit,
+    onMemoChange: (String) -> Unit,
+    onExpiryDateClick: () -> Unit,
+    onCouponTypeChange: (CouponType) -> Unit,
+    onAmountChange: (String) -> Unit,
+    onNotificationInfoClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(RegistrationBackground)
+            .verticalScroll(rememberScrollState())
+            .padding(innerPadding)
+            .padding(horizontal = RegistrationPageHorizontalPadding, vertical = 16.dp)
+    ) {
+        ThumbnailSection(
+            thumbnailUri = formState.thumbnailUri,
+            onThumbnailClick = onThumbnailClick
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        BarcodeSection(
+            state = BarcodeSectionState(
+                barcode = formState.barcode,
+                withoutBarcode = formState.withoutBarcode
+            ),
+            onBarcodeChange = onBarcodeChange,
+            onWithoutBarcodeChange = onWithoutBarcodeChange,
+            onBarcodeInfoClick = onBarcodeInfoClick
+        )
+
+        CouponInfoSection(
+            state = CouponInfoSectionState(
+                place = formState.place,
+                couponName = formState.couponName,
+                expiryDate = expiryDate,
+                memo = formState.memo
+            ),
+            onPlaceChange = onPlaceChange,
+            onCouponNameChange = onCouponNameChange,
+            onMemoChange = onMemoChange,
+            onExpiryDateClick = onExpiryDateClick
+        )
+
+        CouponTypeSection(
+            state = CouponTypeSectionState(
+                couponType = formState.couponType,
+                amount = formState.amount
+            ),
+            onCouponTypeChange = onCouponTypeChange,
+            onAmountChange = onAmountChange,
+            onNotificationInfoClick = onNotificationInfoClick
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RegistrationTopBar(
+    isEditMode: Boolean,
+    onCloseClick: () -> Unit
+) {
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = RegistrationBackground
+        ),
+        title = {
+            Text(
+                text = registrationActionText(isEditMode),
+                modifier = Modifier.fillMaxWidth(),
+                color = RegistrationTextPrimary,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onCloseClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = RegistrationText.ACTION_CLOSE_DESCRIPTION,
+                    tint = RegistrationTextPrimary
+                )
+            }
+        },
+        actions = {
+            Spacer(modifier = Modifier.size(48.dp))
+        }
+    )
+}
+
+@Composable
+private fun RegistrationBottomBar(
+    isEditMode: Boolean,
+    isRegistering: Boolean,
+    onSubmitClick: () -> Unit
+) {
+    Surface(
+        color = RegistrationBackground,
+        tonalElevation = 0.dp,
+        border = BorderStroke(1.dp, RegistrationDivider)
+    ) {
+        Button(
+            onClick = onSubmitClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .height(52.dp),
+            enabled = !isRegistering,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = RegistrationAccent,
+                contentColor = Color.White
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(
+                text = registrationActionText(isEditMode),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun RegistrationSectionTitle(
+    text: String,
+    modifier: Modifier = Modifier,
+    alignStart: Boolean = true
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium.copy(fontSize = RegistrationSectionTitleSize),
+        fontWeight = FontWeight.Bold,
+        color = RegistrationTextPrimary,
+        modifier = if (alignStart) {
+            modifier.padding(start = RegistrationAlignedStartPadding)
+        } else {
+            modifier
+        }
+    )
+}
+
+@Composable
+private fun BarcodeSection(
+    state: BarcodeSectionState,
+    onBarcodeChange: (String) -> Unit,
+    onWithoutBarcodeChange: (Boolean) -> Unit,
+    onBarcodeInfoClick: () -> Unit
+) {
+    RegistrationSectionTitle(text = RegistrationText.LABEL_BARCODE)
+    Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
+    UnderlineInputField(
+        value = if (state.withoutBarcode) RegistrationText.LABEL_NO_BARCODE else state.barcode,
+        onValueChange = onBarcodeChange,
+        placeholder = RegistrationText.PLACEHOLDER_BARCODE,
+        keyboardType = KeyboardType.Ascii,
+        enabled = !state.withoutBarcode,
+        disabledContainerColor = RegistrationDisabledContainer,
+        disabledTextColor = RegistrationDisabledText
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    BarcodePreviewCard(barcode = state.barcode)
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 40.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(modifier = Modifier.width(8.dp))
+        Checkbox(
+            checked = state.withoutBarcode,
+            onCheckedChange = onWithoutBarcodeChange,
+            modifier = Modifier
+                .size(20.dp)
+                .scale(0.65f)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = RegistrationText.ACTION_REGISTER_WITHOUT_BARCODE,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+            color = RegistrationHintTint,
+            modifier = Modifier.padding(top = 1.dp)
+        )
+        Spacer(modifier = Modifier.width(2.dp))
+        IconButton(
+            onClick = onBarcodeInfoClick,
+            modifier = Modifier.size(20.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Info,
+                contentDescription = RegistrationText.ACTION_BARCODE_HELP,
+                tint = RegistrationInfoIconTint,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CouponInfoSection(
+    state: CouponInfoSectionState,
+    onPlaceChange: (String) -> Unit,
+    onCouponNameChange: (String) -> Unit,
+    onMemoChange: (String) -> Unit,
+    onExpiryDateClick: () -> Unit
+) {
+    Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
+    RegistrationSectionTitle(text = RegistrationText.SECTION_COUPON_INFO)
+    Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
+    UnderlineInputField(
+        value = state.place,
+        onValueChange = onPlaceChange,
+        placeholder = CommonText.PLACEHOLDER_STORE_REQUIRED
+    )
+    Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
+    UnderlineInputField(
+        value = state.couponName,
+        onValueChange = onCouponNameChange,
+        placeholder = CommonText.PLACEHOLDER_COUPON_NAME_REQUIRED
+    )
+    Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
+    UnderlineInputField(
+        value = state.expiryDate,
+        onValueChange = {},
+        placeholder = CommonText.PLACEHOLDER_EXPIRY_REQUIRED,
+        readOnly = true,
+        onClick = onExpiryDateClick,
+        showExpandIcon = true
+    )
+
+    Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
+    RegistrationSectionTitle(text = RegistrationText.SECTION_MEMO)
+    Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
+    UnderlineInputField(
+        value = state.memo,
+        onValueChange = onMemoChange,
+        placeholder = CommonText.PLACEHOLDER_MEMO
+    )
+}
+
+@Composable
+private fun CouponTypeSection(
+    state: CouponTypeSectionState,
+    onCouponTypeChange: (CouponType) -> Unit,
+    onAmountChange: (String) -> Unit,
+    onNotificationInfoClick: () -> Unit
+) {
+    Spacer(modifier = Modifier.height(RegistrationSectionSpacing))
+    RegistrationSectionTitle(text = RegistrationText.SECTION_COUPON_TYPE)
+    Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FilterChip(
+            selected = state.couponType == CouponType.EXCHANGE,
+            onClick = { onCouponTypeChange(CouponType.EXCHANGE) },
+            label = { Text(RegistrationText.TYPE_EXCHANGE) },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = RegistrationAccent,
+                selectedLabelColor = Color.White
+            ),
+            modifier = Modifier.weight(1f)
+        )
+        FilterChip(
+            selected = state.couponType == CouponType.AMOUNT,
+            onClick = { onCouponTypeChange(CouponType.AMOUNT) },
+            label = { Text(RegistrationText.TYPE_AMOUNT) },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = RegistrationAccent,
+                selectedLabelColor = Color.White
+            ),
+            modifier = Modifier.weight(1f)
+        )
+    }
+
+    if (state.couponType == CouponType.AMOUNT) {
+        Spacer(modifier = Modifier.height(14.dp))
+        RegistrationSectionTitle(
+            text = RegistrationText.LABEL_AMOUNT_INPUT,
+            alignStart = false
+        )
+        Spacer(modifier = Modifier.height(RegistrationFieldSpacing))
+        UnderlineInputField(
+            value = state.amount,
+            onValueChange = onAmountChange,
+            placeholder = RegistrationText.PLACEHOLDER_AMOUNT,
+            keyboardType = KeyboardType.Number,
+            suffixText = CommonText.UNIT_WON
+        )
+    }
+
+    Spacer(modifier = Modifier.height(14.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Info,
+            contentDescription = RegistrationText.ACTION_NOTIFICATION_INFO_DESCRIPTION,
+            tint = RegistrationInfoIconTint,
+            modifier = Modifier
+                .size(16.dp)
+                .clickable { onNotificationInfoClick() }
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = RegistrationText.ACTION_NOTIFICATION_INFO,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+            color = RegistrationHintTint
+        )
+    }
+}
+
+@Composable
 private fun ThumbnailSection(
     thumbnailUri: String?,
     onThumbnailClick: () -> Unit
@@ -469,7 +597,7 @@ private fun ThumbnailSection(
                 .size(width = 112.dp, height = 112.dp)
                 .border(
                     width = 1.dp,
-                    color = Color(0xFFE2E8F0),
+                    color = RegistrationThumbnailBorder,
                     shape = RoundedCornerShape(14.dp)
                 )
                 .clickable(onClick = onThumbnailClick),
@@ -481,12 +609,12 @@ private fun ThumbnailSection(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Add,
-                        contentDescription = "썸네일 추가",
-                        tint = Color(0xFF94A3B8)
+                        contentDescription = RegistrationText.ACTION_ADD_THUMBNAIL_DESCRIPTION,
+                        tint = RegistrationThumbnailHintTint
                     )
                     Text(
-                        text = "썸네일 추가",
-                        color = Color(0xFF94A3B8),
+                        text = RegistrationText.ACTION_ADD_THUMBNAIL,
+                        color = RegistrationThumbnailHintTint,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -494,7 +622,7 @@ private fun ThumbnailSection(
             } else {
                 AsyncImage(
                     model = thumbnailUri,
-                    contentDescription = "선택한 썸네일",
+                    contentDescription = RegistrationText.IMAGE_SELECTED_THUMBNAIL_DESCRIPTION,
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(RoundedCornerShape(14.dp)),
@@ -508,14 +636,14 @@ private fun ThumbnailSection(
             Icon(
                 imageVector = Icons.Outlined.WarningAmber,
                 contentDescription = null,
-                tint = Color(0xFFF97316),
+                tint = RegistrationThumbnailWarningTint,
                 modifier = Modifier.size(12.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "썸네일 이미지는 자동인식되지 않아요.",
+                text = RegistrationText.MESSAGE_THUMBNAIL_NOT_RECOGNIZED,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFFCBD5E1)
+                color = RegistrationInfoIconTint
             )
         }
     }
@@ -568,8 +696,8 @@ private fun UnderlineInputField(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.ExpandMore,
-                        contentDescription = "유효기한 선택",
-                        tint = Color(0xFF94A3B8),
+                        contentDescription = RegistrationText.ACTION_SELECT_EXPIRY_DESCRIPTION,
+                        tint = RegistrationThumbnailHintTint,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -629,7 +757,7 @@ private fun BarcodePreviewCard(barcode: String) {
                     .fillMaxWidth()
                     .height(45.dp)
                     .drawBehind {
-                        val modules = encodeRegistrationCode128ModulesOrNull(barcode)
+                        val modules = encodeCode128ModulesOrNull(barcode, width = 600)
                         if (modules != null) {
                             drawRegistrationCode128Bars(modules)
                         } else {
@@ -639,7 +767,7 @@ private fun BarcodePreviewCard(barcode: String) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = formatRegistrationBarcodeForDisplay(barcode),
+                text = formatBarcodeNumberForDisplay(barcode),
                 color = Color(0xFF6B7280),
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 9.sp,
@@ -698,23 +826,4 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRegistrationFal
         )
         x += barWidth + (gap * scale)
     }
-}
-
-private fun encodeRegistrationCode128ModulesOrNull(barcodeNumber: String): BooleanArray? {
-    val normalizedBarcode = barcodeNumber.trim()
-    if (normalizedBarcode.isBlank() || normalizedBarcode == UNREGISTERED_BARCODE) return null
-    if (!normalizedBarcode.all { it.code in 32..126 }) return null
-
-    return runCatching {
-        val bitMatrix = Code128Writer().encode(normalizedBarcode, BarcodeFormat.CODE_128, 600, 1)
-        val row = bitMatrix.height / 2
-        BooleanArray(bitMatrix.width) { x -> bitMatrix.get(x, row) }
-    }.getOrNull()
-}
-
-private fun formatRegistrationBarcodeForDisplay(rawBarcode: String): String {
-    val normalized = rawBarcode.trim()
-    if (normalized.isBlank() || normalized == UNREGISTERED_BARCODE) return normalized
-    val compact = normalized.replace(" ", "")
-    return compact.chunked(4).joinToString(" ")
 }

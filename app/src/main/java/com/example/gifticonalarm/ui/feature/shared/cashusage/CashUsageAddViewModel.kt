@@ -1,24 +1,30 @@
 package com.example.gifticonalarm.ui.feature.shared.cashusage
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gifticonalarm.domain.model.Gifticon
+import com.example.gifticonalarm.domain.usecase.BuildAmountGifticonMemoUseCase
 import com.example.gifticonalarm.domain.usecase.GetGifticonByIdUseCase
+import com.example.gifticonalarm.domain.usecase.ParseGifticonMemoUseCase
 import com.example.gifticonalarm.domain.usecase.UpdateGifticonUseCase
+import com.example.gifticonalarm.ui.feature.shared.livedata.consumeEffect
+import com.example.gifticonalarm.ui.feature.shared.livedata.emitEffect
+import com.example.gifticonalarm.ui.feature.shared.util.buildUsageHistoryEntry
+import com.example.gifticonalarm.ui.feature.shared.util.parseCouponIdOrNull
+import com.example.gifticonalarm.ui.feature.shared.validation.ValidationMessages
+import com.example.gifticonalarm.ui.feature.shared.validation.firstValidationError
+import com.example.gifticonalarm.ui.feature.shared.validation.validateAtMost
+import com.example.gifticonalarm.ui.feature.shared.validation.validatePositiveAmount
+import com.example.gifticonalarm.ui.feature.shared.validation.validateRequired
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
-private const val AMOUNT_MEMO_PREFIX = "금액권:"
-private const val AMOUNT_NOTE_PREFIX = "메모:"
-private const val USAGE_HISTORY_PREFIX = "사용내역:"
-private const val LEGACY_USAGE_PREFIX = "최근 사용:"
 
 /**
  * 금액권 사용 내역 추가 화면 상태.
@@ -45,7 +51,9 @@ sealed interface CashUsageAddEffect {
 @HiltViewModel
 class CashUsageAddViewModel @Inject constructor(
     private val getGifticonByIdUseCase: GetGifticonByIdUseCase,
-    private val updateGifticonUseCase: UpdateGifticonUseCase
+    private val updateGifticonUseCase: UpdateGifticonUseCase,
+    private val parseGifticonMemoUseCase: ParseGifticonMemoUseCase,
+    private val buildAmountGifticonMemoUseCase: BuildAmountGifticonMemoUseCase
 ) : ViewModel() {
     private val _uiState = MutableLiveData(CashUsageAddUiState())
     val uiState: LiveData<CashUsageAddUiState> = _uiState
@@ -59,35 +67,39 @@ class CashUsageAddViewModel @Inject constructor(
 
     fun load(couponId: String) {
         if (loadedCouponId == couponId) return
+        val id = parseCouponIdOrNull(couponId) ?: return
         loadedCouponId = couponId
-        val id = couponId.toLongOrNull() ?: return
         observeJob?.cancel()
         observeJob = viewModelScope.launch {
             getGifticonByIdUseCase(id).collectLatest { gifticon ->
                 currentGifticon = gifticon
-                val balance = extractAmount(gifticon?.memo)
-                _uiState.value = (_uiState.value ?: CashUsageAddUiState()).copy(
-                    couponId = couponId,
-                    brand = gifticon?.brand.orEmpty(),
-                    title = gifticon?.name.orEmpty(),
-                    currentBalance = balance
-                )
+                val balance = parseGifticonMemoUseCase.extractAmountInt(gifticon?.memo)
+                updateUiState {
+                    copy(
+                        couponId = couponId,
+                        brand = gifticon?.brand.orEmpty(),
+                        title = gifticon?.name.orEmpty(),
+                        currentBalance = balance
+                    )
+                }
             }
         }
     }
 
     fun updateAmount(value: String) {
-        _uiState.value = (_uiState.value ?: return).copy(
-            amountText = value.filter { it.isDigit() }
-        )
+        updateUiState {
+            copy(
+                amountText = value.filter { it.isDigit() }
+            )
+        }
     }
 
     fun updateStore(value: String) {
-        _uiState.value = (_uiState.value ?: return).copy(storeText = value)
+        updateUiState { copy(storeText = value) }
     }
 
     fun updateUsedAt(value: String) {
-        _uiState.value = (_uiState.value ?: return).copy(usedAtText = value)
+        updateUiState { copy(usedAtText = value) }
     }
 
     fun save() {
@@ -96,139 +108,53 @@ class CashUsageAddViewModel @Inject constructor(
         val store = state.storeText.trim()
         val usedAt = state.usedAtText.trim()
         val usedAmount = state.amountText.toIntOrNull() ?: 0
-        if (usedAmount <= 0) {
-            _effect.value = CashUsageAddEffect.ShowMessage("사용 금액을 입력해 주세요.")
-            return
-        }
-        if (store.isBlank()) {
-            _effect.value = CashUsageAddEffect.ShowMessage("사용처를 입력해 주세요.")
-            return
-        }
-        if (usedAt.isBlank()) {
-            _effect.value = CashUsageAddEffect.ShowMessage("사용 날짜를 입력해 주세요.")
-            return
-        }
-        if (usedAmount > state.currentBalance) {
-            _effect.value = CashUsageAddEffect.ShowMessage("현재 잔액보다 큰 금액은 입력할 수 없어요.")
+        val validationMessage = firstValidationError(
+            validatePositiveAmount(usedAmount, ValidationMessages.AMOUNT_REQUIRED),
+            validateRequired(store, ValidationMessages.STORE_REQUIRED),
+            validateRequired(usedAt, ValidationMessages.USED_DATE_REQUIRED),
+            validateAtMost(usedAmount, state.currentBalance, ValidationMessages.AMOUNT_EXCEEDS_BALANCE)
+        )
+        if (validationMessage != null) {
+            _effect.emitEffect(CashUsageAddEffect.ShowMessage(validationMessage))
             return
         }
 
         val remaining = (state.currentBalance - usedAmount).coerceAtLeast(0)
-        val updatedMemo = buildAmountMemo(
+        val updatedMemo = buildAmountGifticonMemoUseCase.forUsageHistory(
             previousMemo = gifticon.memo,
             remainAmount = remaining,
-            usedAmount = usedAmount,
-            store = store,
-            usedAtText = usedAt
+            latestUsageEntry = buildUsageHistoryEntry(
+                store = store,
+                usedAtText = usedAt,
+                usedAmount = usedAmount
+            )
         )
 
         viewModelScope.launch {
-            _uiState.value = state.copy(isSaving = true)
+            setSaving(true)
             runCatching {
                 updateGifticonUseCase(gifticon.copy(memo = updatedMemo, lastModifiedAt = Date()))
             }.onSuccess {
-                _effect.value = CashUsageAddEffect.Saved
+                _effect.emitEffect(CashUsageAddEffect.Saved)
             }.onFailure {
-                _effect.value = CashUsageAddEffect.ShowMessage("사용 내역 저장에 실패했어요.")
+                _effect.emitEffect(CashUsageAddEffect.ShowMessage(CommonText.MESSAGE_CASH_USAGE_SAVE_FAILED))
             }
-            _uiState.value = (_uiState.value ?: state).copy(isSaving = false)
+            setSaving(false)
         }
+    }
+
+    private fun updateUiState(
+        transform: CashUsageAddUiState.() -> CashUsageAddUiState
+    ) {
+        val current = _uiState.value ?: CashUsageAddUiState()
+        _uiState.value = current.transform()
+    }
+
+    private fun setSaving(isSaving: Boolean) {
+        updateUiState { copy(isSaving = isSaving) }
     }
 
     fun consumeEffect() {
-        _effect.value = null
+        _effect.consumeEffect()
     }
-
-    private fun extractAmount(memo: String?): Int {
-        val amountRegex = Regex("""금액권:\s*([0-9,]+)\s*원""")
-        return amountRegex.find(memo.orEmpty())
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.replace(",", "")
-            ?.toIntOrNull()
-            ?: 0
-    }
-
-    private fun buildAmountMemo(
-        previousMemo: String?,
-        remainAmount: Int,
-        usedAmount: Int,
-        store: String,
-        usedAtText: String
-    ): String {
-        val customMemo = extractMemoNote(previousMemo)
-        val previousUsageHistory = extractUsageHistory(previousMemo)
-        val latestUsage = buildUsageEntry(
-            store = store,
-            usedAtText = usedAtText,
-            usedAmount = usedAmount
-        )
-        val mergedUsageHistory = listOf(latestUsage) + previousUsageHistory
-
-        return buildString {
-            append("$AMOUNT_MEMO_PREFIX ${formatAmount(remainAmount)}원")
-            if (customMemo.isNotBlank()) {
-                append('\n')
-                append("$AMOUNT_NOTE_PREFIX $customMemo")
-            }
-            mergedUsageHistory.forEach { history ->
-                if (history.isBlank()) return@forEach
-                append('\n')
-                append("$USAGE_HISTORY_PREFIX $history")
-            }
-        }
-    }
-
-    private fun extractMemoNote(memo: String?): String {
-        val lines = memo.orEmpty().lines().map { it.trim() }.filter { it.isNotBlank() }
-        val memoLine = lines.firstOrNull { it.startsWith(AMOUNT_NOTE_PREFIX) }
-            ?.removePrefix(AMOUNT_NOTE_PREFIX)
-            ?.trim()
-            .orEmpty()
-        if (memoLine.isBlank()) return ""
-        if (memoLine.startsWith(LEGACY_USAGE_PREFIX)) return ""
-        return memoLine.substringBefore(" | $LEGACY_USAGE_PREFIX").trim()
-    }
-
-    private fun extractUsageHistory(memo: String?): List<String> {
-        val lines = memo.orEmpty().lines().map { it.trim() }.filter { it.isNotBlank() }
-        val usageLines = lines
-            .filter { it.startsWith(USAGE_HISTORY_PREFIX) }
-            .map { it.removePrefix(USAGE_HISTORY_PREFIX).trim() }
-            .filter { it.isNotBlank() }
-
-        if (usageLines.isNotEmpty()) return usageLines
-
-        val legacyUsage = lines.firstOrNull { it.startsWith(AMOUNT_NOTE_PREFIX) }
-            ?.removePrefix(AMOUNT_NOTE_PREFIX)
-            ?.trim()
-            .orEmpty()
-
-        if (legacyUsage.isBlank()) return emptyList()
-        return when {
-            legacyUsage.contains("| $LEGACY_USAGE_PREFIX") -> {
-                listOf(
-                    legacyUsage.substringAfter("| $LEGACY_USAGE_PREFIX")
-                        .trim()
-                )
-            }
-            legacyUsage.startsWith(LEGACY_USAGE_PREFIX) -> {
-                listOf(legacyUsage.removePrefix(LEGACY_USAGE_PREFIX).trim())
-            }
-            else -> emptyList()
-        }.filter { it.isNotBlank() }
-    }
-
-    private fun buildUsageEntry(store: String, usedAtText: String, usedAmount: Int): String {
-        return buildString {
-            if (store.isNotBlank()) append(store) else append("사용처 미입력")
-            if (usedAtText.isNotBlank()) append(" / $usedAtText")
-            append(" / ${formatAmount(usedAmount)}원 사용")
-        }.trim()
-    }
-
-    private fun formatAmount(amount: Int): String {
-        return String.format(Locale.getDefault(), "%,d", amount)
-    }
-
 }

@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.NotificationsNone
@@ -27,12 +26,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,6 +55,9 @@ import com.example.gifticonalarm.ui.feature.home.model.HomeCouponItem
 import com.example.gifticonalarm.ui.feature.home.model.HomeFocusItem
 import com.example.gifticonalarm.ui.feature.home.model.HomeSortType
 import com.example.gifticonalarm.ui.feature.home.model.HomeUiState
+import com.example.gifticonalarm.ui.feature.shared.components.SelectableDropdownMenuItem
+import com.example.gifticonalarm.ui.feature.shared.text.HomeText
+import com.example.gifticonalarm.ui.feature.shared.text.TextFormatters
 import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
 import com.example.gifticonalarm.ui.theme.GifticonDanger
 import com.example.gifticonalarm.ui.theme.GifticonDangerBackground
@@ -81,6 +81,7 @@ private val HomeTextSecondary = GifticonTextSecondary
 private val HomeMenuSurface = Color(0xFFFAFBFD)
 private val HomeMenuBorder = Color(0xFFE7ECF3)
 private val HomeMenuSelected = Color(0xFFEDEEFE)
+private val HomeSortOptions = HomeSortType.entries
 
 /**
  * Stitch 홈 대시보드 디자인을 반영한 UI 전용 홈 화면.
@@ -108,7 +109,7 @@ fun HomeScreen(
                 contentColor = GifticonWhite,
                 shape = CircleShape
             ) {
-                Icon(imageVector = Icons.Outlined.Add, contentDescription = "추가")
+                Icon(imageVector = Icons.Outlined.Add, contentDescription = HomeText.ADD_DESCRIPTION)
             }
         }
     ) { innerPadding ->
@@ -165,7 +166,7 @@ private fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "기프트노트",
+            text = HomeText.APP_NAME,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = HomePrimary
@@ -187,7 +188,7 @@ private fun HomeHeader(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.NotificationsNone,
-                    contentDescription = "알림",
+                    contentDescription = HomeText.NOTIFICATION_DESCRIPTION,
                     tint = HomeTextSecondary,
                     modifier = Modifier.size(22.dp)
                 )
@@ -210,7 +211,7 @@ private fun FocusSection(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "오늘의 포커스",
+            text = HomeText.TODAY_FOCUS,
             style = MaterialTheme.typography.titleMedium,
             color = HomeTextPrimary,
             fontWeight = FontWeight.Bold
@@ -294,7 +295,7 @@ private fun FocusSection(
                             color = GifticonWhite.copy(alpha = 0.7f)
                         )
                         Text(
-                            text = "사용하기",
+                            text = HomeText.USE_ACTION,
                             modifier = Modifier
                                 .clickable { onFocusClick(focus.id) }
                                 .clip(RoundedCornerShape(12.dp))
@@ -322,8 +323,7 @@ private data class CouponBadgeColors(
 )
 
 private fun resolveHomeFocusBadgeStyle(ddayText: String): FocusBadgeStyle {
-    val normalized = ddayText.trim()
-    val dday = normalized.removePrefix("D-").toLongOrNull()
+    val dday = extractDdayOrNull(ddayText)
 
     return when {
         dday != null && dday in 0L..7L -> FocusBadgeStyle(
@@ -339,6 +339,10 @@ private fun resolveHomeFocusBadgeStyle(ddayText: String): FocusBadgeStyle {
             textColor = GifticonWhite
         )
     }
+}
+
+private fun extractDdayOrNull(ddayText: String): Long? {
+    return TextFormatters.parseDdayOrNull(ddayText)
 }
 
 private fun resolveHomeCouponBadgeColors(type: HomeBadgeType): CouponBadgeColors {
@@ -391,7 +395,7 @@ private fun CouponSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "나의 쿠폰 목록",
+                text = HomeText.COUPON_LIST_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = HomeTextPrimary
@@ -429,31 +433,19 @@ private fun CouponSection(
                     shadowElevation = 8.dp,
                     border = androidx.compose.foundation.BorderStroke(1.dp, HomeMenuBorder)
                 ) {
-                    HomeSortDropdownItem(
-                        label = HomeSortType.LATEST.label,
-                        selected = selectedSort == HomeSortType.LATEST,
-                        onClick = {
-                            onSortSelected(HomeSortType.LATEST)
-                            sortMenuExpanded = false
-                        }
-                    )
-                    HomeSortDropdownItem(
-                        label = HomeSortType.EXPIRY_SOON.label,
-                        selected = selectedSort == HomeSortType.EXPIRY_SOON,
-                        onClick = {
-                            onSortSelected(HomeSortType.EXPIRY_SOON)
-                            sortMenuExpanded = false
-                        }
-                    )
-                    HomeSortDropdownItem(
-                        label = HomeSortType.EXPIRY_LATE.label,
-                        selected = selectedSort == HomeSortType.EXPIRY_LATE,
-                        onClick = {
-                            onSortSelected(HomeSortType.EXPIRY_LATE)
-                            sortMenuExpanded = false
-                        }
-                    )
-
+                    HomeSortOptions.forEach { sortType ->
+                        SelectableDropdownMenuItem(
+                            label = sortType.label,
+                            selected = selectedSort == sortType,
+                            selectedBackgroundColor = HomeMenuSelected,
+                            textColor = HomeTextPrimary,
+                            checkTintColor = HomePrimary,
+                            onClick = {
+                                onSortSelected(sortType)
+                                sortMenuExpanded = false
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -477,40 +469,6 @@ private fun CouponSection(
             }
         }
     }
-}
-
-@Composable
-private fun HomeSortDropdownItem(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    DropdownMenuItem(
-        text = {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-            )
-        },
-        onClick = onClick,
-        trailingIcon = {
-            if (selected) {
-                Icon(
-                    imageVector = Icons.Outlined.Check,
-                    contentDescription = null,
-                    tint = HomePrimary,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        },
-        colors = MenuDefaults.itemColors(
-            textColor = HomeTextPrimary,
-            trailingIconColor = HomePrimary
-        ),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-        modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(if (selected) HomeMenuSelected else Color.Transparent)
-    )
 }
 
 @Composable
@@ -611,7 +569,7 @@ private fun EmptyCouponSection() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "등록된 쿠폰이 없어요.",
+            text = HomeText.EMPTY_COUPON,
             style = MaterialTheme.typography.bodyMedium,
             color = HomeTextSecondary
         )

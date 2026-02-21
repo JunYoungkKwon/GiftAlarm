@@ -1,5 +1,7 @@
 package com.example.gifticonalarm.ui.feature.home.model
 
+import com.example.gifticonalarm.ui.feature.shared.text.HomeText
+
 /**
  * 홈 대시보드용 UI 상태 모델.
  */
@@ -34,9 +36,9 @@ enum class HomeBadgeType {
 }
 
 enum class HomeSortType(val label: String) {
-    LATEST("최신순"),
-    EXPIRY_SOON("유효기간 짧은 순"),
-    EXPIRY_LATE("유효기간 긴 순")
+    LATEST(HomeText.SORT_LATEST),
+    EXPIRY_SOON(HomeText.SORT_EXPIRY_SOON),
+    EXPIRY_LATE(HomeText.SORT_EXPIRY_LATE)
 }
 
 /**

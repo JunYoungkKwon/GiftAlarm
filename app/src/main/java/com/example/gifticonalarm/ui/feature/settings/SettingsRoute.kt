@@ -2,20 +2,18 @@ package com.example.gifticonalarm.ui.feature.settings
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.gifticonalarm.ui.common.components.ToastBanner
-import kotlinx.coroutines.delay
+import com.example.gifticonalarm.ui.feature.shared.components.BottomToastBanner
+import com.example.gifticonalarm.ui.feature.shared.effect.AutoDismissToast
+import com.example.gifticonalarm.ui.feature.shared.effect.HandleRouteEffect
 
 /**
  * 설정 라우트 진입점.
@@ -34,21 +32,18 @@ fun SettingsRoute(
     var toastMessage by remember { mutableStateOf<String?>(null) }
     var immediateTimeText by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(effect) {
-        when (val currentEffect = effect) {
+    HandleRouteEffect(
+        effect = effect,
+        onConsumed = viewModel::consumeEffect
+    ) { currentEffect ->
+        when (currentEffect) {
             is SettingsEffect.ShowMessage -> {
                 toastMessage = currentEffect.message
-                viewModel.consumeEffect()
             }
-            null -> Unit
         }
     }
 
-    LaunchedEffect(toastMessage) {
-        if (toastMessage == null) return@LaunchedEffect
-        delay(1900L)
-        toastMessage = null
-    }
+    AutoDismissToast(message = toastMessage, onDismiss = { toastMessage = null })
 
     LaunchedEffect(externalToastVersion) {
         if (externalToastMessage.isNullOrBlank()) return@LaunchedEffect
@@ -61,8 +56,11 @@ fun SettingsRoute(
     }
 
     LaunchedEffect(uiState.notificationTimeText, immediateTimeText) {
-        if (immediateTimeText == null) return@LaunchedEffect
-        if (uiState.notificationTimeText == immediateTimeText) {
+        if (shouldClearImmediateTime(
+                stateTimeText = uiState.notificationTimeText,
+                immediateTimeText = immediateTimeText
+            )
+        ) {
             immediateTimeText = null
         }
     }
@@ -70,7 +68,10 @@ fun SettingsRoute(
     Box(modifier = Modifier.fillMaxSize()) {
         SettingsScreen(
             uiState = uiState.copy(
-                notificationTimeText = immediateTimeText ?: uiState.notificationTimeText
+                notificationTimeText = resolveDisplayedNotificationTime(
+                    stateTimeText = uiState.notificationTimeText,
+                    immediateTimeText = immediateTimeText
+                )
             ),
             onPushEnabledChange = viewModel::updatePushEnabled,
             onNotify30DaysChange = viewModel::updateNotify30Days,
@@ -79,13 +80,21 @@ fun SettingsRoute(
             onNotify1DayChange = viewModel::updateNotify1Day,
             onNotificationTimeClick = onNavigateToNotificationTime
         )
-        toastMessage?.let { message ->
-            ToastBanner(
-                message = message,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
-            )
-        }
+        BottomToastBanner(message = toastMessage)
     }
+}
+
+private fun shouldClearImmediateTime(
+    stateTimeText: String,
+    immediateTimeText: String?
+): Boolean {
+    if (immediateTimeText == null) return false
+    return stateTimeText == immediateTimeText
+}
+
+private fun resolveDisplayedNotificationTime(
+    stateTimeText: String,
+    immediateTimeText: String?
+): String {
+    return immediateTimeText ?: stateTimeText
 }

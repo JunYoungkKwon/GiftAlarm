@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.gifticonalarm.ui.feature.shared.util.formatDateYmdDot
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 private val BottomSheetBackground = Color(0xFFFFFFFF)
@@ -48,7 +49,7 @@ data class ExpirationDate(
     val month: Int,
     val day: Int
 ) {
-    fun toDisplayText(): String = "%04d.%02d.%02d".format(year, month, day)
+    fun toDisplayText(): String = formatDateYmdDot(year, month, day)
 
     fun toConfirmText(): String = "${toDisplayText()} 까지"
 

@@ -1,4 +1,5 @@
 package com.example.gifticonalarm.ui.feature.shared.barcodelarge
+import com.example.gifticonalarm.ui.feature.shared.text.VoucherText
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,7 +37,7 @@ fun BarcodeLargeRoute(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "바코드 정보를 찾을 수 없어요.",
+                    text = VoucherText.BARCODE_NOT_FOUND,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

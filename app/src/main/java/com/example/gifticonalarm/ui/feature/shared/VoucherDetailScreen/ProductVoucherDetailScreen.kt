@@ -11,17 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -33,7 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.gifticonalarm.R
-import com.example.gifticonalarm.ui.feature.shared.components.VoucherDetailMoreMenu
+import com.example.gifticonalarm.ui.feature.shared.components.VoucherDetailTopBar
+import com.example.gifticonalarm.ui.feature.shared.fixture.VoucherUiFixtureProvider
+import com.example.gifticonalarm.ui.feature.shared.model.VoucherStatus
+import com.example.gifticonalarm.ui.feature.shared.text.VoucherText
 import com.example.gifticonalarm.ui.theme.GifticonBlack
 import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
 import com.example.gifticonalarm.ui.theme.GifticonSurfacePill
@@ -46,14 +42,12 @@ private val ScreenBackground = GifticonWhite
 private val PrimaryText = GifticonTextPrimary
 private val Accent = GifticonBrandPrimary
 
-/**
- * 교환권 상태.
- */
-enum class ProductVoucherStatus(val label: String) {
-    USABLE("사용 가능"),
-    USED("사용 완료"),
-    EXPIRED("만료")
-}
+private data class ProductActionButtonStyle(
+    val text: String,
+    val containerColor: androidx.compose.ui.graphics.Color,
+    val contentColor: androidx.compose.ui.graphics.Color,
+    val borderColor: androidx.compose.ui.graphics.Color?
+)
 
 /**
  * 교환권 상세 UI 모델.
@@ -62,7 +56,7 @@ data class ProductVoucherDetailUiModel(
     val couponId: String,
     val brand: String,
     val productName: String,
-    val status: ProductVoucherStatus,
+    val status: VoucherStatus,
     val expireDateText: String,
     val expireBadgeText: String,
     val barcodeNumber: String,
@@ -71,25 +65,14 @@ data class ProductVoucherDetailUiModel(
     val productImageUrl: String
 ) {
     companion object {
-        fun placeholder(couponId: String): ProductVoucherDetailUiModel = ProductVoucherDetailUiModel(
-            couponId = couponId,
-            brand = "스타벅스",
-            productName = "아이스 아메리카노 T",
-            status = ProductVoucherStatus.USABLE,
-            expireDateText = "2024. 12. 31 까지",
-            expireBadgeText = "D-45",
-            barcodeNumber = "1234 5678 9012",
-            exchangePlaceText = "스타벅스 전국 매장 (일부 특수 매장 제외)",
-            memoText = "생일 축하해! 시원한 아메리카노 한 잔 하고 힘내렴 :)",
-            productImageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBiurr-zc8f8sX4Auu40fAUYTJf_d0YFt4JKqX3FLo1lUFrAwvr4DubDpMyK_FwDpMDKaUpkHz2pW_qjYEQBZp9OKk0JIjUgsax6tFqJXIS0KWSXOhWK4fvvj07CMVD85UFEPC0H4qbQQlYUeK3L34HeVPomYC2AUHZicvik-9iCOfd0T2nUAMngz51oIYTK1HNUK6_Wb3Jsu-y8IaPE9N18vINXmV-zlySx6AVerBvwTCJTHxN1yhp5c4olltdW3z3IeLro19188ej"
-        )
+        fun placeholder(couponId: String): ProductVoucherDetailUiModel =
+            VoucherUiFixtureProvider.productVoucher(couponId)
     }
 }
 
 /**
  * 교환권 상세 화면.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductVoucherDetailScreen(
     couponId: String,
@@ -102,47 +85,22 @@ fun ProductVoucherDetailScreen(
     onDeleteClick: () -> Unit = {}
 ) {
     val isMoreMenuExpanded = rememberSaveable { mutableStateOf(false) }
+    val actionButtonStyle = resolveProductActionButtonStyle(uiModel.status)
 
     Scaffold(
         modifier = modifier,
         containerColor = ScreenBackground,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = ScreenBackground),
-                title = {
-                    Text(
-                        text = "교환권 상세 정보",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = PrimaryText,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 3.dp)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Text(
-                            text = "‹",
-                            color = PrimaryText,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { isMoreMenuExpanded.value = true }) {
-                        Icon(
-                            imageVector = Icons.Outlined.MoreHoriz,
-                            contentDescription = "더보기",
-                            tint = PrimaryText
-                        )
-                    }
-                    VoucherDetailMoreMenu(
-                        expanded = isMoreMenuExpanded.value,
-                        onDismissRequest = { isMoreMenuExpanded.value = false },
-                        onEditClick = onEditClick,
-                        onDeleteClick = onDeleteClick
-                    )
-                }
+            VoucherDetailTopBar(
+                title = VoucherText.PRODUCT_DETAIL_TITLE,
+                containerColor = ScreenBackground,
+                contentColor = PrimaryText,
+                menuExpanded = isMoreMenuExpanded.value,
+                onBackClick = onNavigateBack,
+                onExpandMenuClick = { isMoreMenuExpanded.value = true },
+                onDismissMenu = { isMoreMenuExpanded.value = false },
+                onEditClick = onEditClick,
+                onDeleteClick = onDeleteClick
             )
         }
     ) { innerPadding ->
@@ -169,26 +127,10 @@ fun ProductVoucherDetailScreen(
                 ),
                 onShowBarcodeClick = onShowBarcodeClick,
                 onCopyBarcodeClick = onCopyBarcodeClick,
-                actionButtonText = if (uiModel.status == ProductVoucherStatus.USED) {
-                    "사용취소"
-                } else {
-                    "사용하기"
-                },
-                actionButtonContainerColor = if (uiModel.status == ProductVoucherStatus.USED) {
-                    GifticonWhite
-                } else {
-                    Accent
-                },
-                actionButtonContentColor = if (uiModel.status == ProductVoucherStatus.USED) {
-                    GifticonBlack
-                } else {
-                    GifticonWhite
-                },
-                actionButtonBorderColor = if (uiModel.status == ProductVoucherStatus.USED) {
-                    GifticonTextPrimary
-                } else {
-                    null
-                },
+                actionButtonText = actionButtonStyle.text,
+                actionButtonContainerColor = actionButtonStyle.containerColor,
+                actionButtonContentColor = actionButtonStyle.contentColor,
+                actionButtonBorderColor = actionButtonStyle.borderColor,
                 showActionButtonIcon = false,
                 modifier = Modifier.weight(1f)
             )
@@ -215,7 +157,7 @@ private fun ProductVoucherTopSection(
         ) {
             AsyncImage(
                 model = uiModel.productImageUrl,
-                contentDescription = "교환권 상품 이미지",
+                contentDescription = VoucherText.PRODUCT_IMAGE_DESCRIPTION,
                 modifier = Modifier.fillMaxSize(),
                 error = painterResource(id = R.drawable.default_coupon_image),
                 fallback = painterResource(id = R.drawable.default_coupon_image)
@@ -249,5 +191,23 @@ private fun ProductVoucherTopSection(
         }
 
         Spacer(modifier = Modifier.height(2.dp))
+    }
+}
+
+private fun resolveProductActionButtonStyle(status: VoucherStatus): ProductActionButtonStyle {
+    return if (status == VoucherStatus.USED) {
+        ProductActionButtonStyle(
+            text = VoucherText.ACTION_CANCEL_USE,
+            containerColor = GifticonWhite,
+            contentColor = GifticonBlack,
+            borderColor = GifticonTextPrimary
+        )
+    } else {
+        ProductActionButtonStyle(
+            text = VoucherText.ACTION_USE,
+            containerColor = Accent,
+            contentColor = GifticonWhite,
+            borderColor = null
+        )
     }
 }

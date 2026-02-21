@@ -42,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.gifticonalarm.ui.feature.shared.text.OnboardingText
+import com.example.gifticonalarm.ui.feature.shared.text.TextFormatters
 import kotlinx.coroutines.launch
 
 private val OnboardingBackground = Color(0xFFFFFFFF)
@@ -56,7 +58,7 @@ private val OnboardingMuted = Color(0xFFE5E7EB)
 fun OnboardingScreen(
     onStartClick: () -> Unit
 ) {
-    val pages = onboardingPages()
+    val pages = OnboardingPages
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val coroutineScope = rememberCoroutineScope()
     val lastPageIndex = pages.lastIndex
@@ -74,20 +76,13 @@ fun OnboardingScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            TextButton(
+            OnboardingSkipButton(
                 onClick = {
                     coroutineScope.launch {
                         pagerState.animateScrollToPage(lastPageIndex)
                     }
                 }
-            ) {
-                Text(
-                    text = "건너뛰기",
-                    color = OnboardingAccent,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            )
         }
 
         HorizontalPager(
@@ -99,51 +94,85 @@ fun OnboardingScreen(
             OnboardingPageContent(page = pages[pageIndex])
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            repeat(pages.size) { index ->
-                val isSelected = pagerState.currentPage == index
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(width = if (isSelected) 28.dp else 8.dp, height = 8.dp)
-                        .clip(CircleShape)
-                        .background(if (isSelected) OnboardingAccent else OnboardingMuted)
-                )
-            }
-        }
+        OnboardingPageIndicator(
+            pageCount = pages.size,
+            currentPage = pagerState.currentPage
+        )
 
-        Button(
+        OnboardingPrimaryActionButton(
+            isLastPage = isLastPage,
             onClick = {
                 if (isLastPage) {
                     onStartClick()
-                    return@Button
+                    return@OnboardingPrimaryActionButton
                 }
                 coroutineScope.launch {
                     pagerState.animateScrollToPage(pagerState.currentPage + 1)
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = OnboardingAccent,
-                contentColor = Color.White
-            )
-        ) {
-            Text(
-                text = if (isLastPage) "시작하기" else "다음",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
-        }
+            }
+        )
 
         Spacer(modifier = Modifier.height(28.dp))
+    }
+}
+
+@Composable
+private fun OnboardingSkipButton(onClick: () -> Unit) {
+    TextButton(onClick = onClick) {
+        Text(
+            text = OnboardingText.ACTION_SKIP,
+            color = OnboardingAccent,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun OnboardingPageIndicator(
+    pageCount: Int,
+    currentPage: Int
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 24.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        repeat(pageCount) { index ->
+            val isSelected = currentPage == index
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .size(width = if (isSelected) 28.dp else 8.dp, height = 8.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) OnboardingAccent else OnboardingMuted)
+            )
+        }
+    }
+}
+
+@Composable
+private fun OnboardingPrimaryActionButton(
+    isLastPage: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = OnboardingAccent,
+            contentColor = Color.White
+        )
+    ) {
+        Text(
+            text = if (isLastPage) OnboardingText.ACTION_START else OnboardingText.ACTION_NEXT,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold
+        )
     }
 }
 
@@ -154,11 +183,7 @@ private fun OnboardingPageContent(page: OnboardingPageUiModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        when (page.type) {
-            OnboardingType.AUTO_REGISTRATION -> AutoRegistrationIllustration()
-            OnboardingType.EXPIRATION_MANAGEMENT -> ExpirationManagementIllustration()
-            OnboardingType.NOTIFICATION -> NotificationIllustration()
-        }
+        page.type.RenderIllustration()
 
         Spacer(modifier = Modifier.height(28.dp))
 
@@ -178,6 +203,15 @@ private fun OnboardingPageContent(page: OnboardingPageUiModel) {
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center
         )
+    }
+}
+
+@Composable
+private fun OnboardingType.RenderIllustration() {
+    when (this) {
+        OnboardingType.AUTO_REGISTRATION -> AutoRegistrationIllustration()
+        OnboardingType.EXPIRATION_MANAGEMENT -> ExpirationManagementIllustration()
+        OnboardingType.NOTIFICATION -> NotificationIllustration()
     }
 }
 
@@ -287,7 +321,7 @@ private fun AutoRegistrationIllustration() {
                     tint = OnboardingAccent
                 )
                 Text(
-                    text = "찰칵! 자동 인식",
+                    text = OnboardingText.AUTO_RECOGNITION_BADGE,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF4B5563)
@@ -371,7 +405,7 @@ private fun ExpirationManagementIllustration() {
                     )
                 }
                 Text(
-                    text = "D-3",
+                    text = TextFormatters.ddayLabel(3),
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(Color(0xFFEF4444))
@@ -413,42 +447,7 @@ private fun NotificationIllustration() {
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 repeat(3) { index ->
-                    val rowColor = when (index) {
-                        0 -> Color(0xFF22C55E)
-                        1 -> Color(0xFFFACC15)
-                        else -> Color(0xFF3B82F6)
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(32.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(rowColor.copy(alpha = 0.20f))
-                            .border(1.dp, rowColor.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(14.dp)
-                                .clip(CircleShape)
-                                .background(rowColor)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(6.dp)
-                                .clip(CircleShape)
-                                .background(rowColor.copy(alpha = 0.35f))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(width = 14.dp, height = 10.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(rowColor.copy(alpha = 0.5f))
-                        )
-                    }
+                    NotificationIllustrationRow(rowColor = notificationRowColor(index))
                 }
             }
         }
@@ -474,7 +473,7 @@ private fun NotificationIllustration() {
                     tint = Color(0xFF854D0E)
                 )
                 Text(
-                    text = "똑똑하게 관리해요",
+                    text = OnboardingText.SMART_MANAGEMENT_BADGE,
                     color = Color(0xFF854D0E),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.ExtraBold
@@ -504,10 +503,53 @@ private fun NotificationIllustration() {
                 .padding(top = 80.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            CoinBadge(symbol = "₩")
-            CoinBadge(symbol = "P")
+            CoinBadge(symbol = OnboardingText.COIN_SYMBOL_WON)
+            CoinBadge(symbol = OnboardingText.COIN_SYMBOL_POINT)
             TicketBadge()
         }
+    }
+}
+
+@Composable
+private fun NotificationIllustrationRow(rowColor: Color) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(32.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(rowColor.copy(alpha = 0.20f))
+            .border(1.dp, rowColor.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(14.dp)
+                .clip(CircleShape)
+                .background(rowColor)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(6.dp)
+                .clip(CircleShape)
+                .background(rowColor.copy(alpha = 0.35f))
+        )
+        Box(
+            modifier = Modifier
+                .size(width = 14.dp, height = 10.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(rowColor.copy(alpha = 0.5f))
+        )
+    }
+}
+
+private fun notificationRowColor(index: Int): Color {
+    return when (index) {
+        0 -> Color(0xFF22C55E)
+        1 -> Color(0xFFFACC15)
+        else -> Color(0xFF3B82F6)
     }
 }
 
@@ -552,26 +594,6 @@ private fun TicketBadge() {
     }
 }
 
-private fun onboardingPages(): List<OnboardingPageUiModel> {
-    return listOf(
-        OnboardingPageUiModel(
-            type = OnboardingType.AUTO_REGISTRATION,
-            title = "OCR 자동 등록",
-            description = "이미지를 불러오거나 촬영하면\n쿠폰 정보를 자동으로 입력해요."
-        ),
-        OnboardingPageUiModel(
-            type = OnboardingType.EXPIRATION_MANAGEMENT,
-            title = "기프티콘 만료 관리",
-            description = "만료 임박한 쿠폰을\n놓치지 않게 관리해드려요."
-        ),
-        OnboardingPageUiModel(
-            type = OnboardingType.NOTIFICATION,
-            title = "알림 및 잔액 확인",
-            description = "잔액권 관리부터 알림 설정까지\n한 번에 확인하세요."
-        )
-    )
-}
-
 private enum class OnboardingType {
     AUTO_REGISTRATION,
     EXPIRATION_MANAGEMENT,
@@ -582,4 +604,22 @@ private data class OnboardingPageUiModel(
     val type: OnboardingType,
     val title: String,
     val description: String
+)
+
+private val OnboardingPages = listOf(
+    OnboardingPageUiModel(
+        type = OnboardingType.AUTO_REGISTRATION,
+        title = OnboardingText.PAGE1_TITLE,
+        description = OnboardingText.PAGE1_DESCRIPTION
+    ),
+    OnboardingPageUiModel(
+        type = OnboardingType.EXPIRATION_MANAGEMENT,
+        title = OnboardingText.PAGE2_TITLE,
+        description = OnboardingText.PAGE2_DESCRIPTION
+    ),
+    OnboardingPageUiModel(
+        type = OnboardingType.NOTIFICATION,
+        title = OnboardingText.PAGE3_TITLE,
+        description = OnboardingText.PAGE3_DESCRIPTION
+    )
 )

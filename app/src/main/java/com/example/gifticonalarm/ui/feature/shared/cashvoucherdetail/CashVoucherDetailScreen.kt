@@ -17,20 +17,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Fullscreen
-import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,7 +37,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.gifticonalarm.R
-import com.example.gifticonalarm.ui.feature.shared.components.VoucherDetailMoreMenu
+import com.example.gifticonalarm.ui.feature.shared.components.VoucherDetailTopBar
+import com.example.gifticonalarm.ui.feature.shared.fixture.VoucherUiFixtureProvider
+import com.example.gifticonalarm.ui.feature.shared.model.VoucherStatus
+import com.example.gifticonalarm.ui.feature.shared.text.CommonText
+import com.example.gifticonalarm.ui.feature.shared.text.VoucherText
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailBottomSection
 import com.example.gifticonalarm.ui.feature.shared.voucherdetailscreen.VoucherDetailBottomSectionUiModel
 import com.example.gifticonalarm.ui.theme.GifticonBrandPrimary
@@ -61,7 +60,7 @@ data class CashVoucherDetailUiModel(
     val couponId: String,
     val brand: String,
     val title: String,
-    val status: String,
+    val status: VoucherStatus,
     val remainAmountText: String,
     val usageHistoryText: String,
     val expireDateText: String,
@@ -72,27 +71,14 @@ data class CashVoucherDetailUiModel(
     val brandLogoUrl: String
 ) {
     companion object {
-        fun placeholder(couponId: String): CashVoucherDetailUiModel = CashVoucherDetailUiModel(
-            couponId = couponId,
-            brand = "스타벅스",
-            title = "e카드 5만원 교환권",
-            status = "사용 가능",
-            remainAmountText = "32,500",
-            usageHistoryText = "스타벅스 강남점 / 2026-02-21 / 4,500원 사용",
-            expireDateText = "2024. 12. 31 까지",
-            expireBadgeText = "D-45",
-            barcodeNumber = "1234 5678 9012",
-            exchangePlaceText = "스타벅스 전국 매장 (일부 특수 매장 제외)",
-            memo = "친구 생일 선물로 받은 기프티콘. 유효기간 연장 1회 완료함.",
-            brandLogoUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAXVWYahb8gPbQN0cgsRi5zK9FKYl2Hy4pcMW13H2rafEVzYzFh6EFlFpNyyKaJfmw5hXjnAaGKgOTUme6FFpdjLyt2HfAdvf4AuYNExmaFc95S4Kdzj4UbJuTd-7FnOl4msBfNkyakzIXVuoHQTroSR8iUFfAJFsapq_JyzJqORe8kTGMwr7EjPtINS1mZHKAfAgpxM8R9W5Yl9SjXYIYJVc34QmoWsCCIRG13WJpgzPqVhAhS0wUAK6QV_fZh21BMlltykcQNeYKG"
-        )
+        fun placeholder(couponId: String): CashVoucherDetailUiModel =
+            VoucherUiFixtureProvider.cashVoucher(couponId)
     }
 }
 
 /**
  * 홈 대시보드에서 진입하는 금액권 상세 화면.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CashVoucherDetailScreen(
     couponId: String,
@@ -111,42 +97,16 @@ fun CashVoucherDetailScreen(
         modifier = modifier,
         containerColor = CouponBackground,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = CouponBackground),
-                title = {
-                    Text(
-                        text = "금액권 상세 정보",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = CouponTextPrimary,
-                        fontWeight = FontWeight.Bold ,
-                        modifier = Modifier.padding(top = 3.dp)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Text(
-                            text = "‹",
-                            color = CouponTextPrimary,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { isMoreMenuExpanded.value = true }) {
-                        Icon(
-                            imageVector = Icons.Outlined.MoreHoriz,
-                            contentDescription = "더보기",
-                            tint = CouponTextPrimary
-                        )
-                    }
-                    VoucherDetailMoreMenu(
-                        expanded = isMoreMenuExpanded.value,
-                        onDismissRequest = { isMoreMenuExpanded.value = false },
-                        onEditClick = onEditClick,
-                        onDeleteClick = onDeleteClick
-                    )
-                }
+            VoucherDetailTopBar(
+                title = VoucherText.CASH_DETAIL_TITLE,
+                containerColor = CouponBackground,
+                contentColor = CouponTextPrimary,
+                menuExpanded = isMoreMenuExpanded.value,
+                onBackClick = onNavigateBack,
+                onExpandMenuClick = { isMoreMenuExpanded.value = true },
+                onDismissMenu = { isMoreMenuExpanded.value = false },
+                onEditClick = onEditClick,
+                onDeleteClick = onDeleteClick
             )
         }
     ) { innerPadding ->
@@ -238,7 +198,7 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
                     ) {
                         AsyncImage(
                             model = uiModel.brandLogoUrl,
-                            contentDescription = "브랜드 로고",
+                            contentDescription = VoucherText.BRAND_LOGO_DESCRIPTION,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(4.dp),
@@ -267,7 +227,7 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
-                        text = uiModel.status,
+                        text = uiModel.status.label,
                         color = GifticonWhite,
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -277,7 +237,7 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "남은 잔액",
+                text = VoucherText.LABEL_REMAIN_BALANCE,
                 color = GifticonWhite.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.labelSmall
             )
@@ -290,7 +250,7 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "원",
+                    text = CommonText.UNIT_WON,
                     color = GifticonWhite,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
@@ -308,7 +268,7 @@ private fun BalanceCard(uiModel: CashVoucherDetailUiModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "유효기간",
+                    text = VoucherText.LABEL_EXPIRE_DATE,
                     color = GifticonWhite.copy(alpha = 0.85f),
                     style = MaterialTheme.typography.labelSmall
                 )
@@ -332,34 +292,58 @@ private fun ActionButtons(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Button(
+        DetailActionButton(
             modifier = Modifier.weight(1f),
             onClick = onAddUsageClick,
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = CouponAccent,
-                contentColor = GifticonWhite
-            ),
-            contentPadding = PaddingValues(vertical = 12.dp)
-        ) {
-            Icon(imageVector = Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("사용 내역 추가", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-        }
+            icon = {
+                Icon(imageVector = Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            label = VoucherText.ACTION_ADD_USAGE,
+            containerColor = CouponAccent,
+            contentColor = GifticonWhite,
+            labelWeight = FontWeight.Bold
+        )
 
-        Button(
+        DetailActionButton(
             modifier = Modifier.weight(1f),
             onClick = onShowBarcodeClick,
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = GifticonSurfaceSoft,
-                contentColor = CouponTextPrimary
-            ),
-            contentPadding = PaddingValues(vertical = 12.dp)
-        ) {
-            Icon(imageVector = Icons.Outlined.Fullscreen, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("바코드 크게 보기", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-        }
+            icon = {
+                Icon(imageVector = Icons.Outlined.Fullscreen, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            label = VoucherText.ACTION_SHOW_LARGE_BARCODE,
+            containerColor = GifticonSurfaceSoft,
+            contentColor = CouponTextPrimary,
+            labelWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun DetailActionButton(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    label: String,
+    containerColor: androidx.compose.ui.graphics.Color,
+    contentColor: androidx.compose.ui.graphics.Color,
+    labelWeight: FontWeight
+) {
+    Button(
+        modifier = modifier,
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        contentPadding = PaddingValues(vertical = 12.dp)
+    ) {
+        icon()
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = labelWeight
+        )
     }
 }
