@@ -14,11 +14,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Settings
@@ -114,7 +114,7 @@ fun GifticonAlarmApp() {
     val bottomItems = listOf(
         BottomNavItem(Screen.HomeTab.route, "홈", Icons.Filled.Home, Icons.Outlined.Home),
         BottomNavItem(Screen.CouponsTab.route, "쿠폰함", Icons.Filled.LocalOffer, Icons.Outlined.LocalOffer),
-        BottomNavItem(Screen.AddTab.route, "추가", Icons.Filled.Add, Icons.Outlined.Add),
+        BottomNavItem(Screen.AddTab.route, "추가", Icons.Filled.AddCircle, Icons.Outlined.AddCircle),
         BottomNavItem(Screen.SettingsTab.route, "설정", Icons.Filled.Settings, Icons.Outlined.Settings)
     )
 
