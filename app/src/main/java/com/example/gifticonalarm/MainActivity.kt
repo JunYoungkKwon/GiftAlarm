@@ -10,18 +10,25 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LocalOffer
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +36,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -103,10 +112,10 @@ fun GifticonAlarmApp() {
     val currentDestination = navBackStackEntry?.destination
 
     val bottomItems = listOf(
-        BottomNavItem(Screen.HomeTab.route, "홈", Icons.Filled.Home),
-        BottomNavItem(Screen.CouponsTab.route, "쿠폰함", Icons.Filled.Inventory2),
-        BottomNavItem(Screen.AddTab.route, "추가", Icons.Filled.AddCircle),
-        BottomNavItem(Screen.SettingsTab.route, "설정", Icons.Filled.Settings)
+        BottomNavItem(Screen.HomeTab.route, "홈", Icons.Filled.Home, Icons.Outlined.Home),
+        BottomNavItem(Screen.CouponsTab.route, "쿠폰함", Icons.Filled.LocalOffer, Icons.Outlined.LocalOffer),
+        BottomNavItem(Screen.AddTab.route, "추가", Icons.Filled.Add, Icons.Outlined.Add),
+        BottomNavItem(Screen.SettingsTab.route, "설정", Icons.Filled.Settings, Icons.Outlined.Settings)
     )
 
     Scaffold(
@@ -118,32 +127,51 @@ fun GifticonAlarmApp() {
                     }
 
                 if (shouldShowBottomBar) {
-                    NavigationBar {
-                        bottomItems.forEach { item ->
-                            val selected = destination.hierarchy
-                                .any { navDestination -> navDestination.route == item.route }
+                    Surface(
+                        color = Color.White,
+                        shadowElevation = 10.dp
+                    ) {
+                        Column {
+                            HorizontalDivider(color = Color(0xFFEFF2F6), thickness = 1.dp)
+                            NavigationBar(
+                                containerColor = Color.White,
+                                tonalElevation = 0.dp
+                            ) {
+                                bottomItems.forEach { item ->
+                                    val selected = destination.hierarchy
+                                        .any { navDestination -> navDestination.route == item.route }
 
-                            NavigationBarItem(
-                                selected = selected,
-                                onClick = {
-                                    if (selected) return@NavigationBarItem
-                                    navController.navigate(item.route) {
-                                        popUpTo(navController.graph.findStartDestination().id)
-                                        launchSingleTop = true
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.label
+                                    NavigationBarItem(
+                                        selected = selected,
+                                        onClick = {
+                                            if (selected) return@NavigationBarItem
+                                            navController.navigate(item.route) {
+                                                popUpTo(navController.graph.findStartDestination().id)
+                                                launchSingleTop = true
+                                            }
+                                        },
+                                        icon = {
+                                            Icon(
+                                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                                contentDescription = item.label
+                                            )
+                                        },
+                                        label = {
+                                            Text(
+                                                text = item.label,
+                                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                                            )
+                                        },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            selectedIconColor = Color(0xFF191970),
+                                            selectedTextColor = Color(0xFF191970),
+                                            unselectedIconColor = Color(0xFF8C96A8),
+                                            unselectedTextColor = Color(0xFF8C96A8),
+                                            indicatorColor = Color(0xFFEDEEFE)
+                                        )
                                     )
-                                },
-                                label = { Text(item.label) },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = Color(0xFF191970),
-                                    selectedTextColor = Color(0xFF191970)
-                                )
-                            )
+                                }
+                            }
                         }
                     }
                 }
@@ -161,5 +189,6 @@ fun GifticonAlarmApp() {
 private data class BottomNavItem(
     val route: String,
     val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
+    val selectedIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    val unselectedIcon: androidx.compose.ui.graphics.vector.ImageVector
 )

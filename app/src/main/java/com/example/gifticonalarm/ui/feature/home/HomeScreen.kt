@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.NotificationsNone
@@ -31,6 +32,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,6 +78,9 @@ private val HomePrimary = GifticonBrandPrimary
 private val HomeSurface = GifticonSurface
 private val HomeTextPrimary = GifticonTextPrimaryAlt
 private val HomeTextSecondary = GifticonTextSecondary
+private val HomeMenuSurface = Color(0xFFFAFBFD)
+private val HomeMenuBorder = Color(0xFFE7ECF3)
+private val HomeMenuSelected = Color(0xFFEDEEFE)
 
 /**
  * Stitch 홈 대시보드 디자인을 반영한 UI 전용 홈 화면.
@@ -417,24 +422,32 @@ private fun CouponSection(
 
                 DropdownMenu(
                     expanded = sortMenuExpanded,
-                    onDismissRequest = { sortMenuExpanded = false }
+                    onDismissRequest = { sortMenuExpanded = false },
+                    shape = RoundedCornerShape(14.dp),
+                    containerColor = HomeMenuSurface,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 8.dp,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, HomeMenuBorder)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(HomeSortType.LATEST.label) },
+                    HomeSortDropdownItem(
+                        label = HomeSortType.LATEST.label,
+                        selected = selectedSort == HomeSortType.LATEST,
                         onClick = {
                             onSortSelected(HomeSortType.LATEST)
                             sortMenuExpanded = false
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text(HomeSortType.EXPIRY_SOON.label) },
+                    HomeSortDropdownItem(
+                        label = HomeSortType.EXPIRY_SOON.label,
+                        selected = selectedSort == HomeSortType.EXPIRY_SOON,
                         onClick = {
                             onSortSelected(HomeSortType.EXPIRY_SOON)
                             sortMenuExpanded = false
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text(HomeSortType.EXPIRY_LATE.label) },
+                    HomeSortDropdownItem(
+                        label = HomeSortType.EXPIRY_LATE.label,
+                        selected = selectedSort == HomeSortType.EXPIRY_LATE,
                         onClick = {
                             onSortSelected(HomeSortType.EXPIRY_LATE)
                             sortMenuExpanded = false
@@ -464,6 +477,40 @@ private fun CouponSection(
             }
         }
     }
+}
+
+@Composable
+private fun HomeSortDropdownItem(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
+        },
+        onClick = onClick,
+        trailingIcon = {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    tint = HomePrimary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        },
+        colors = MenuDefaults.itemColors(
+            textColor = HomeTextPrimary,
+            trailingIconColor = HomePrimary
+        ),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+        modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(if (selected) HomeMenuSelected else Color.Transparent)
+    )
 }
 
 @Composable

@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AssistChip
@@ -32,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -84,6 +86,9 @@ private val CouponBackground = GifticonWhite
 private val CouponListBackground = GifticonSurface
 private val CouponCardBorder = GifticonBorder
 private val CouponMutedText = GifticonTextMuted
+private val CouponMenuSurface = Color(0xFFFAFBFD)
+private val CouponMenuBorder = Color(0xFFE7ECF3)
+private val CouponMenuSelected = Color(0xFFEDEEFE)
 
 /**
  * 쿠폰함 화면 UI.
@@ -284,24 +289,32 @@ private fun CouponBoxHeader(
 
                 DropdownMenu(
                     expanded = categoryMenuExpanded,
-                    onDismissRequest = { categoryMenuExpanded = false }
+                    onDismissRequest = { categoryMenuExpanded = false },
+                    shape = RoundedCornerShape(14.dp),
+                    containerColor = CouponMenuSurface,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 8.dp,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CouponMenuBorder)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(CouponCategoryType.ALL.label) },
+                    CouponCategoryDropdownItem(
+                        label = CouponCategoryType.ALL.label,
+                        selected = selectedCategory == CouponCategoryType.ALL,
                         onClick = {
                             onCategorySelected(CouponCategoryType.ALL)
                             categoryMenuExpanded = false
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text(CouponCategoryType.EXCHANGE.label) },
+                    CouponCategoryDropdownItem(
+                        label = CouponCategoryType.EXCHANGE.label,
+                        selected = selectedCategory == CouponCategoryType.EXCHANGE,
                         onClick = {
                             onCategorySelected(CouponCategoryType.EXCHANGE)
                             categoryMenuExpanded = false
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text(CouponCategoryType.AMOUNT.label) },
+                    CouponCategoryDropdownItem(
+                        label = CouponCategoryType.AMOUNT.label,
+                        selected = selectedCategory == CouponCategoryType.AMOUNT,
                         onClick = {
                             onCategorySelected(CouponCategoryType.AMOUNT)
                             categoryMenuExpanded = false
@@ -317,6 +330,40 @@ private fun CouponBoxHeader(
             )
         }
     }
+}
+
+@Composable
+private fun CouponCategoryDropdownItem(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    DropdownMenuItem(
+        text = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
+        },
+        onClick = onClick,
+        trailingIcon = {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    tint = CouponAccent,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        },
+        colors = MenuDefaults.itemColors(
+            textColor = GifticonTextPrimary,
+            trailingIconColor = CouponAccent
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+        modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(if (selected) CouponMenuSelected else Color.Transparent)
+    )
 }
 
 @Composable
