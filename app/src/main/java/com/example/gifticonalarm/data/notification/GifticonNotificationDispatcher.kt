@@ -42,20 +42,12 @@ class GifticonNotificationDispatcher @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = if (gifticons.size == 1) {
-            "기프티콘 만료 알림"
-        } else {
-            "만료 예정 기프티콘 ${gifticons.size}개"
-        }
-        val message = if (gifticons.size == 1) {
-            val item = gifticons.first()
-            "${item.brand} ${item.name}의 유효기간이 임박했어요."
-        } else {
-            "설정한 만료 주기에 해당하는 기프티콘이 있어요."
-        }
+        val title = "🔔 기프티콘 만료 임박 🔔"
+        val message = "지금 확인하고 기프티콘을 사용하세요."
+        val smallIconRes = R.drawable.ic_notification
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(smallIconRes)
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
