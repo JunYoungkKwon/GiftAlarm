@@ -130,7 +130,7 @@ private fun resolveHomeBadgeType(isUsed: Boolean, dday: Long): HomeBadgeType {
     return when {
         isUsed -> HomeBadgeType.USED
         dday < 0 -> HomeBadgeType.EXPIRED
-        dday in 1L..7L -> HomeBadgeType.URGENT
+        dday in 0L..7L -> HomeBadgeType.URGENT
         dday in 8L..15L -> HomeBadgeType.NORMAL
         else -> HomeBadgeType.SAFE
     }

@@ -176,6 +176,8 @@ private fun BarcodeCard(
     barcodeNumber: String,
     onCopyBarcodeClick: (String) -> Unit
 ) {
+    val canCopyBarcode = barcodeNumber.trim().isNotBlank() && barcodeNumber.trim() != UNREGISTERED_BARCODE
+
     Card(
         colors = CardDefaults.cardColors(containerColor = GifticonWhite),
         shape = RoundedCornerShape(16.dp),
@@ -192,22 +194,24 @@ private fun BarcodeCard(
             Spacer(modifier = Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = barcodeNumber,
+                    text = formatBarcodeNumberForDisplay(barcodeNumber),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryText
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = { onCopyBarcodeClick(barcodeNumber) },
-                    modifier = Modifier.size(22.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ContentCopy,
-                        contentDescription = "바코드 번호 복사",
-                        tint = SecondaryText,
-                        modifier = Modifier.size(18.dp)
-                    )
+                if (canCopyBarcode) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { onCopyBarcodeClick(barcodeNumber) },
+                        modifier = Modifier.size(20.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ContentCopy,
+                            contentDescription = "바코드 번호 복사",
+                            tint = SecondaryText,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
@@ -510,7 +514,14 @@ private fun encodeCode128ModulesOrNull(barcodeNumber: String): BooleanArray? {
         val bitMatrix = Code128Writer().encode(normalizedBarcode, BarcodeFormat.CODE_128, 600, 1)
         val row = bitMatrix.height / 2
         BooleanArray(bitMatrix.width) { x -> bitMatrix.get(x, row) }
-    }.getOrNull()
+}.getOrNull()
+}
+
+private fun formatBarcodeNumberForDisplay(rawBarcodeNumber: String): String {
+    val normalized = rawBarcodeNumber.trim()
+    if (normalized.isBlank() || normalized == UNREGISTERED_BARCODE) return normalized
+    val compact = normalized.replace(" ", "")
+    return compact.chunked(4).joinToString(" ")
 }
 
 private fun resolveExpireBadgeStyle(expireBadgeText: String): ExpireBadgeStyle {
@@ -528,7 +539,7 @@ private fun resolveExpireBadgeStyle(expireBadgeText: String): ExpireBadgeStyle {
             borderColor = GifticonBorderSoft,
             textColor = GifticonDanger
         )
-        dday != null && dday in 1L..7L -> ExpireBadgeStyle(
+        dday != null && dday in 0L..7L -> ExpireBadgeStyle(
             containerColor = GifticonDangerBackground,
             borderColor = GifticonDangerBackground,
             textColor = GifticonDangerStrong

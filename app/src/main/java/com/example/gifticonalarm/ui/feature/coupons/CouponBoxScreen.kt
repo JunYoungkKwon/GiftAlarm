@@ -355,7 +355,7 @@ private fun CouponListItem(
         CouponStatus.EXPIRED -> GifticonDanger
         CouponStatus.USED -> GifticonTextSlateStrong
         CouponStatus.AVAILABLE -> {
-            if ((coupon.dday ?: Long.MAX_VALUE) in 1L..7L) GifticonDanger else GifticonTextSlate
+            if ((coupon.dday ?: Long.MAX_VALUE) in 0L..7L) GifticonDanger else GifticonTextSlate
         }
     }
 
@@ -472,7 +472,7 @@ private fun badgeStyleByCoupon(coupon: CouponUiModel): CouponBadgeStyle {
         CouponStatus.AVAILABLE -> {
             val dday = coupon.dday ?: Long.MAX_VALUE
             when {
-                dday in 1L..7L -> CouponBadgeStyle(
+                dday in 0L..7L -> CouponBadgeStyle(
                     containerColor = GifticonDangerBackground,
                     borderColor = GifticonDangerBackground,
                     textColor = GifticonDangerStrong

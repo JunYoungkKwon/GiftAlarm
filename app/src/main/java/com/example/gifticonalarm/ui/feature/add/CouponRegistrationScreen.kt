@@ -176,7 +176,7 @@ fun CouponRegistrationScreen(
                         text = if (formState.isEditMode) "수정하기" else "등록하기",
                         modifier = Modifier.fillMaxWidth(),
                         color = RegistrationTextPrimary,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
@@ -639,7 +639,7 @@ private fun BarcodePreviewCard(barcode: String) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = barcode,
+                text = formatRegistrationBarcodeForDisplay(barcode),
                 color = Color(0xFF6B7280),
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 9.sp,
@@ -710,4 +710,11 @@ private fun encodeRegistrationCode128ModulesOrNull(barcodeNumber: String): Boole
         val row = bitMatrix.height / 2
         BooleanArray(bitMatrix.width) { x -> bitMatrix.get(x, row) }
     }.getOrNull()
+}
+
+private fun formatRegistrationBarcodeForDisplay(rawBarcode: String): String {
+    val normalized = rawBarcode.trim()
+    if (normalized.isBlank() || normalized == UNREGISTERED_BARCODE) return normalized
+    val compact = normalized.replace(" ", "")
+    return compact.chunked(4).joinToString(" ")
 }

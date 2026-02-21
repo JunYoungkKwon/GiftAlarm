@@ -161,7 +161,7 @@ fun BarcodeLargeScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             Text(
-                text = uiModel.barcodeNumber,
+                text = formatBarcodeNumberForDisplay(uiModel.barcodeNumber),
                 style = MaterialTheme.typography.headlineMedium,
                 color = Primary,
                 fontWeight = FontWeight.Bold
@@ -248,4 +248,11 @@ private fun encodeCode128ModulesOrNull(barcodeNumber: String): BooleanArray? {
         val row = bitMatrix.height / 2
         BooleanArray(bitMatrix.width) { x -> bitMatrix.get(x, row) }
     }.getOrNull()
+}
+
+private fun formatBarcodeNumberForDisplay(rawBarcodeNumber: String): String {
+    val normalized = rawBarcodeNumber.trim()
+    if (normalized.isBlank()) return normalized
+    val compact = normalized.replace(" ", "")
+    return compact.chunked(4).joinToString(" ")
 }

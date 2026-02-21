@@ -321,7 +321,7 @@ private fun resolveHomeFocusBadgeStyle(ddayText: String): FocusBadgeStyle {
     val dday = normalized.removePrefix("D-").toLongOrNull()
 
     return when {
-        dday != null && dday in 1L..7L -> FocusBadgeStyle(
+        dday != null && dday in 0L..7L -> FocusBadgeStyle(
             containerColor = GifticonDanger,
             textColor = GifticonWhite
         )
