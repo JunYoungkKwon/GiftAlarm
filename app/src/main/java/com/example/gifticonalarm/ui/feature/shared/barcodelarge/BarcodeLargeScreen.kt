@@ -9,21 +9,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,22 +56,71 @@ private val SoftBackground = Color(0xFFF9FAFB)
 /**
  * 바코드 크게 보기 화면.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarcodeLargeScreen(
     uiModel: BarcodeLargeUiModel,
     onCloseClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ScreenBackground)
-    ) {
-        Spacer(modifier = Modifier.height(12.dp))
-        Header(onCloseClick = onCloseClick)
+    Scaffold(
+        containerColor = ScreenBackground,
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = ScreenBackground),
+                title = {
+                    Text(
+                        text = "바코드 크게 보기",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TitleColor,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 3.dp)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onCloseClick) {
+                        Text(
+                            text = "‹",
+                            color = Primary,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                },
+                actions = {
+                    Surface(
+                        modifier = Modifier.offset(x = (-5).dp, y = 3.dp),
+                        color = Color(0xFFF3F4F6),
+                        shape = RoundedCornerShape(999.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.WbSunny,
+                                contentDescription = null,
+                                tint = Color(0xFFF59E0B),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "밝기 최대",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SubText,
+                                fontWeight = FontWeight.Bold
 
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            )
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(innerPadding)
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -121,50 +174,6 @@ fun BarcodeLargeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
             ExpireChip(expireDateText = uiModel.expireDateText)
-        }
-    }
-}
-
-@Composable
-private fun Header(onCloseClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onCloseClick) {
-                Icon(
-                    imageVector = Icons.Outlined.Close,
-                    contentDescription = "닫기",
-                    tint = Primary
-                )
-            }
-        }
-        Surface(
-            color = Color(0xFFF3F4F6),
-            shape = RoundedCornerShape(999.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.WbSunny,
-                    contentDescription = null,
-                    tint = Color(0xFFF59E0B),
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "밝기 최대",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = SubText,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
     }
 }
