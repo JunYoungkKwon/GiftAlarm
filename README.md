@@ -28,7 +28,7 @@
 | **소개** | **홈** | **쿠폰함** |
 | :---: | :---: | :---:| 
 |<img src="https://github.com/user-attachments/assets/5f991849-0f58-40e7-9183-2d47520c7b54">  |<img src="https://github.com/user-attachments/assets/e077847d-7ccb-4384-86c0-7f892f0e55e6"> | <img src="https://github.com/user-attachments/assets/12c4bff1-d3e7-4e02-b646-7bacee2ea8a4"> |
-| **등록** | **상세정보** | **환경설정 및 푸쉬알림** | 
+| **쿠폰 등록** | **상세정보** | **환경설정 및 푸쉬알림** | 
 | <img src="https://github.com/user-attachments/assets/85855b6b-15f6-4524-8f23-ea27265e8335">  | <img src="https://github.com/user-attachments/assets/00607e77-9f41-4753-b02e-05de31667a51"> | <img src="https://github.com/user-attachments/assets/e6c7eca2-217d-44b2-9a8f-57a135a0c570">  | 
   
 </p>
