@@ -172,7 +172,7 @@ private fun InfoSheetContent(
                     )
                 }
                 Text(
-                    text = "• 만료일의 7일 전, 3일 전, 그리고 당일 오전 11시",
+                    text = "• 기본적으로 만료일의 7일 전, 3일 전 설정한 시간대에 발송",
                     style = MaterialTheme.typography.bodySmall,
                     color = SheetDescription
                 )
