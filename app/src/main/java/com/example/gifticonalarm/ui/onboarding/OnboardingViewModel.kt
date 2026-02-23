@@ -20,7 +20,7 @@ class OnboardingViewModel @Inject constructor(
      */
     fun completeOnboarding(onCompleted: () -> Unit) {
         viewModelScope.launch {
-            setOnboardingCompletedUseCase(true)
+            setOnboardingCompletedUseCase(false)
             onCompleted()
         }
     }
