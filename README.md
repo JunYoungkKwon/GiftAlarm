@@ -30,6 +30,7 @@
 **DI - Hilt**<br>
 **Jetpack - Compose, Navigation Compose, LiveData, ViewModel, WorkManager**<br>
 **Image - Coil**<br>
+**Tools - Codex, Stitch, Figma**<br>
 
 ## **Preview**
 <p align="center">
